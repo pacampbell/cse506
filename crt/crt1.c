@@ -1,13 +1,13 @@
-void __init();
-void __start();
+void _init();
+void _start();
 extern int main();
 
-void __init() {
+void _init() {
 
-    __start();
+    _start();
 
 }
 
-void __start() {
+void _start() {
     main();
 }
