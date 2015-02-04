@@ -9,7 +9,6 @@ int main(int argc, char *argv[], char* envp[]) {
         printf("> ");
         break;
         //scanf()
-
     }
     return EXIT_SUCCESS;
 }
