@@ -1,6 +1,9 @@
 #ifndef _STDLIB_H
 #define _STDLIB_H
 
+#define EXIT_SUCCESS 0
+#define EXIT_FAILURE 1
+
 extern __thread int errno;
 
 int main(int argc, char* argv[], char* envp[]);
