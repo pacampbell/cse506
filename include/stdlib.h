@@ -1,6 +1,7 @@
 #ifndef _STDLIB_H
 #define _STDLIB_H
 
+#include <sys/defs.h>
 #define EXIT_SUCCESS 0
 #define EXIT_FAILURE 1
 
@@ -10,13 +11,13 @@ int main(int argc, char* argv[], char* envp[]);
 void exit(int status);
 
 // memory
-typedef unsigned long size_t;
+typedef uint64_t size_t;
 void *malloc(size_t size);
 void free(void *ptr);
 int brk(void *end_data_segment);
 
 // processes
-typedef unsigned pid_t;
+typedef uint32_t pid_t;
 pid_t fork(void);
 pid_t getpid(void);
 pid_t getppid(void);
@@ -30,13 +31,13 @@ char *getcwd(char *buf, size_t size);
 int chdir(const char *path);
 
 // files
-typedef long ssize_t;
-enum { O_RDONLY = 0, O_WRONLY = 1, O_RDWR = 2, O_CREAT = 64 };
+typedef int64_t ssize_t;
+enum { O_RDONLY = 0, O_WRONLY = 1, O_RDWR = 2, O_CREAT = 0x40, O_DIRECTORY = 0x10000 };
 int open(const char *pathname, int flags);
 ssize_t read(int fd, void *buf, size_t count);
 ssize_t write(int fd, const void *buf, size_t count);
 enum { SEEK_SET = 0, SEEK_CUR = 1, SEEK_END = 2 };
-typedef int off_t;
+typedef uint64_t off_t;
 off_t lseek(int fildes, off_t offset, int whence);
 int close(int fd);
 int pipe(int filedes[2]);
