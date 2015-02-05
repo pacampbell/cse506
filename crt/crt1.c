@@ -1,4 +1,5 @@
-void _start();
+#include <stdlib.h>
+void _start(int argc, char **argv, char **envp);
 void _init(void);
 extern int main();
 
@@ -6,10 +7,10 @@ void _init() {
 
 }
 
-void _start(int argc, char **argv, char **env) {
+void _start(int argc, char **argv, char **envp) {
     _init();
     // Should be exit(main())
-    main(argc, argv, env);
+    exit(main(argc, argv, envp));
 /*
 #include <stdlib.h>
 

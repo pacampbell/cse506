@@ -14,7 +14,8 @@ int main(int argc, char *argv[], char* envp[]) {
         //scanf("%"XSTR(INPUT_BUFFER)"s", buffer);
         running = 0;
     }
-    return EXIT_SUCCESS;
+    putint(4);
+    return 1337;
 }
 
 void evaluateCommand(char **cmd, int cmdSize, int *running, char* wd, char** envp, int debug, char *historyList[], int rdSize) {
