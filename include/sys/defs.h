@@ -2,11 +2,14 @@
 #define _DEFS_H
 
 #ifndef NULL
-#define NULL ((void*)0)
+    #define NULL ((void*)0)
 #endif  /* NULL */
 
-typedef unsigned long int	uint64_t;
-typedef unsigned int		uint32_t;
-typedef signed long long int int64_t;
+typedef unsigned long  uint64_t;
+typedef          long   int64_t;
+typedef unsigned int   uint32_t;
+typedef          int    int32_t;
+typedef unsigned short uint16_t;
+typedef          short  int16_t;
 
 #endif /* _DEFS_H */
