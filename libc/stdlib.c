@@ -6,7 +6,12 @@ void exit(int status) {
 }
 
 void putint(int value) {
+    char *test = "Test\n";
     // syscall_3()
     // syscall_3(SYS_write, 1, "Test\n", 5);
-    syscall_3(SYS_write, 1, 1, 1);
+    syscall_3(SYS_write, 1, (uint64_t)test, 5);
+}
+
+ssize_t write(int fd, const void *buf, size_t count) {
+    return syscall_3(SYS_write, fd, (uint64_t)buf, count);
 }
