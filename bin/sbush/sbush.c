@@ -10,5 +10,6 @@ int main(int argc, char *argv[], char* envp[]) {
         //printf("> ");
         //scanf("%"XSTR(INPUT_BUFFER)"s", buffer);
     }
-    return EXIT_SUCCESS;
+    putint(4);
+    return 1337;
 }
