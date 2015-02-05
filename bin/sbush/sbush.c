@@ -10,6 +10,11 @@ int main(int argc, char *argv[], char* envp[]) {
     //char buffer[INPUT_BUFFER];
     int running = 1;
     char *test = "Hello, World!\n";
+    char *test2 = "enter something: ";
+    char *test3 = "got: ";
+
+    char buf[5] = {0};
+
     size_t len = strlen(test);
     while(running && 0) {
         //printf("> ");
@@ -18,9 +23,16 @@ int main(int argc, char *argv[], char* envp[]) {
     }
 
     write(1, test, len);
+    write(1, test2, 17);
+    read(0, buf, 5);
+    write(1, test3, 5);
+    write(1, buf, 5);
+    write(1, "\n", 1);
+
     return 1337;
 }
 
+/*
 void evaluateCommand(char **cmd, int cmdSize, int *running, char* wd, char** envp, int debug, char *historyList[], int rdSize) {
     char *arguments[MAX_ARGS];
 
@@ -97,4 +109,4 @@ void evaluateCommand(char **cmd, int cmdSize, int *running, char* wd, char** env
         spawnRedirect(cmd, cmdSize, redirects, rdSize);
     }
 
-}
+}*/
