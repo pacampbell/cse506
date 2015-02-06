@@ -21,15 +21,7 @@ ssize_t read(int fd, void *buf, size_t count) {
 }
 
 int open(const char *pathname, int flags) {
-    return syscall_2(SYS_open, pathname, flags);
-}
-
-char *getcwd(char *buf, size_t size) {
-    return syscall_2(SYS_getcwd, buf, size);
-}
-
-int chdir(const char *path) {
-    reteun syscall_1(SYS_chdir, path);
+    return syscall_2(SYS_open, (uint64_t)pathname, flags);
 }
 
 off_t lseek(int fildes, off_t offset, int whence) {
@@ -41,7 +33,7 @@ int close(int fd) {
 }
 
 int pipe(int filedes[2]) {
-    return syscall_1(SYS_pipe, filedes);
+    return syscall_1(SYS_pipe, (uint64_t)filedes);
 }
 
 int dup(int oldfd) {
