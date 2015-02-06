@@ -12,7 +12,7 @@ void *malloc(size_t size) {
 }
 
 void free(void *ptr) {
-        // TODO:
+    // TODO:
 }
 
 int brk(void *end_data_segment) {
@@ -97,4 +97,3 @@ int dup(int oldfd) {
 int dup2(int oldfd, int newfd) {
     return syscall_1(SYS_dup2, oldfd);
 }
-
