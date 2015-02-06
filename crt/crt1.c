@@ -8,9 +8,10 @@ void _init() {
 }
 
 void _start(int argc, char **argv, char **envp) {
+    int result = 0;
     _init();
-    // Should be exit(main())
-    exit(main(argc, argv, envp));
+    result = main(argc, argv, envp);
+    exit(result);
 /*
 #include <stdlib.h>
 

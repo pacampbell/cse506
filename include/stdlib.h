@@ -59,7 +59,4 @@ void *opendir(const char *name);
 struct dirent *readdir(void *dir);
 int closedir(void *dir);
 
-// Sample testing syscalls
-void putint(int value);
-
 #endif
