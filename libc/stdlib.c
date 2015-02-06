@@ -20,4 +20,8 @@ ssize_t read(int fd, void *buf, size_t count) {
     return syscall_3(SYS_read, fd, (uint64_t)buf, count);
 }
 
+int open(const char *pathname, int flags) {
+    return syscall_2(SYS_open, pathname, flags);
+}
+
 
