@@ -7,3 +7,12 @@ size_t strlen(const char *s) {
     }
     return length;
 }
+
+void *memset(void *s, int c, size_t n) {
+    if(s != NULL) {
+        for(int i = 0; i < n; i++) {
+            *(char*)s = c;
+        }
+    }
+    return s;
+}
