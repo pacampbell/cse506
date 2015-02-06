@@ -1,5 +1,6 @@
 #include <stdlib.h>
 #include <syscall.h>
+#include <string.h>
 
 void exit(int status) {
     syscall_1(SYS_exit, status);
@@ -44,7 +45,17 @@ pid_t waitpid(pid_t pid, int *status, int options) {
 }
 
 unsigned int sleep(unsigned int seconds) {
-    return 1;
+    struct timespec rqtp, rmtp;
+    // Zero out the memory
+    memset(&rqtp, 0, sizeof(rqtp));
+    memset(&rmtp, 0, sizeof(rmtp));
+    // initialize rqtp struct
+    rqtp.tv_sec = seconds;
+    // Get the return code
+    if(syscall_2(SYS_nanosleep, (uint64_t)&rqtp, (uint64_t)&rmtp) < 0) {
+        // TODO: Something bad happened
+    }
+    return rmtp.tv_sec;
 }
 
 unsigned int alarm(unsigned int seconds) {

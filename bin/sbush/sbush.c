@@ -22,13 +22,12 @@ int main(int argc, char *argv[], char* envp[]) {
         running = 0;
     }
 
-    write(1, test, len);
-    write(1, test2, 17);
-    read(0, buf, 5);
-    write(1, test3, 5);
-    write(1, buf, 5);
-    write(1, "\n", 1);
-
+    write(STDOUT_FILENO, test, len);
+    write(STDOUT_FILENO, test2, 17);
+    read(STDIN_FILENO, buf, 5);
+    write(STDOUT_FILENO, test3, 5);
+    write(STDOUT_FILENO, buf, 5);
+    write(STDOUT_FILENO, "\n", 1);
     return 1337;
 }
 
