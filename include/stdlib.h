@@ -27,15 +27,8 @@ int execve(const char *filename, char *const argv[], char *const envp[]);
 pid_t waitpid(pid_t pid, int *status, int options);
 
 struct timespec {
-	int tm_sec;
-	int tm_min;
-	int tm_hour;
-	int tm_mday;
-	int tm_mon;
-	int tm_year;
-	int tm_wday;
-	int tm_yday;
-	int tm_isdst;
+	long tv_sec;        /* seconds */
+	long tv_nsec;       /* nanoseconds */
 };
 unsigned int sleep(unsigned int seconds);
 unsigned int alarm(unsigned int seconds);
