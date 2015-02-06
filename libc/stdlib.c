@@ -69,3 +69,32 @@ char *getcwd(char *buf, size_t size) {
 int chdir(const char *path) {
     return syscall_1(SYS_chdir, (uint64_t)path);
 }
+
+ssize_t read(int fd, void *buf, size_t count) {
+    return syscall_3(SYS_read, fd, (uint64_t)buf, count);
+}
+
+int open(const char *pathname, int flags) {
+    return syscall_2(SYS_open, (uint64_t)pathname, flags);
+}
+
+off_t lseek(int fildes, off_t offset, int whence) {
+    return syscall_3(SYS_lseek, fildes, offset, whence);
+}
+
+int close(int fd) {
+    return syscall_1(SYS_close, fd);
+}
+
+int pipe(int filedes[2]) {
+    return syscall_1(SYS_pipe, (uint64_t)filedes);
+}
+
+int dup(int oldfd) {
+    return syscall_1(SYS_dup, oldfd);
+}
+
+int dup2(int oldfd, int newfd) {
+    return syscall_1(SYS_dup2, oldfd);
+}
+
