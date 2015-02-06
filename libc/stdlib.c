@@ -12,7 +12,7 @@ void *malloc(size_t size) {
 }
 
 void free(void *ptr) {
-        // TODO:
+    // TODO:
 }
 
 int brk(void *end_data_segment) {
@@ -40,8 +40,12 @@ int execve(const char *filename, char *const argv[], char *const envp[]) {
 }
 
 pid_t waitpid(pid_t pid, int *status, int options) {
-    // TODO: Figure out what this does
-    return -1;
+    // Create the struct
+    struct rusage ru;
+    // Zero out memory
+    memset(&ru, 0, sizeof(ru));
+    // According to the man page wait4 with these args is waitpid
+    return syscall_4(SYS_wait4, (uint64_t)pid, (uint64_t)status, (uint64_t)options, (uint64_t)&ru);
 }
 
 unsigned int sleep(unsigned int seconds) {
@@ -109,5 +113,3 @@ struct dirent *readdir(void *dir) {
 int closedir(void *dir) {
     return 1;
 }
-
-
