@@ -14,6 +14,6 @@ int main(int argc, char *argv[], char* envp[]) {
         //scanf("%"XSTR(INPUT_BUFFER)"s", buffer);
     }
 
-    write(1, test, len);
+    write(STDOUT_FILENO, test, len);
     return 1337;
 }
