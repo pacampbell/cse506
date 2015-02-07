@@ -6,12 +6,14 @@
 
 #define MAX_ARGS 1
 
-int main(int argc, char *argv[], char* envp[]) {
+int main(int argc, char **argv, char **envp) {
     //char buffer[INPUT_BUFFER];
     int running = 1;
     char *test = "Hello, World!\n";
     char *test2 = "enter something: ";
     char *test3 = "got: ";
+    char *nl = "\n";
+
 
     char buf[5] = {0};
 
@@ -21,14 +23,18 @@ int main(int argc, char *argv[], char* envp[]) {
         //scanf("%"XSTR(INPUT_BUFFER)"s", buffer);
         running = 0;
     }
-
+    putint(argc);
+    write(STDOUT_FILENO, argv[0], strlen(argv[0]));
+    write(STDOUT_FILENO, nl, 1);
+    write(STDOUT_FILENO, envp[0], strlen(envp[0]));
+    write(STDOUT_FILENO, nl, 1);
     write(STDOUT_FILENO, test, len);
     write(STDOUT_FILENO, test2, 17);
-    read(STDIN_FILENO, buf, 5);
+    // read(STDIN_FILENO, buf, 5);
     write(STDOUT_FILENO, test3, 5);
     write(STDOUT_FILENO, buf, 5);
     write(STDOUT_FILENO, "\n", 1);
-    return 1337;
+    return 4;
 }
 
 /*
