@@ -15,8 +15,15 @@ void free(void *ptr) {
     // TODO:
 }
 
+int sbrk(uint64_t bytes) {
+    return syscall_1(SYS_brk, bytes);
+}
+
 int brk(void *end_data_segment) {
-    return -1;
+    uint64_t add = sbrk(0);
+    //TODO: see if this is the right math
+    add = add - (uint64_t)end_data_segment;
+    return sbrk(add);
 }
 
 ssize_t write(int fd, const void *buf, size_t count) {
