@@ -1,4 +1,5 @@
 CC=gcc
+#CC=clang
 AS=as
 CFLAGS=-O1 -std=c99 -D__thread= -Wall -Werror -nostdinc -Iinclude -msoft-float -mno-sse -mno-red-zone -fno-builtin -fPIC -march=amdfam10 -g3 -fno-stack-protector
 LD=ld

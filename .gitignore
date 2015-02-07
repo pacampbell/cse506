@@ -2,5 +2,6 @@
 obj
 rootfs
 /.project
-*.swap
+*.swp
+tags
 

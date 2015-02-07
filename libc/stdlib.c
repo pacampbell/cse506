@@ -103,6 +103,20 @@ int dup2(int oldfd, int newfd) {
 }
 
 void *opendir(const char *name) {
+    //TODO: use malloc and fix everything
+    struct DIR dir;
+
+    //check if malloc worked
+
+    dir._DIR_fd = open(name, O_RDONLY|O_DIRECTORY);
+    if(dir._DIR_fd < 0) {
+        //TODO: free dir
+        return NULL;
+    }
+
+    dir._DIR_avail = 0;
+    dir._DIR_next  = NULL;
+
     return NULL;
 }
 
@@ -110,6 +124,10 @@ struct dirent *readdir(void *dir) {
     return NULL;
 }
 
-int closedir(void *dir) {
-    return 1;
+//int closedir(struct DIR *dir) {
+int closedir(struct DIR *dir) {
+    //TODO: use free
+
+    return close(dir->_DIR_fd);
 }
+
