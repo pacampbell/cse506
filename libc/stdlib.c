@@ -15,9 +15,15 @@ void free(void *ptr) {
     // TODO:
 }
 
+int sbrk(uint64_t bytes) {
+    return syscall_1(SYS_brk, bytes);
+}
+
 int brk(void *end_data_segment) {
-    // return syscall_1(SYS_brk, );
-    return -1;
+    uint64_t add = sbrk(0);
+    //TODO: see if this is the right math
+    add = add - (uint64_t)end_data_segment;
+    return sbrk(add);
 }
 
 ssize_t write(int fd, const void *buf, size_t count) {
@@ -104,6 +110,20 @@ int dup2(int oldfd, int newfd) {
 }
 
 void *opendir(const char *name) {
+    //TODO: use malloc and fix everything
+    struct DIR dir;
+
+    //check if malloc worked
+
+    dir._DIR_fd = open(name, O_RDONLY|O_DIRECTORY);
+    if(dir._DIR_fd < 0) {
+        //TODO: free dir
+        return NULL;
+    }
+
+    dir._DIR_avail = 0;
+    dir._DIR_next  = NULL;
+
     return NULL;
 }
 
@@ -111,6 +131,9 @@ struct dirent *readdir(void *dir) {
     return NULL;
 }
 
-int closedir(void *dir) {
-    return 1;
+//int closedir(struct DIR *dir) {
+int closedir(struct DIR *dir) {
+    //TODO: use free
+
+    return close(dir->_DIR_fd);
 }

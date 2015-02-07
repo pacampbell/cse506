@@ -1,4 +1,3 @@
-void _start(void);
 extern int main();
 extern void exit();
 
@@ -12,14 +11,13 @@ extern void exit();
     argc             <- rsp
 ============
 Register arguments calling conventions
-
-%rdi
-%rsi
-%rdx
-%r10
-%r8
-%r9
- */
+    %rdi
+    %rsi
+    %rdx
+    %r10
+    %r8
+    %r9
+*/
 void _start(void) {
     __asm__ __volatile__ (
         ".intel_syntax;"

@@ -2,3 +2,7 @@
 obj
 rootfs
 /.project
+*.swp
+tags
+cscope*
+

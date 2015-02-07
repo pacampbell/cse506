@@ -6,14 +6,13 @@
 
 #define MAX_ARGS 1
 
-int main(int argc, char **argv, char **envp) {
+int old_main(int argc, char *argv[], char* envp[]) {
     //char buffer[INPUT_BUFFER];
     int running = 1;
     char *test = "Hello, World!\n";
     char *test2 = "enter something: ";
     char *test3 = "got: ";
     char *nl = "\n";
-
 
     char buf[5] = {0};
 
@@ -34,7 +33,41 @@ int main(int argc, char **argv, char **envp) {
     write(STDOUT_FILENO, test3, 5);
     write(STDOUT_FILENO, buf, 5);
     write(STDOUT_FILENO, "\n", 1);
-    return 4;
+
+    int fd = open("./test", O_WRONLY);
+
+    if(fd > 0) {
+        write(STDOUT_FILENO, "good fd\n", 8);
+        write(fd, "good fd\n", 8);
+        if(close(fd) == 0) {
+            write(STDOUT_FILENO, "good close\n", 11);
+        } else {
+            write(STDOUT_FILENO, "bad close\n", 10);
+        }
+
+    } else {
+        write(STDOUT_FILENO, "bad fd\n", 7);
+    }
+    return 13;
+}
+
+int main(int argc, char* argv[], char* envp[]) {
+    char buf[256] = {0};
+    char *name[] = {"fake", NULL};
+    int rc;
+    char *c;
+
+    write(STDOUT_FILENO, "> ", 2);
+    read(STDIN_FILENO, buf, 256);
+
+    c = buf;
+    for(;*c != '\n' && *c != 0; c++);
+    *c = 0;
+
+    rc = execve(buf, name, NULL/*char *const envp[]*/);
+    write(STDOUT_FILENO, "no\n", 3);
+
+    return rc;
 }
 
 /*

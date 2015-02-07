@@ -1,7 +1,7 @@
 #ifndef _STRING_H
 #define _STRING_H
 #include <sys/defs.h>
-typedef uint64_t size_t;
+#include <stdlib.h>
 
 char *strcpy(char*d,const char*s);
 size_t strlen(const char*s);
