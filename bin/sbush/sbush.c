@@ -28,7 +28,22 @@ int main(int argc, char *argv[], char* envp[]) {
     write(STDOUT_FILENO, test3, 5);
     write(STDOUT_FILENO, buf, 5);
     write(STDOUT_FILENO, "\n", 1);
-    return 1337;
+
+    int fd = open("./test", O_WRONLY);
+
+    if(fd > 0) {
+        write(STDOUT_FILENO, "good fd\n", 8);
+        write(fd, "good fd\n", 8);
+        if(close(fd) == 0) {
+            write(STDOUT_FILENO, "good close\n", 11);
+        } else {
+            write(STDOUT_FILENO, "bad close\n", 10);
+        }
+
+    } else {
+        write(STDOUT_FILENO, "bad fd\n", 7);
+    }
+    return 13;
 }
 
 /*
