@@ -48,6 +48,9 @@ int old_main(int argc, char *argv[], char* envp[]) {
     } else {
         write(STDOUT_FILENO, "bad fd\n", 7);
     }
+
+    printf("\nnum: ", 1337);
+
     return 13;
 }
 
