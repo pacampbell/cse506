@@ -55,22 +55,37 @@ int old_main(int argc, char *argv[], char* envp[]) {
 }
 
 int main(int argc, char* argv[], char* envp[]) {
-    char buf[256] = {0};
+    char cmd[256] = {0};
     char *name[] = {"fake", NULL};
+    char *path;
     int rc;
     char *c;
 
-    char *str = malloc(8);
-    str[0] = '\0';
+//    char *str = malloc(8);
+  //  str[0] = '\0';
 
     write(STDOUT_FILENO, "> ", 2);
-    read(STDIN_FILENO, buf, 256);
+    read(STDIN_FILENO, cmd, 256);
 
-    c = buf;
+    c = cmd;
     for(;*c != '\n' && *c != 0; c++);
     *c = 0;
 
-    rc = execve(buf, name, NULL/*char *const envp[]*/);
+    //find the path var
+    for(rc = 0, path = *envp; !strbegwith("PATH", path); rc++, path = *(envp+rc));
+    for(;*path != '='; path++);
+    path++;
+
+    //printf("path: %s\n", path);
+
+    rc = execve(cmd, name, envp);
+    c = strtok(path, ':');
+    while(c != NULL) {
+        //printf("trying: %s\n", strappend(c, "/", cmd));
+        rc = execve(strappend(c, "/", cmd), name, envp);
+        c = strtok(NULL, ':');
+    }
+
     write(STDOUT_FILENO, "no\n", 3);
 
     return rc;

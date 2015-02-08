@@ -59,3 +59,26 @@ char *strtok(char *str, char delim) {
     }
     return head;
 }
+
+char *strappend(char *s1, char *s2, char *s3) {
+    static char buf[256];
+    char *cb = buf;
+    char *cp = s1;
+
+    for(cp = s1; *cp != '\0'; cp++, cb++) {
+        *cb = *cp;
+    }
+
+    for(cp = s2; *cp != '\0'; cp++, cb++) {
+        *cb = *cp;
+    }
+
+    for(cp = s3; *cp != '\0'; cp++, cb++) {
+        *cb = *cp;
+    }
+
+    *cb = '\0';
+
+    return buf;
+}
+
