@@ -26,8 +26,8 @@ void *memcpy(void *dest, const void *src, size_t n) {
     return dest;
 }
 
-//string equ
-int streq(char *str1, char *str2) {
+//string begins with
+int strbegwith(char *str1, char *str2) {
     char *c1, *c2;
     for(c1 = str1, c2 = str2; *c1 != 0 && *c2 != 0; c1++, c2++) {
         if(*c1 != *c2) {
