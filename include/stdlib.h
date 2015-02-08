@@ -65,7 +65,7 @@ struct DIR {
     struct dirent    _DIR_buff[15];
 };
 void *opendir(const char *name);
-struct dirent *readdir(void *dir);
+struct dirent *readdir(struct DIR *dir);
 int closedir(struct DIR *dir); 
 
 #endif

@@ -127,8 +127,21 @@ void *opendir(const char *name) {
     return NULL;
 }
 
-struct dirent *readdir(void *dir) {
-    return NULL;
+struct dirent *readdir(struct DIR *dir) {
+    struct dirent *ret;
+
+    if ( !dir->_DIR_avail ) {
+        //TODO: not sure what to do here
+        return NULL;
+    }
+
+    ret = dir->_DIR_next;
+
+    dir->_DIR_next   = (struct dirent*)((char*)ret+ ret->d_reclen);
+    dir->_DIR_avail -= ret->d_reclen;
+
+    return ret;
+
 }
 
 //int closedir(struct DIR *dir) {
