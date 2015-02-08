@@ -120,4 +120,22 @@ static __inline uint64_t syscall_5(uint64_t n, uint64_t a1, uint64_t a2, uint64_
 	return rv;
 }
 
+static __inline uint64_t syscall_6(uint64_t n, uint64_t a1, uint64_t a2, uint64_t a3, uint64_t a4, uint64_t a5, uint64_t a6) {
+	uint64_t rv = -ENOSYS;
+	__asm__ __volatile__ (
+	"movq %1, %%rax;"
+	"movq %2, %%rdi;"
+	"movq %3, %%rsi;"
+	"movq %4, %%rdx;"
+	"movq %5, %%r10;"
+	"movq %6, %%r8;"
+	"movq %7, %%r9;"
+	"syscall;"
+	"movq %%rax, %0;"
+	:"=r"(rv)
+	:"r"(n), "r"(a1), "r"(a2), "r"(a3), "r"(a4), "r"(a5), "r"(a6)
+	:"%rax", "%rdi", "%rsi", "%rdx", "r10", "%r8", "%r9");
+	return rv;
+}
+
 #endif

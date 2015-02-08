@@ -57,6 +57,9 @@ int main(int argc, char* argv[], char* envp[]) {
     int rc;
     char *c;
 
+    char *str = malloc(8);
+    str[0] = '\0';
+
     write(STDOUT_FILENO, "> ", 2);
     read(STDIN_FILENO, buf, 256);
 

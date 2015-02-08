@@ -15,6 +15,20 @@ void exit(int status);
 
 // memory
 typedef uint64_t size_t;
+struct meta_data {
+    size_t size;
+    int in_use;
+    struct meta_data *next;
+};
+
+struct page_data {
+    size_t allocations;
+    struct page_head *next;
+};
+
+#define META_DATA_SIZE sizeof(struct meta_data)
+#define PAGE_DATA_SIZE sizeof(struct page_data)
+
 void *malloc(size_t size);
 void free(void *ptr);
 int brk(void *end_data_segment);
@@ -66,6 +80,6 @@ struct DIR {
 };
 void *opendir(const char *name);
 struct dirent *readdir(void *dir);
-int closedir(struct DIR *dir); 
+int closedir(struct DIR *dir);
 
 #endif

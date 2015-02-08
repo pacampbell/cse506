@@ -1,14 +1,46 @@
 #include <stdlib.h>
 #include <syscall.h>
 #include <string.h>
+#include <sys/mman.h>
 
 void exit(int status) {
     syscall_1(SYS_exit, status);
 }
 
+/* Head pointer for malloc/free implementation */
+static void *head_ptr = NULL;
+
 void *malloc(size_t size) {
-    // TODO:
-    return (void*) 0;
+    void *ptr = NULL;
+    if(head_ptr == NULL) {
+        // fd and offset are ignored, fd should be -1 for some implementations
+        head_ptr = mmap(NULL, _SC_PAGE_SIZE, PROT_READ | PROT_WRITE, MAP_ANONYMOUS | MAP_PRIVATE, -1, 0);
+        // Check the result
+        if(head_ptr == MAP_FAILED) {
+            return NULL;
+        }
+        // Create a new head struct
+        struct page_data pd = { .allocations = 0, .next = NULL };
+        memcpy(head_ptr, &pd, PAGE_DATA_SIZE);
+    }
+    // Find a place for the new allocations
+    struct page_data *pg_hd = (struct page_data*)head_ptr;
+    // Make the stub for the new allocation
+    struct meta_data md = { .size = size, .in_use = 1, .next = NULL};
+    // Now determine where to put it
+    if(pg_hd->allocations == 0) {
+        ptr = pg_hd + PAGE_DATA_SIZE;
+        memcpy(ptr, &md, META_DATA_SIZE);
+        // Move the pointer up to where the user is allowed to access the memory
+        ptr += META_DATA_SIZE;
+    } else {
+        // Get the first node
+        struct meta_data *node = (struct meta_data *)(pg_hd + PAGE_DATA_SIZE);
+        if(node->in_use) {
+            // TODO: Start here
+        }
+    }
+    return ptr;
 }
 
 void free(void *ptr) {
