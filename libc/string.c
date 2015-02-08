@@ -36,3 +36,26 @@ int streq(char *str1, char *str2) {
     }
     return 1;
 }
+
+char *strtok(char *str, char delim) {
+    static char *ptr = NULL;
+    static char *head = NULL;
+    if(str != NULL) {
+        head = str;
+        ptr = str;
+    } else {
+        head = ptr;
+    }
+
+    if(head != NULL) {
+        while(*ptr != delim && *ptr != '\0') {
+            ptr++;
+        }
+        if(*ptr == '\0') {
+            ptr = NULL;
+        } else {
+            *ptr++ = '\0';
+        }
+    }
+    return head;
+}
