@@ -6,7 +6,9 @@
 
 #define MAX_ARGS 1
 
-int main(int argc, char *argv[], char* envp[]) {
+char *find_env_var(char* envp[], char* name);
+
+int old_main(int argc, char *argv[], char* envp[]) {
     int running = 1;
     char buf[] = "hello everyone";
 
@@ -20,27 +22,36 @@ int main(int argc, char *argv[], char* envp[]) {
     return 13;
 }
 
-int new_main(int argc, char* argv[], char* envp[]) {
+int main(int argc, char* argv[], char* envp[]) {
     char cmd[256] = {0};
     char *name[] = {"fake", NULL};
     char *path;
+    char *ps1;
     int rc;
     char *c;
 
     //char *str = malloc(8);
     //str[0] = '\0';
 
-    write(STDOUT_FILENO, "> ", 2);
-    read(STDIN_FILENO, cmd, 256);
+    ps1 = find_env_var(envp, "PS1");
+
+    for(c = *envp, rc = 0; c != NULL; rc++, c = *(envp + rc)) {
+        printf("ENV::: %s\n", c);
+    }
+
+    if(ps1 == NULL) {
+        printf("> ");
+        read(STDIN_FILENO, cmd, 256);
+    } else {
+        printf("%s", ps1);
+    }
 
     c = cmd;
     for(;*c != '\n' && *c != 0; c++);
     *c = 0;
 
     //find the path var
-    for(rc = 0, path = *envp; !strbegwith("PATH", path); rc++, path = *(envp+rc));
-    for(;*path != '='; path++);
-    path++;
+    path = find_env_var(envp, "PATH");
 
     //printf("path: %s\n", path);
 
@@ -55,6 +66,19 @@ int new_main(int argc, char* argv[], char* envp[]) {
     write(STDOUT_FILENO, "no\n", 3);
 
     return rc;
+}
+
+char *find_env_var(char* envp[], char* name) {
+    int rc;
+    char *var;
+
+    for(rc = 0, var = *envp; var != NULL && !strbegwith(name, var); rc++, var = *(envp+rc));
+    if(var != NULL) {
+        for(; *var != '='; var++);
+        var++;
+    }
+
+    return var;    
 }
 
 /*

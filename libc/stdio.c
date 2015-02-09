@@ -53,10 +53,11 @@ int scanf(const char *format, ...) {
 
                         format++;
                         break;
-
+                /*
                     case 'd':
                         format++;
                         break;
+                */
 
                     default:
                         printf("\n-----\nyou broke scanf in switch\n-----\n");
