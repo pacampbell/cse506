@@ -28,7 +28,7 @@ struct meta_data {
 void *malloc(size_t size);
 void free(void *ptr);
 int brk(void *end_data_segment);
-void* sbrk(uint64_t bytes);
+void *sbrk(uint64_t bytes);
 
 // processes
 typedef uint32_t pid_t;

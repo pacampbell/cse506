@@ -11,6 +11,10 @@ void exit(int status) {
 static void *head_ptr = NULL;
 
 void *malloc(size_t size) {
+    return sbrk(size);
+}
+
+void *paul_malloc(size_t size) {
     void *ptr = NULL;
     if(size > 0) {
         if(head_ptr == NULL) {
@@ -50,17 +54,16 @@ void free(void *ptr) {
     // TODO:
 }
 
-void* sbrk(uint64_t bytes) {
-    return (void*)syscall_1(SYS_brk, bytes);
+void *sbrk(uint64_t bytes) {
+    char *cur = (char*)syscall_1(SYS_brk, 0);
+    char *tmp = cur + bytes;
+    char *now = (char*)syscall_1(SYS_brk, (uint64_t)tmp);
+    return (void*)now;
+
 }
 
 int brk(void *end_data_segment) {
-    void *brk_pt = sbrk(0);
-    //TODO: see if this is the right math
-    uint64_t add = brk_pt - end_data_segment;
-    // FIXME:!!!!!
-    sbrk(add);
-    return -1;
+    return (void*)syscall_0(SYS_brk) == end_data_segment;
 }
 
 ssize_t write(int fd, const void *buf, size_t count) {
@@ -147,25 +150,28 @@ int dup2(int oldfd, int newfd) {
 }
 
 void *opendir(const char *name) {
-    //TODO: use malloc and fix everything
-    struct DIR dir;
+    struct DIR *dir = malloc(sizeof(sizeof(struct DIR)));
+    if(dir == NULL) {
+        return NULL;
+    }
 
     //check if malloc worked
 
-    dir._DIR_fd = open(name, O_RDONLY|O_DIRECTORY);
-    if(dir._DIR_fd < 0) {
+    dir->_DIR_fd = open(name, O_RDONLY|O_DIRECTORY);
+    if(dir->_DIR_fd < 0) {
         //TODO: free dir
         return NULL;
     }
 
-    dir._DIR_avail = 0;
-    dir._DIR_next  = NULL;
+    dir->_DIR_avail = 0;
+    dir->_DIR_next  = NULL;
 
-    return NULL;
+    return dir;
 }
 
 struct dirent *readdir(struct DIR *dir) {
-    struct dirent *ret;
+    //not thread safe
+    static struct dirent *ret;
 
     if ( !dir->_DIR_avail ) {
         //TODO: not sure what to do here
@@ -183,7 +189,6 @@ struct dirent *readdir(struct DIR *dir) {
 
 //int closedir(struct DIR *dir) {
 int closedir(struct DIR *dir) {
-    //TODO: use free
-
+    free(dir);
     return close(dir->_DIR_fd);
 }
