@@ -10,17 +10,24 @@ void exit(int status) {
 /* Head pointer for malloc/free implementation */
 static void *head_ptr = NULL;
 
+/*
 void *malloc(size_t size) {
     return sbrk(size);
 }
+*/
 
-void *paul_malloc(size_t size) {
+void *malloc(size_t size) {
     void *ptr = NULL;
     if(size > 0) {
+        // Calculate the total size of the allocation
+        size_t total_bytes = size + META_DATA_SIZE;
+        // Align on word boundry
+        total_bytes += total_bytes % 8;
+        // Allocate a meta_data struct
+        struct meta_data md = {.size = total_bytes, .in_use = 1, .next = NULL,
+            .prev = NULL, .data_start = NULL};
+        // Check the head pointer
         if(head_ptr == NULL) {
-            size_t total_bytes = size + META_DATA_SIZE;
-            // Align on word boundry
-            total_bytes += total_bytes % 8;
             // Get back the address in memory
             ptr = sbrk(total_bytes); // Get the current brk
             // Linux system call returns the new brk
@@ -28,9 +35,8 @@ void *paul_malloc(size_t size) {
                 // sbrk failed
                 return NULL;
             }
-            // Allocate a meta_data struct
-            struct meta_data md = {.size = total_bytes, .in_use = 1, .next = NULL,
-                .prev = NULL, .data_start = ptr + META_DATA_SIZE};
+            // Set the data_start correctly
+            md.data_start = ptr + META_DATA_SIZE;
             // Copy the struct into the block
             memcpy(ptr, &md, META_DATA_SIZE);
             // Set the head pointer
@@ -40,10 +46,40 @@ void *paul_malloc(size_t size) {
         } else {
             // Navigate the list
             struct meta_data *node = head_ptr;
-            while(node != NULL && node->next != NULL) {
-                if(node->in_use) {
+            struct meta_data *prev = NULL;
+            int placed = 0;
+            while(node != NULL) {
+                if(node->in_use || (!(node->in_use) && node->size < total_bytes)) {
+                    prev = node;
                     node = node->next;
+                } else {
+                    // Found a place for the allocation
+                    placed = 1;
+                    // Change the metadata struct
+                    node->in_use = 1;
+                    // Set the pointer to the start of the data
+                    ptr = node->data_start;
+                    // Done Allocating memory
+                    break;
                 }
+            }
+            // Check to see if we found any successful nodes
+            if(!placed) {
+                // Allocate space for a new block
+                ptr = sbrk(total_bytes);
+                if(ptr == (void*) -1) {
+                    // sbrk failed
+                    return NULL;
+                }
+                // Set the data_start correctly
+                md.data_start = ptr + META_DATA_SIZE;
+                // Add this new node to the end of the list
+                md.prev = node;
+                prev->next = ptr;
+                // Copy the struct into the block
+                memcpy(ptr, &md, META_DATA_SIZE);
+                // Finally adjust the address for the user
+                ptr += META_DATA_SIZE;
             }
         }
     }
@@ -51,7 +87,25 @@ void *paul_malloc(size_t size) {
 }
 
 void free(void *ptr) {
-    // TODO:
+    if(ptr != NULL) {
+        // Begin searching for the ptr
+        struct meta_data *node = head_ptr;
+        int freed_block = 0;
+        while(node != NULL) {
+            if(node->data_start == ptr) {
+                // Mark the block free for use
+                node->in_use = 0;
+                // Mark that we freed the block
+                break;
+            } else {
+                node = node->next;
+            }
+        }
+        if(!freed_block) {
+            // If we get here this is technically an error
+            // user tried to free memory they shouldn't have
+        }
+    }
 }
 
 void *sbrk(uint64_t bytes) {

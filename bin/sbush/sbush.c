@@ -12,7 +12,8 @@ int test_main(int argc, char *argv[], char* envp[]);
 int sbsh_main(int argc, char* argv[], char* envp[]);
 
 int main(int argc, char *argv[], char* envp[]) {
-    return test_main(argc, argv, envp); 
+    // return test_main(argc, argv, envp);
+    return sbsh_main(argc, argv, envp);
 }
 
 int test_main(int argc, char *argv[], char* envp[]) {
@@ -41,6 +42,11 @@ int sbsh_main(int argc, char* argv[], char* envp[]) {
     char *c;
 
     char *str = malloc(8);
+    char *str2 = malloc(50);
+    char *str3 = malloc(80);
+    free(str2);
+    str2 = malloc(10);
+    // Use the strings
     str[0] = 'H';
     str[1] = 'e';
     str[2] = 'l';
@@ -48,7 +54,16 @@ int sbsh_main(int argc, char* argv[], char* envp[]) {
     str[4] = 'o';
     str[5] = '\n';
 
+    str2[0] = 'S';
+    str2[1] = '\0';
+
+    str3[0] = 'Q';
+    str3[1] = '\0';
+
     write(STDOUT_FILENO, str, strlen(str));
+    write(STDOUT_FILENO, str2, strlen(str2));
+    write(STDOUT_FILENO, str3, strlen(str3));
+
     //char *str = malloc(8);
     //str[0] = '\0';
 
