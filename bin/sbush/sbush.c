@@ -8,7 +8,14 @@
 
 char *find_env_var(char* envp[], char* name);
 
+int test_main(int argc, char *argv[], char* envp[]);
+int sbsh_main(int argc, char* argv[], char* envp[]);
+
 int main(int argc, char *argv[], char* envp[]) {
+    return test_main(argc, argv, envp); 
+}
+
+int test_main(int argc, char *argv[], char* envp[]) {
     void *try = sbrk(2);
     if(try == (void*)-1) {
         printf("error got -1 from sbrk\n");
@@ -25,7 +32,7 @@ int main(int argc, char *argv[], char* envp[]) {
     return 13;
 }
 
-int new_main(int argc, char* argv[], char* envp[]) {
+int sbsh_main(int argc, char* argv[], char* envp[]) {
     char cmd[256] = {0};
     char *name[] = {"fake", NULL};
     char *path;
