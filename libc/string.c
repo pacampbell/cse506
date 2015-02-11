@@ -26,8 +26,8 @@ void *memcpy(void *dest, const void *src, size_t n) {
     return dest;
 }
 
-//string equ
-int streq(char *str1, char *str2) {
+//string begins with
+int strbegwith(char *str1, char *str2) {
     char *c1, *c2;
     for(c1 = str1, c2 = str2; *c1 != 0 && *c2 != 0; c1++, c2++) {
         if(*c1 != *c2) {
@@ -59,3 +59,26 @@ char *strtok(char *str, char delim) {
     }
     return head;
 }
+
+char *strappend(char *s1, char *s2, char *s3) {
+    static char buf[256];
+    char *cb = buf;
+    char *cp = s1;
+
+    for(cp = s1; *cp != '\0'; cp++, cb++) {
+        *cb = *cp;
+    }
+
+    for(cp = s2; *cp != '\0'; cp++, cb++) {
+        *cb = *cp;
+    }
+
+    for(cp = s3; *cp != '\0'; cp++, cb++) {
+        *cb = *cp;
+    }
+
+    *cb = '\0';
+
+    return buf;
+}
+

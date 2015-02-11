@@ -6,57 +6,27 @@
 
 #define MAX_ARGS 1
 
+char *find_env_var(char* envp[], char* name);
+
 int old_main(int argc, char *argv[], char* envp[]) {
-    //char buffer[INPUT_BUFFER];
     int running = 1;
-    char *test = "Hello, World!\n";
-    char *test2 = "enter something: ";
-    char *test3 = "got: ";
-    char *nl = "\n";
+    char buf[] = "hello everyone";
 
-    char buf[5] = {0};
-
-    size_t len = strlen(test);
-    while(running && 0) {
-        //printf("> ");
-        //scanf("%"XSTR(INPUT_BUFFER)"s", buffer);
+    while(running) {
+        printf("> ");
+        scanf("%s", buf);
+        printf("new buf: %s end", buf);
         running = 0;
     }
-    putint(argc);
-    write(STDOUT_FILENO, argv[0], strlen(argv[0]));
-    write(STDOUT_FILENO, nl, 1);
-    write(STDOUT_FILENO, envp[0], strlen(envp[0]));
-    write(STDOUT_FILENO, nl, 1);
-    write(STDOUT_FILENO, test, len);
-    write(STDOUT_FILENO, test2, 17);
-    // read(STDIN_FILENO, buf, 5);
-    write(STDOUT_FILENO, test3, 5);
-    write(STDOUT_FILENO, buf, 5);
-    write(STDOUT_FILENO, "\n", 1);
-
-    int fd = open("./test", O_WRONLY);
-
-    if(fd > 0) {
-        write(STDOUT_FILENO, "good fd\n", 8);
-        write(fd, "good fd\n", 8);
-        if(close(fd) == 0) {
-            write(STDOUT_FILENO, "good close\n", 11);
-        } else {
-            write(STDOUT_FILENO, "bad close\n", 10);
-        }
-
-    } else {
-        write(STDOUT_FILENO, "bad fd\n", 7);
-    }
-
-    printf("\nnum: ", 1337);
 
     return 13;
 }
 
 int main(int argc, char* argv[], char* envp[]) {
-    char buf[256] = {0};
+    char cmd[256] = {0};
     char *name[] = {"fake", NULL};
+    char *path;
+    char *ps1;
     int rc;
     char *c;
 
@@ -69,18 +39,55 @@ int main(int argc, char* argv[], char* envp[]) {
     str[5] = '\n';
 
     write(STDOUT_FILENO, str, strlen(str));
+    //char *str = malloc(8);
+    //str[0] = '\0';
 
-    write(STDOUT_FILENO, "> ", 2);
-    read(STDIN_FILENO, buf, 256);
+    ps1 = find_env_var(envp, "PS1");
 
-    c = buf;
+    for(c = *envp, rc = 0; c != NULL; rc++, c = *(envp + rc)) {
+        printf("ENV::: %s\n", c);
+    }
+
+    if(ps1 == NULL) {
+        printf("> ");
+        read(STDIN_FILENO, cmd, 256);
+    } else {
+        printf("%s", ps1);
+    }
+
+    c = cmd;
     for(;*c != '\n' && *c != 0; c++);
     *c = 0;
 
-    rc = execve(buf, name, NULL/*char *const envp[]*/);
+    //find the path var
+    path = find_env_var(envp, "PATH");
+
+    //printf("path: %s\n", path);
+
+    rc = execve(cmd, name, envp);
+    c = strtok(path, ':');
+    while(c != NULL) {
+        //printf("trying: %s\n", strappend(c, "/", cmd));
+        rc = execve(strappend(c, "/", cmd), name, envp);
+        c = strtok(NULL, ':');
+    }
+
     write(STDOUT_FILENO, "no\n", 3);
 
     return rc;
+}
+
+char *find_env_var(char* envp[], char* name) {
+    int rc;
+    char *var;
+
+    for(rc = 0, var = *envp; var != NULL && !strbegwith(name, var); rc++, var = *(envp+rc));
+    if(var != NULL) {
+        for(; *var != '='; var++);
+        var++;
+    }
+
+    return var;
 }
 
 /*
