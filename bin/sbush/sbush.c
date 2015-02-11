@@ -9,7 +9,7 @@
 char *find_env_var(char* envp[], char* name);
 
 int main(int argc, char *argv[], char* envp[]) {
-    void *try = sbrk(500);
+    void *try = sbrk(2);
     if(try == (void*)-1) {
         printf("error got -1 from sbrk\n");
         exit(-1);
@@ -18,6 +18,9 @@ int main(int argc, char *argv[], char* envp[]) {
 
     char *cp = (char*)((void*)try);
     *cp = '!';
+    *(cp+1) = 0;
+
+    printf("%s\n", cp);
 
     return 13;
 }
