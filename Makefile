@@ -34,6 +34,10 @@ obj/%.o: %.c $(wildcard include/*.h include/*/*.h)
 	@mkdir -p $(dir $@)
 	$(CC) -c $(CFLAGS) -o $@ $<
 
+obj/%.o: %.s
+	@mkdir -p $(dir $@)
+	$(CC) -c -o $@ $<
+
 .PHONY: submit clean tags
 
 SUBMITTO:=~mferdman/cse506-submit/
