@@ -12,32 +12,35 @@ static void *head_ptr = NULL;
 
 void *malloc(size_t size) {
     void *ptr = NULL;
-    if(head_ptr == NULL) {
-        // fd and offset are ignored, fd should be -1 for some implementations
-        head_ptr = mmap(NULL, _SC_PAGE_SIZE, PROT_READ | PROT_WRITE, MAP_ANONYMOUS | MAP_PRIVATE, -1, 0);
-        // Check the result
-        if(head_ptr == MAP_FAILED) {
-            return NULL;
-        }
-        // Create a new head struct
-        struct page_data pd = { .allocations = 0, .next = NULL };
-        memcpy(head_ptr, &pd, PAGE_DATA_SIZE);
-    }
-    // Find a place for the new allocations
-    struct page_data *pg_hd = (struct page_data*)head_ptr;
-    // Make the stub for the new allocation
-    struct meta_data md = { .size = size, .in_use = 1, .next = NULL};
-    // Now determine where to put it
-    if(pg_hd->allocations == 0) {
-        ptr = pg_hd + PAGE_DATA_SIZE;
-        memcpy(ptr, &md, META_DATA_SIZE);
-        // Move the pointer up to where the user is allowed to access the memory
-        ptr += META_DATA_SIZE;
-    } else {
-        // Get the first node
-        struct meta_data *node = (struct meta_data *)(pg_hd + PAGE_DATA_SIZE);
-        if(node->in_use) {
-            // TODO: Start here
+    if(size > 0) {
+        if(head_ptr == NULL) {
+            size_t total_bytes = size + META_DATA_SIZE;
+            // Align on word boundry
+            total_bytes += total_bytes % 8;
+            // Get back the address in memory
+            ptr = sbrk(total_bytes); // Get the current brk
+            // Linux system call returns the new brk
+            if(ptr == (void*) -1) {
+                // sbrk failed
+                return NULL;
+            }
+            // Allocate a meta_data struct
+            struct meta_data md = {.size = total_bytes, .in_use = 1, .next = NULL,
+                .prev = NULL, .data_start = ptr + META_DATA_SIZE};
+            // Copy the struct into the block
+            memcpy(ptr, &md, META_DATA_SIZE);
+            // Set the head pointer
+            head_ptr = ptr;
+            // Finally adjust the address for the user
+            ptr += META_DATA_SIZE;
+        } else {
+            // Navigate the list
+            struct meta_data *node = head_ptr;
+            while(node != NULL && node->next != NULL) {
+                if(node->in_use) {
+                    node = node->next;
+                }
+            }
         }
     }
     return ptr;
@@ -47,15 +50,17 @@ void free(void *ptr) {
     // TODO:
 }
 
-int sbrk(uint64_t bytes) {
-    return syscall_1(SYS_brk, bytes);
+void* sbrk(uint64_t bytes) {
+    return (void*)syscall_1(SYS_brk, bytes);
 }
 
 int brk(void *end_data_segment) {
-    uint64_t add = sbrk(0);
+    void *brk_pt = sbrk(0);
     //TODO: see if this is the right math
-    add = add - (uint64_t)end_data_segment;
-    return sbrk(add);
+    uint64_t add = brk_pt - end_data_segment;
+    // FIXME:!!!!!
+    sbrk(add);
+    return -1;
 }
 
 ssize_t write(int fd, const void *buf, size_t count) {

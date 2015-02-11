@@ -61,7 +61,14 @@ int main(int argc, char* argv[], char* envp[]) {
     char *c;
 
     char *str = malloc(8);
-    str[0] = '\0';
+    str[0] = 'H';
+    str[1] = 'e';
+    str[2] = 'l';
+    str[3] = 'l';
+    str[4] = 'o';
+    str[5] = '\n';
+
+    write(STDOUT_FILENO, str, strlen(str));
 
     write(STDOUT_FILENO, "> ", 2);
     read(STDIN_FILENO, buf, 256);
