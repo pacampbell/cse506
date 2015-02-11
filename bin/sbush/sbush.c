@@ -8,21 +8,21 @@
 
 char *find_env_var(char* envp[], char* name);
 
-int old_main(int argc, char *argv[], char* envp[]) {
-    int running = 1;
-    char buf[] = "hello everyone";
-
-    while(running) {
-        printf("> ");
-        scanf("%s", buf);
-        printf("new buf: %s end", buf);
-        running = 0;
+int main(int argc, char *argv[], char* envp[]) {
+    void *try = sbrk(500);
+    if(try == (void*)-1) {
+        printf("error got -1 from sbrk\n");
+        exit(-1);
     }
+    printf("sbrk: %d\n", try);
+
+    char *cp = (char*)((void*)try);
+    *cp = '!';
 
     return 13;
 }
 
-int main(int argc, char* argv[], char* envp[]) {
+int new_main(int argc, char* argv[], char* envp[]) {
     char cmd[256] = {0};
     char *name[] = {"fake", NULL};
     char *path;
@@ -82,32 +82,32 @@ char *find_env_var(char* envp[], char* name) {
 }
 
 /*
-void evaluateCommand(char **cmd, int cmdSize, int *running, char* wd, char** envp, int debug, char *historyList[], int rdSize) {
-    char *arguments[MAX_ARGS];
+   void evaluateCommand(char **cmd, int cmdSize, int *running, char* wd, char** envp, int debug, char *historyList[], int rdSize) {
+   char *arguments[MAX_ARGS];
 
-    // Something went wrong stop evaluating.
-    if(cmdSize <= 0){
-        return;
-    }
-    // Check to see how many commands we need to evaluate
-    if(!rdSize){
-        if (strlen(*cmd)) {
-            if (debug) {
-                printf("RUNNING:%s\n", *cmd);
-            }
-            parseCommand(*cmd, arguments, MAX_ARGS);
-            if (!strcmp(arguments[0], "exit")) {
-                *running = false;
+// Something went wrong stop evaluating.
+if(cmdSize <= 0){
+return;
+}
+// Check to see how many commands we need to evaluate
+if(!rdSize){
+if (strlen(*cmd)) {
+if (debug) {
+printf("RUNNING:%s\n", *cmd);
+}
+parseCommand(*cmd, arguments, MAX_ARGS);
+if (!strcmp(arguments[0], "exit")) {
+ *running = false;
 
-            } else if (!strcmp(arguments[0], "cd")) {
+ } else if (!strcmp(arguments[0], "cd")) {
 
 
-                if (arguments[1] == NULL || !strcmp(arguments[1], "~")) {
-                    setenv("OLDPWD", wd, 1);
-                    if (debug) printf("oldpwd: %s\n", getenv("OLDPWD"));
-                    chdir(parseEnv(envp, "HOME"));
+ if (arguments[1] == NULL || !strcmp(arguments[1], "~")) {
+ setenv("OLDPWD", wd, 1);
+ if (debug) printf("oldpwd: %s\n", getenv("OLDPWD"));
+ chdir(parseEnv(envp, "HOME"));
 
-                } else if (!strcmp(arguments[1], "-")) {
+ } else if (!strcmp(arguments[1], "-")) {
                     chdir(getenv("OLDPWD"));
                 } else {
                     setenv("OLDPWD", wd, 1);
