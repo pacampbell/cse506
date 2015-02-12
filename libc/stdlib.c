@@ -74,7 +74,7 @@ void *malloc(size_t size) {
                 // Set the data_start correctly
                 md.data_start = ptr + META_DATA_SIZE;
                 // Add this new node to the end of the list
-                md.prev = node;
+                md.prev = prev;
                 prev->next = ptr;
                 // Copy the struct into the block
                 memcpy(ptr, &md, META_DATA_SIZE);
@@ -109,15 +109,15 @@ void free(void *ptr) {
 }
 
 void *sbrk(uint64_t bytes) {
-    char *cur = (char*)syscall_1(SYS_brk, 0);
+    char *cur = (char*) syscall_1(SYS_brk, 0);
     char *tmp = cur + bytes;
-    char *now = (char*)syscall_1(SYS_brk, (uint64_t)tmp);
-    return (void*)now;
-
+    syscall_1(SYS_brk, (uint64_t)tmp);
+    return (void*)cur;
 }
 
 int brk(void *end_data_segment) {
-    return (void*)syscall_0(SYS_brk) == end_data_segment;
+    // TODO: Does this work?
+    return (void*) syscall_1(SYS_brk, 0) == end_data_segment;
 }
 
 ssize_t write(int fd, const void *buf, size_t count) {
