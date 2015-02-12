@@ -37,7 +37,7 @@ int strbegwith(char *str1, char *str2) {
     return 1;
 }
 
-char *strtok(char *str, char delim) {
+char *strtok(char *str, const char delim) {
     static char *ptr = NULL;
     static char *head = NULL;
     if(str != NULL) {
@@ -82,3 +82,69 @@ char *strappend(char *s1, char *s2, char *s3) {
     return buf;
 }
 
+char *strcpy(char *dst, const char *src) {
+    if(src != NULL && dst != NULL) {
+        while(*src != '\0') {
+            *dst++ = *src++;
+        }
+        *dst = '\0';
+    }
+    return dst;
+}
+
+char *strip(char *src) {
+    if(src != NULL) {
+        // Remove preceding spaces
+        while(*src == ' ') {
+            src++;
+        }
+        // Remove traling spaces
+        int end = strlen(src) - 1;
+        while(src[end] == ' ' || src[end] == '\n') {
+            end--;
+        }
+        // Add a null terminator to the new end
+        src[end + 1] = '\0';
+    }
+    return src;
+}
+
+static int count_tokens(const char *cmd, char token) {
+    int tokens = 0;
+    if(cmd != NULL) {
+        while(*cmd != '\0') {
+            if(*cmd++ == token) tokens++;
+        }
+        // if theres n vertices there is n + 1 nodes
+        tokens++;
+    }
+    return tokens;
+}
+
+char **split(const char *str, char delim) {
+    char **tokens = NULL;
+    if(str != NULL) {
+        // Count tokens
+        int count = count_tokens(str, delim);
+        // Allocate space
+        int str_len = strlen(str);
+        char *cpy = malloc(str_len + 1);
+        // Copy the string
+        strcpy(cpy, str);
+        // Allocate space for all tokens
+        tokens = malloc(sizeof(char*) * (count + 1));
+        // Begin splitting the string
+        char **tkn_ptr = tokens;
+        *tkn_ptr++ = cpy;   // Set the first token
+        while(*cpy != '\0') {
+            if(*cpy == delim) {
+                *cpy++ = '\0';
+                *tkn_ptr++ = cpy;
+            }
+            cpy++;
+        }
+        // Set the last element as NULL so we can find the bottom
+        *tkn_ptr = NULL;
+    }
+    return tokens;
+}
