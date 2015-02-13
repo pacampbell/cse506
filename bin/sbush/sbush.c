@@ -10,27 +10,80 @@ char *find_env_var(char* envp[], char* name);
 
 int test_main(int argc, char *argv[], char* envp[]);
 int sbsh_main(int argc, char* argv[], char* envp[]);
+int pipe_count(char *cmd);
+int count_pipes(char *cmd);
 
 int main(int argc, char *argv[], char* envp[]) {
     return test_main(argc, argv, envp); 
 }
 
 int test_main(int argc, char *argv[], char* envp[]) {
-    void *try = sbrk(2);
-    if(try == (void*)-1) {
-        printf("error got -1 from sbrk\n");
-        exit(-1);
+    //char *cmd[] = {"/usr/bin/ls", "/usr/bin/cat", "/usr/bin/cat", NULL};
+    char *cmd[] = {"/usr/bin/ls", "/usr/bin/cat", NULL};
+    char *fake[][2] = {{"ls", NULL}, {"cat", NULL}};
+    //int pipe_count = 2;
+    int pipe_count = 1;
+    int fds[pipe_count][2];
+
+    for(int i = 0; i < pipe_count; i++) {
+        if( pipe(*(fds + i)) != 0 ) {
+            printf("Error: pipe\n");
+            return -1;
+        }
     }
-    printf("sbrk: %d\n", try);
 
-    char *cp = (char*)((void*)try);
-    *cp = '!';
-    *(cp+1) = 0;
+    printf("pipes: %d\n", pipe_count);
 
-    printf("%s\n", cp);
+    for(int i = 0; *(cmd + i) != NULL; i++) {
+        //if only one cmd just do it
+        if(i == 0 && *(cmd + i + 1) == NULL) {
+            printf("going to one_cmd\n");
+            goto one_cmd;
+        }
+
+        if(fork() == 0) {
+            //child
+
+            if(i == 0) {
+                //if first cmd
+                if(dup2(fds[0][1], 1) < 0) {
+                    printf("dup2 broke 1\n");
+                } 
+
+            } else if(*(cmd + i + 1) == NULL) {
+                //if last cmd
+                if(0 > dup2(fds[i-1][0], 0)) {
+                    printf("dup2 broke 2\n");
+                }
+
+            } else {
+                //if mid cmd
+                if(0 > dup2(fds[i-1][0], 0)) {
+                    printf("dup2 broke 3\n");
+                }
+
+                if(0 > dup2(fds[i][1], 1)) {
+                    printf("dup2 broke 4\n");
+                }
+
+            }
+            
+            //close all fds
+            for(int j = 0; j < pipe_count; j++) {
+                close(fds[j][0]);
+                close(fds[j][1]);
+            }
+one_cmd:
+            execve(cmd[i], fake[i], envp);
+            exit(1);
+        } 
+    }
+
+    while(waitpid(-1, &pipe_count, 0) > 0);
 
     return 13;
 }
+
 
 int sbsh_main(int argc, char* argv[], char* envp[]) {
     char cmd[256] = {0};
@@ -39,18 +92,6 @@ int sbsh_main(int argc, char* argv[], char* envp[]) {
     char *ps1;
     int rc;
     char *c;
-
-    char *str = malloc(8);
-    str[0] = 'H';
-    str[1] = 'e';
-    str[2] = 'l';
-    str[3] = 'l';
-    str[4] = 'o';
-    str[5] = '\n';
-
-    write(STDOUT_FILENO, str, strlen(str));
-    //char *str = malloc(8);
-    //str[0] = '\0';
 
     ps1 = find_env_var(envp, "PS1");
 
@@ -100,81 +141,16 @@ char *find_env_var(char* envp[], char* name) {
     return var;
 }
 
-/*
-   void evaluateCommand(char **cmd, int cmdSize, int *running, char* wd, char** envp, int debug, char *historyList[], int rdSize) {
-   char *arguments[MAX_ARGS];
 
-// Something went wrong stop evaluating.
-if(cmdSize <= 0){
-return;
-}
-// Check to see how many commands we need to evaluate
-if(!rdSize){
-if (strlen(*cmd)) {
-if (debug) {
-printf("RUNNING:%s\n", *cmd);
-}
-parseCommand(*cmd, arguments, MAX_ARGS);
-if (!strcmp(arguments[0], "exit")) {
- *running = false;
+int count_pipes(char *cmd) {
+    char *cp;
+    int count = 0;
 
- } else if (!strcmp(arguments[0], "cd")) {
-
-
- if (arguments[1] == NULL || !strcmp(arguments[1], "~")) {
- setenv("OLDPWD", wd, 1);
- if (debug) printf("oldpwd: %s\n", getenv("OLDPWD"));
- chdir(parseEnv(envp, "HOME"));
-
- } else if (!strcmp(arguments[1], "-")) {
-                    chdir(getenv("OLDPWD"));
-                } else {
-                    setenv("OLDPWD", wd, 1);
-                    if (debug) printf("oldpwd: %s\n", getenv("OLDPWD"));
-                    int val = chdir(arguments[1]);
-                    if (val) printf("Sorry but %s does not exist\n", arguments[1]);
-                }
-
-            } else if (!strcmp(arguments[0], "set")) {
-                setenv(arguments[1], arguments[3], 1);
-
-            } else if (!strcmp(arguments[0], "echo")) {
-                int index = contains(arguments, '$');
-                char *cp = NULL;
-                if(index > -1) cp = arguments[index];
-                if (cp != NULL) {
-                    cp++;
-                    printf("%s\n", getenv(cp));
-                } else {
-                    spawn(arguments);
-                }
-
-            } else if(!strcmp(arguments[0], "history")) {
-                for (int i = 0; i < MAX_HISTORY && *historyList[i] != '\0'; ++i) {
-                    printf("%s\n", historyList[i]);
-                }
-            } else if(!strcmp(arguments[0], "wolfie")){
-                printWolf();
-            } else if(!strcmp(arguments[0], "cls")){
-                strcpy(arguments[0], "clear");
-                spawn(arguments);
-            } else if(!strcmp(arguments[0], "clear")){
-                for (int i = 0; i < MAX_HISTORY; ++i) {
-                    *historyList[i] = '\0';
-                }
-            } else if(!strcmp(arguments[0], "clear")){
-                for (int i = 0; i < MAX_HISTORY; ++i) {
-                    *historyList[i] = '\0';
-                }
-            } else {
-                spawn(arguments);
-            }
-            if (debug) {
-                printf("ENDED: %s (needs return val)\n", *cmd);
-            }
+    for(cp = cmd; *cp != '\n' && *cp != '\0'; cp++) {
+        if(*cp == '|') {
+            count++;
         }
-    } else {
-        spawnRedirect(cmd, cmdSize, redirects, rdSize);
     }
+    return count;
+}
 
-}*/

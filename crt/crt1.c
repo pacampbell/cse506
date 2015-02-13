@@ -1,5 +1,3 @@
-extern int main();
-extern void exit();
 
 /**
     0
