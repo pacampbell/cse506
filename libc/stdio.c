@@ -2,28 +2,6 @@
 #include <stdlib.h>
 #include <stdarg.h>
 
-void putint(int i) {
-    char buffer[256];
-    char nl = '\n';
-    int count = 0;
-    if(i != 0) {
-        // Get ascii digits in reverse
-        while(i > 0) {
-            buffer[count++] = (i % 10) + '0';
-            i /= 10;
-        }
-        count--;
-        // Print out the ascii digits 1 at a time
-        while(count >= 0) {
-            write(STDOUT_FILENO, &buffer[count--], 1);
-        }
-    } else {
-        char z = '0';
-        write(STDOUT_FILENO, &z, 1);
-    }
-    write(STDOUT_FILENO, &nl, 1);
-}
-
 int scanf(const char *format, ...) {
 	va_list val;
 	int got = 0;
@@ -35,9 +13,10 @@ int scanf(const char *format, ...) {
 
         while(*format) {
             if(*format == '%') {
-                format++;
+                switch(*(format + 1)) {
+                    case '%':
 
-                switch(*format) {
+                        break;
                     case 's':
                         tmp_cp = va_arg(val, char*);
 
@@ -53,11 +32,13 @@ int scanf(const char *format, ...) {
 
                         format++;
                         break;
-                /*
                     case 'd':
                         format++;
                         break;
-                */
+                    case 'x':
+                        break;
+                    case 'c':
+                        break;
 
                     default:
                         printf("\n-----\nyou broke scanf in switch\n-----\n");

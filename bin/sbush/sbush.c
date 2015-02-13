@@ -51,6 +51,8 @@ int sbsh_main(int argc, char* argv[], char* envp[]) {
     }
     */
 
+    printf("%d %s%d%% 0x%x %c\n", -1256, " Do I work?", 1337, 0xcafe, 'q');
+
     printf("> %s\n", cmd);
 
     char **parsed_command = NULL; // parse_cmd(cmd);

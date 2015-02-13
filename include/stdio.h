@@ -8,6 +8,4 @@
 int printf(const char *format, ...);
 int scanf(const char *format, ...);
 
-void putint(int i);
-
 #endif
