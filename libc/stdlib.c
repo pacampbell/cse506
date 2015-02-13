@@ -209,8 +209,6 @@ void *opendir(const char *name) {
         return NULL;
     }
 
-    //check if malloc worked
-
     dir->_DIR_fd = open(name, O_RDONLY|O_DIRECTORY);
     if(dir->_DIR_fd < 0) {
         //TODO: free dir
