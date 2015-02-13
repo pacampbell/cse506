@@ -10,6 +10,8 @@ int strbegwith(char *str1, char *str2);
 void *memset(void *s, int c, size_t n);
 
 void *memcpy(void *dest, const void *src, size_t n);
-char *strtok(char *str, char delim);
+char *strtok(char *str, const char delim);
 char *strappend(char *s1, char *s2, char *s3);
+char *strip(char *src);
+char **split(const char *str, char delim);
 #endif
