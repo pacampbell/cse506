@@ -116,10 +116,6 @@ int sbsh_main(int argc, char* argv[], char* envp[]) {
         //check for cd
         if(commands[0] != NULL && strcmp(commands[0][0], "cd") == 0) {
             chdir(commands[0][1]);
-            //execve(const char *filename, char *const argv[], char *const envp[]) {
-            //printf("exec: %d\n", execve(argv[0], argv, envp));
-            //printf("cd broke\n");
-            //exit(1);
             continue;
         }
 
