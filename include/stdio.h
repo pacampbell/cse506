@@ -7,5 +7,6 @@
 
 int printf(const char *format, ...);
 int scanf(const char *format, ...);
+int fprintf(int fd, const char *format, ...);
 
 #endif

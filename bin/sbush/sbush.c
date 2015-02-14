@@ -13,6 +13,7 @@ int main(int argc, char *argv[], char* envp[]) {
 int run_cmd(char ***cmds, char* envp[]) {
     char *c, *path;
     int pipe_count = 0;
+    int is_one_cmd = 0;
 
     for(pipe_count = 0; *(cmds+pipe_count) != NULL; pipe_count++);
     pipe_count--;
@@ -32,6 +33,7 @@ int run_cmd(char ***cmds, char* envp[]) {
             //child
 
             if(i == 0 && cmds[i+1] == NULL) {
+                is_one_cmd = 1;
                 goto one_cmd;
             } else if(i == 0) {
                 //if first cmd
@@ -68,12 +70,15 @@ one_cmd:
             //printf("path: %s\n", path);
             c = strtok(path, ':');
             while(c != NULL) {
+                fprintf(STDERR_FILENO, "trying: %s\n", strappend(c, "/", *cmds[i]));
                 execve(strappend(c, "/", *cmds[i]), cmds[i], envp);
                 c = strtok(NULL, ':');
             }
 
-            write(STDERR_FILENO, "broke\n", 6);
-            exit(1);
+            fprintf(STDERR_FILENO, "No such command: %s\n", *cmds[i]);
+            if(!is_one_cmd) {
+                exit(1);
+            }
         } 
     }
 
