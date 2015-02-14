@@ -9,11 +9,15 @@ static char char_table[] = {'0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'A
 #define BASE_10 10
 #define BASE_16 16
 
-static void print_base(int v, int base, int *counter) {
-	if(v == 0) {
+static void print_base(int v, int base, int *counter, int steps) {
+	if(v == 0 && steps == 0) {
+		write(STDOUT_FILENO, char_table + (v % base), sizeof(char));
+		*counter += 1;
+	} else if(v == 0) {
 		return;
 	} else {
-		print_base(v / base, base, counter);
+		steps++;
+		print_base(v / base, base, counter, steps);
 		write(STDOUT_FILENO, char_table + (v % base), sizeof(char));
 		*counter += 1;
 	}
@@ -51,12 +55,12 @@ int printf(const char *format, ...) {
 						tmp_int = ~tmp_int + 1;
 					}
 					// Convert the number to decimal
-					print_base(tmp_int, BASE_10, &printed);
+					print_base(tmp_int, BASE_10, &printed, 0);
                     break;
 				case 'x':
 					tmp_hex = va_arg(val, unsigned int);
 					// Convert the number to hex
-					print_base(tmp_hex, BASE_16, &printed);
+					print_base(tmp_hex, BASE_16, &printed, 0);
 					break;
 				case 'c':
 					tmp_int = va_arg(val, int);
