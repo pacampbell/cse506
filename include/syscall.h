@@ -29,8 +29,8 @@
  movq s, d   # Moves the value s into d
 */
 
-static __inline uint64_t syscall_0(uint64_t n) {
-	uint64_t rv = -ENOSYS;
+static __inline int64_t syscall_0(uint64_t n) {
+	int64_t rv = -ENOSYS;
 	__asm__ __volatile__ (
 		"movq %1, %%rax;"
 		"syscall;"
@@ -42,8 +42,8 @@ static __inline uint64_t syscall_0(uint64_t n) {
 	return rv;
 }
 
-static __inline uint64_t syscall_1(uint64_t n, uint64_t a1) {
-	uint64_t rv = -ENOSYS;
+static __inline int64_t syscall_1(uint64_t n, uint64_t a1) {
+	int64_t rv = -ENOSYS;
 	__asm__ __volatile__ (
 		"movq %1, %%rax;"
 		"movq %2, %%rdi;"
@@ -56,8 +56,8 @@ static __inline uint64_t syscall_1(uint64_t n, uint64_t a1) {
 	return rv;
 }
 
-static __inline uint64_t syscall_2(uint64_t n, uint64_t a1, uint64_t a2) {
-	uint64_t rv = -ENOSYS;
+static __inline int64_t syscall_2(uint64_t n, uint64_t a1, uint64_t a2) {
+	int64_t rv = -ENOSYS;
 	__asm__ __volatile__ (
 	"movq %1, %%rax;"
 	"movq %2, %%rdi;"
@@ -70,8 +70,8 @@ static __inline uint64_t syscall_2(uint64_t n, uint64_t a1, uint64_t a2) {
 	return rv;
 }
 
-static __inline uint64_t syscall_3(uint64_t n, uint64_t a1, uint64_t a2, uint64_t a3) {
-	uint64_t rv = -ENOSYS;
+static __inline int64_t syscall_3(uint64_t n, uint64_t a1, uint64_t a2, uint64_t a3) {
+	int64_t rv = -ENOSYS;
 	__asm__ __volatile__ (
 		"movq %1, %%rax;"
 		"movq %2, %%rdi;"
@@ -86,8 +86,8 @@ static __inline uint64_t syscall_3(uint64_t n, uint64_t a1, uint64_t a2, uint64_
 	return rv;
 }
 
-static __inline uint64_t syscall_4(uint64_t n, uint64_t a1, uint64_t a2, uint64_t a3, uint64_t a4) {
-	uint64_t rv = -ENOSYS;
+static __inline int64_t syscall_4(uint64_t n, uint64_t a1, uint64_t a2, uint64_t a3, uint64_t a4) {
+	int64_t rv = -ENOSYS;
 	__asm__ __volatile__ (
 		"movq %1, %%rax;"
 		"movq %2, %%rdi;"
@@ -103,8 +103,8 @@ static __inline uint64_t syscall_4(uint64_t n, uint64_t a1, uint64_t a2, uint64_
 	return rv;
 }
 
-static __inline uint64_t syscall_5(uint64_t n, uint64_t a1, uint64_t a2, uint64_t a3, uint64_t a4, uint64_t a5) {
-	uint64_t rv = -ENOSYS;
+static __inline int64_t syscall_5(uint64_t n, uint64_t a1, uint64_t a2, uint64_t a3, uint64_t a4, uint64_t a5) {
+	int64_t rv = -ENOSYS;
 	__asm__ __volatile__ (
 	"movq %1, %%rax;"
 	"movq %2, %%rdi;"
@@ -120,8 +120,8 @@ static __inline uint64_t syscall_5(uint64_t n, uint64_t a1, uint64_t a2, uint64_
 	return rv;
 }
 
-static __inline uint64_t syscall_6(uint64_t n, uint64_t a1, uint64_t a2, uint64_t a3, uint64_t a4, uint64_t a5, uint64_t a6) {
-	uint64_t rv = -ENOSYS;
+static __inline int64_t syscall_6(uint64_t n, uint64_t a1, uint64_t a2, uint64_t a3, uint64_t a4, uint64_t a5, uint64_t a6) {
+	int64_t rv = -ENOSYS;
 	__asm__ __volatile__ (
 	"movq %1, %%rax;"
 	"movq %2, %%rdi;"
