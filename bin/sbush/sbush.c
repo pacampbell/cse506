@@ -10,12 +10,13 @@ int main(int argc, char *argv[], char* envp[]) {
     return sbsh_main(argc, argv, envp);
 }
 
-int test_main(int argc, char *argv[], char* envp[]) {
-    //char *cmd[] = {"/usr/bin/ls", "/usr/bin/cat", "/usr/bin/cat", NULL};
-    char *cmd[] = {"/usr/bin/ls", "/usr/bin/cat", NULL};
-    char *fake[][2] = {{"ls", NULL}, {"cat", NULL}};
-    //int pipe_count = 2;
-    int pipe_count = 1;
+int run_cmd(char ***cmds, char* envp[]) {
+    char *c, *path;
+    int pipe_count = 0;
+
+    for(pipe_count = 0; *(cmds+pipe_count) != NULL; pipe_count++);
+    pipe_count--;
+
     int fds[pipe_count][2];
 
     for(int i = 0; i < pipe_count; i++) {
@@ -25,25 +26,20 @@ int test_main(int argc, char *argv[], char* envp[]) {
         }
     }
 
-    printf("pipes: %d\n", pipe_count);
-
-    for(int i = 0; *(cmd + i) != NULL; i++) {
-        //if only one cmd just do it
-        if(i == 0 && *(cmd + i + 1) == NULL) {
-            printf("going to one_cmd\n");
-            goto one_cmd;
-        }
+    for(int i = 0; cmds[i] != NULL; i++) {
 
         if(fork() == 0) {
             //child
 
-            if(i == 0) {
+            if(i == 0 && cmds[i+1] == NULL) {
+                goto one_cmd;
+            } else if(i == 0) {
                 //if first cmd
                 if(dup2(fds[0][1], 1) < 0) {
                     printf("dup2 broke 1\n");
                 } 
 
-            } else if(*(cmd + i + 1) == NULL) {
+            } else if(cmds[i+1] == NULL) {
                 //if last cmd
                 if(0 > dup2(fds[i-1][0], 0)) {
                     printf("dup2 broke 2\n");
@@ -67,70 +63,59 @@ int test_main(int argc, char *argv[], char* envp[]) {
                 close(fds[j][1]);
             }
 one_cmd:
-            execve(cmd[i], fake[i], envp);
+            path = find_env_var(envp, "PATH");
+
+            //printf("path: %s\n", path);
+            c = strtok(path, ':');
+            while(c != NULL) {
+                execve(strappend(c, "/", *cmds[i]), cmds[i], envp);
+                c = strtok(NULL, ':');
+            }
+
+            write(STDERR_FILENO, "broke\n", 6);
             exit(1);
         } 
     }
 
-    while(waitpid(-1, &pipe_count, 0) > 0);
+    //while(waitpid(-1, &pipe_count, 0) > 0);
 
     return 13;
 }
 
 
 int sbsh_main(int argc, char* argv[], char* envp[]) {
-    // char cmd[256] = {0};
-    char *cmd = "ls -l | grep crt | echo hello";
-    // char *name[] = {"fake", NULL};
-    char *path = NULL;
-    // char *ps1;
+    char cmd[256] = {0};
+    char *ps1;
     int rc = 0;
-    char *c = NULL;
+    int running = 1;
+    //char *c;
 
-    // ps1 = find_env_var(envp, "PS1");
+    while(running) {
 
-    /*
-    for(c = *envp, rc = 0; c != NULL; rc++, c = *(envp + rc)) {
-        printf("ENV::: %s\n", c);
-    }
-    */
+        ps1 = find_env_var(envp, "PS1");
 
-    /*
-    if(ps1 == NULL) {
-        printf("> ");
-        read(STDIN_FILENO, cmd, 256);
-    } else {
-        printf("%s", ps1);
-    }
-    */
+        /*for(c = *envp, rc = 0; c != NULL; rc++, c = *(envp + rc)) {
+          printf("ENV::: %s\n", c);
+          }*/
 
-    printf("> %s\n", cmd);
-
-    char **parsed_command = NULL; // parse_cmd(cmd);
-    char ***commands = extract_commands(cmd);
-    while(*commands != NULL) {
-        // Get the current command in the interation
-        parsed_command = *commands;
-        for(int i = 0; parsed_command[i] != NULL; i++) {
-            printf("cmd> %s\n", parsed_command[i]);
+        if(ps1 == NULL) {
+            printf("> ");
+            read(STDIN_FILENO, cmd, 256);
+        } else {
+            printf("%s", ps1);
         }
-        // Get the next command in the list
-        commands++;
+
+        if(strcmp(cmd, "exit\n") == 0) {
+            exit(0);
+        }
+
+        char ***commands = extract_commands(cmd);
+        run_cmd(commands, envp);
+        while(waitpid(-1, &rc, 0) > 0) {
+            //printf("rc: %d\n", rc);
+            if(rc == 0) break;
+        }
     }
-
-    //find the path var
-    path = find_env_var(envp, "PATH");
-
-    //printf("path: %s\n", path);
-    rc = execve(parsed_command[0], parsed_command, envp);
-    c = strtok(path, ':');
-    while(c != NULL) {
-        //printf("trying: %s\n", strappend(c, "/", cmd));
-        rc = execve(strappend(c, "/", parsed_command[0]), parsed_command, envp);
-        c = strtok(NULL, ':');
-    }
-
-    write(STDOUT_FILENO, "no\n", 3);
 
     return rc;
 }
