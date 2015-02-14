@@ -93,6 +93,7 @@ int sbsh_main(int argc, char* argv[], char* envp[]) {
     while(running) {
 
         ps1 = find_env_var(envp, "PS1");
+        printf("PWD= %s\n", find_env_var(envp, "PWD"));
 
         /*for(c = *envp, rc = 0; c != NULL; rc++, c = *(envp + rc)) {
           printf("ENV::: %s\n", c);
@@ -110,6 +111,18 @@ int sbsh_main(int argc, char* argv[], char* envp[]) {
         }
 
         char ***commands = extract_commands(cmd);
+    
+        //check for cd
+        if(commands[0] != NULL && strcmp(commands[0][0], "cd") == 0) {
+            chdir(commands[0][1]);
+            //execve(const char *filename, char *const argv[], char *const envp[]) {
+            printf("exec: %d\n", execve(argv[0], argv, envp));
+            printf("cd broke\n");
+            exit(1);
+            continue;
+        }
+
+
         run_cmd(commands, envp);
         while(waitpid(-1, &rc, 0) > 0) {
             //printf("rc: %d\n", rc);
