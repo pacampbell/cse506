@@ -1,4 +1,6 @@
 #include "sbush.h"
+#include <stdio.h>
+#include <sys/mman.h>
 
 int test_main(int argc, char *argv[], char* envp[]);
 int sbsh_main(int argc, char* argv[], char* envp[]);
@@ -11,9 +13,9 @@ int main(int argc, char *argv[], char* envp[]) {
 }
 
 int run_cmd(char ***cmds, char* envp[]) {
-    char *c, *path;
+    char *c, *pathp;
+    char new_path[256] = {0};
     int pipe_count = 0;
-    int is_one_cmd = 0;
 
     for(pipe_count = 0; *(cmds+pipe_count) != NULL; pipe_count++);
     pipe_count--;
@@ -33,7 +35,6 @@ int run_cmd(char ***cmds, char* envp[]) {
             //child
 
             if(i == 0 && cmds[i+1] == NULL) {
-                is_one_cmd = 1;
                 goto one_cmd;
             } else if(i == 0) {
                 //if first cmd
@@ -65,20 +66,19 @@ int run_cmd(char ***cmds, char* envp[]) {
                 close(fds[j][1]);
             }
 one_cmd:
-            path = find_env_var(envp, "PATH");
+
+            pathp = find_env_var(envp, "PATH");
+            strcpy(new_path, pathp);
 
             //printf("path: %s\n", path);
-            c = strtok(path, ':');
+            c = strtok(new_path, ':');
             while(c != NULL) {
-                fprintf(STDERR_FILENO, "trying: %s\n", strappend(c, "/", *cmds[i]));
                 execve(strappend(c, "/", *cmds[i]), cmds[i], envp);
                 c = strtok(NULL, ':');
             }
 
             fprintf(STDERR_FILENO, "No such command: %s\n", *cmds[i]);
-            if(!is_one_cmd) {
-                exit(1);
-            }
+            exit(1);
         } 
     }
 
@@ -90,11 +90,39 @@ one_cmd:
 
 int sbsh_main(int argc, char* argv[], char* envp[]) {
     char cmd[256] = {0};
+    char ***commands; 
     char *ps1;
     int rc = 0;
     int running = 1;
     int red = 0;
     //char *c;
+
+    if(argc == 2) {
+        int fd = open(argv[1], O_RDONLY);
+        running = 0;
+
+        if(fd < 0) {
+            fprintf(STDERR_FILENO, "error opening script: %s\n", argv[1]);
+            fprintf(STDERR_FILENO, "Usage: %s [script]\n", argv[0]);
+            exit(1);
+        }
+
+        while(fgets(cmd, 256, fd) != NULL) {
+            commands = extract_commands(cmd);
+            //check for cd
+            if(commands[0] != NULL && strcmp(commands[0][0], "cd") == 0) {
+                chdir(commands[0][1]);
+                continue;
+            }
+            run_cmd(commands, envp);
+            waitpid(-1, NULL, 0);
+        }
+
+        exit(1); 
+    } else if(argc > 2) {
+       fprintf(STDERR_FILENO, "too many args\nUsage: %s [script]\n", argv[0]);
+       exit(1);
+    }
 
     while(running) {
 
@@ -106,18 +134,20 @@ int sbsh_main(int argc, char* argv[], char* envp[]) {
 
         if(ps1 == NULL) {
             printf("> ");
-            red = read(STDIN_FILENO, cmd, 256);
-            *(cmd + red) = '\0';
         } else {
             printf("%s", ps1);
         }
 
+        red = read(STDIN_FILENO, cmd, 256);
+        *(cmd + red) = '\0';
+
         if(strcmp(cmd, "exit\n") == 0) {
+            printf("Exitting ...\n");
             exit(0);
         }
 
-        char ***commands = extract_commands(cmd);
-    
+        commands = extract_commands(cmd);
+
         //check for cd
         if(commands[0] != NULL && strcmp(commands[0][0], "cd") == 0) {
             chdir(commands[0][1]);
@@ -126,10 +156,7 @@ int sbsh_main(int argc, char* argv[], char* envp[]) {
 
 
         run_cmd(commands, envp);
-        while(waitpid(-1, &rc, 0) > 0) {
-            //printf("rc: %d\n", rc);
-            if(rc == 0) break;
-        }
+        waitpid(-1, NULL, 0);
     }
 
     return rc;
