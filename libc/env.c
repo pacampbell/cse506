@@ -18,7 +18,11 @@ char **putenv(char *var, char **envp) {
         return envp;
     }
 
-    memcpy(new_env, envp, i);
+    //memcpy(new_env, envp, i);
+    for(int j = 0; j < i; j++) {
+        new_env[j] = envp[j];
+    }
+
     if(var == NULL) return envp;
 
     new_env[i] = malloc(varlen * sizeof(char));

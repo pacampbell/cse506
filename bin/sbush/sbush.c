@@ -13,6 +13,8 @@ char **environ;
 
 int main(int argc, char *argv[], char* envp[]) {
     // return test_main(argc, argv, envp);
+char **putenv(char *var, char **envp);
+    environ = putenv(NULL, envp);
     return sbsh_main(argc, argv);
 }
 
