@@ -14,84 +14,73 @@ int main(int argc, char *argv[], char* envp[]) {
 }
 
 int run_cmd(char ***cmds, char* envp[]) {
-    char *c, *pathp;
-    char new_path[256] = {0};
-    int pipe_count = 0;
-
-    for(pipe_count = 0; *(cmds+pipe_count) != NULL; pipe_count++);
-    pipe_count--;
-
-    int fds[pipe_count][2];
-
-    for(int i = 0; i < pipe_count; i++) {
-        if( pipe(*(fds + i)) != 0 ) {
-            printf("Error: pipe\n");
-            return -1;
-        }
-    }
-
+    int old_fds[2];
+    int new_fds[2];
     for(int i = 0; cmds[i] != NULL; i++) {
+        int pid;
+        // Create a new pipe if there is more commands
+        if(cmds[i + 1] != NULL) {
+            pipe(new_fds);
+        }
+        // Fork a new process
+        pid = fork();
+        // Figure out if we are in the parent or child
+        if(pid == 0) {
+            char new_path[2048] = {0};
+            char *pathp = find_env_var(envp, "PATH");
+            char *c = NULL;
 
-        if(fork() == 0) {
-            //child
-
-            if(i == 0 && cmds[i+1] == NULL) {
-                goto one_cmd;
-            } else if(i == 0) {
-                //if first cmd
-                if(dup2(fds[0][1], 1) < 0) {
-                    printf("dup2 broke 1\n");
-                } 
-
-            } else if(cmds[i+1] == NULL) {
-                //if last cmd
-                if(0 > dup2(fds[i-1][0], 0)) {
-                    printf("dup2 broke 2\n");
-                }
-
-            } else {
-                //if mid cmd
-                if(0 > dup2(fds[i-1][0], 0)) {
-                    printf("dup2 broke 3\n");
-                }
-
-                if(0 > dup2(fds[i][1], 1)) {
-                    printf("dup2 broke 4\n");
-                }
-
+            /* child process */
+            if(i > 0) { // There was a command previously in the chain
+                dup2(old_fds[0], 0);
+                close(old_fds[0]);
+                close(old_fds[1]);
             }
-            
-            //close all fds
-            for(int j = 0; j < pipe_count; j++) {
-                close(fds[j][0]);
-                close(fds[j][1]);
-            }
-one_cmd:
 
-            pathp = find_env_var(envp, "PATH");
+            if(cmds[i + 1] != NULL) { // Theres another command in the chain
+                close(new_fds[0]);
+                dup2(new_fds[1], 1);
+                close(new_fds[1]);
+            }
+
+            // Begin searching the path to execute binary
             strcpy(new_path, pathp);
-
-            //printf("path: %s\n", path);
             c = strtok(new_path, ':');
             while(c != NULL) {
-                execve(strappend(c, "/", *cmds[i]), cmds[i], envp);
+                char *t = strappend(c, "/", cmds[i][0]);
+                execve(t, cmds[i], envp);
                 c = strtok(NULL, ':');
             }
-
             fprintf(STDERR_FILENO, "No such command: %s\n", *cmds[i]);
+        } else if(pid < 0) {
+            /* something went wrong */
             exit(1);
-        } 
+        } else {
+            /* parent process */
+            if(i > 0) { // There was a command previously in the chain
+                close(old_fds[0]);
+                close(old_fds[1]);
+            }
+            if(cmds[i + 1] != NULL) {
+                old_fds[0] = new_fds[0];
+                old_fds[1] = new_fds[1];
+            }
+            // Wait for the process to finish
+            waitpid(pid, NULL, 0);
+        }
     }
-
-    //while(waitpid(-1, &pipe_count, 0) > 0);
-
-    return 13;
+    // Check to see if we ran multiple commands
+    if(cmds[0] != NULL && cmds[1] != NULL) {
+        close(old_fds[0]);
+        close(old_fds[1]);
+    }
+    return 0;
 }
 
 
 int sbsh_main(int argc, char* argv[], char* envp[]) {
     char cmd[256] = {0};
-    char ***commands; 
+    char ***commands;
     char *ps1;
     int running = 1;
     int red = 0;
@@ -118,7 +107,7 @@ int sbsh_main(int argc, char* argv[], char* envp[]) {
             waitpid(-1, NULL, 0);
         }
 
-        exit(1); 
+        exit(1);
     } else if(argc > 2) {
         fprintf(STDERR_FILENO, "too many args\nUsage: %s [script]\n", argv[0]);
         exit(1);
@@ -147,7 +136,7 @@ int sbsh_main(int argc, char* argv[], char* envp[]) {
         if(special_cmds(commands, envp) > 0) continue;
 
         run_cmd(commands, envp);
-        waitpid(-1, NULL, 0);
+        // waitpid(-1, NULL, 0);
     }
 
     return 0;
@@ -168,7 +157,7 @@ int special_cmds(char ***commands, char **envp) {
 
     //check for exit
     if(strcmp(commands[0][0], "exit") == 0) {
-        printf("Exitting ...\n");
+        printf("Exiting ...\n");
         exit(0);
     }
 
@@ -183,6 +172,3 @@ int special_cmds(char ***commands, char **envp) {
 
     return 0;
 }
-
-
-
