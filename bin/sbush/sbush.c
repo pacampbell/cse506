@@ -1,19 +1,22 @@
 #include "sbush.h"
 #include <stdio.h>
 #include <sys/mman.h>
+#include <env.h>
 
 int test_main(int argc, char *argv[], char* envp[]);
-int sbsh_main(int argc, char* argv[], char* envp[]);
+int sbsh_main(int argc, char* argv[]);
 int pipe_count(char *cmd);
 int count_pipes(char *cmd);
-int special_cmds(char ***commands, char **envp);
+int special_cmds(char ***commands);
+
+char **environ;
 
 int main(int argc, char *argv[], char* envp[]) {
     // return test_main(argc, argv, envp);
-    return sbsh_main(argc, argv, envp);
+    return sbsh_main(argc, argv);
 }
 
-int run_cmd(char ***cmds, char* envp[]) {
+int run_cmd(char ***cmds) {
     int old_fds[2];
     int new_fds[2];
     for(int i = 0; cmds[i] != NULL; i++) {
@@ -27,7 +30,7 @@ int run_cmd(char ***cmds, char* envp[]) {
         // Figure out if we are in the parent or child
         if(pid == 0) {
             char new_path[2048] = {0};
-            char *pathp = find_env_var(envp, "PATH");
+            char *pathp = find_env_var(environ, "PATH");
             char *c = NULL;
 
             /* child process */
@@ -48,7 +51,7 @@ int run_cmd(char ***cmds, char* envp[]) {
             c = strtok(new_path, ':');
             while(c != NULL) {
                 char *t = strappend(c, "/", cmds[i][0]);
-                execve(t, cmds[i], envp);
+                execve(t, cmds[i], environ);
                 c = strtok(NULL, ':');
             }
             fprintf(STDERR_FILENO, "No such command: %s\n", *cmds[i]);
@@ -78,7 +81,7 @@ int run_cmd(char ***cmds, char* envp[]) {
 }
 
 
-int sbsh_main(int argc, char* argv[], char* envp[]) {
+int sbsh_main(int argc, char* argv[]) {
     char cmd[256] = {0};
     char ***commands;
     char *ps1;
@@ -99,11 +102,11 @@ int sbsh_main(int argc, char* argv[], char* envp[]) {
         while(fgets(cmd, 256, fd) != NULL) {
             commands = extract_commands(cmd);
 
-            if(special_cmds(commands, envp) > 0) {
+            if(special_cmds(commands) > 0) {
                 continue;
             }
 
-            run_cmd(commands, envp);
+            run_cmd(commands);
             waitpid(-1, NULL, 0);
         }
 
@@ -115,7 +118,7 @@ int sbsh_main(int argc, char* argv[], char* envp[]) {
 
     while(running) {
 
-        ps1 = find_env_var(envp, "PS1");
+        ps1 = find_env_var(environ, "PS1");
 
         /*for(c = *envp, rc = 0; c != NULL; rc++, c = *(envp + rc)) {
           printf("ENV::: %s\n", c);
@@ -133,16 +136,16 @@ int sbsh_main(int argc, char* argv[], char* envp[]) {
         commands = extract_commands(cmd);
 
         //check for cd and exit
-        if(special_cmds(commands, envp) > 0) continue;
+        if(special_cmds(commands) > 0) continue;
 
-        run_cmd(commands, envp);
+        run_cmd(commands);
         // waitpid(-1, NULL, 0);
     }
 
     return 0;
 }
 
-int special_cmds(char ***commands, char **envp) {
+int special_cmds(char ***commands) {
 
     if(commands[0] == NULL) {
         return 0;
@@ -150,8 +153,7 @@ int special_cmds(char ***commands, char **envp) {
 
     if((count_tokens(commands[0][0], '=') -1) > 0) {
         printf("not setting a var: %s\n", commands[0][0]);
-        int rc = putenv(commands[0][0], envp);
-        printf("putenv: %d\n", rc);
+        environ = putenv(commands[0][0], environ);
         return 1;
     }
 

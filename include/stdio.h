@@ -9,6 +9,5 @@ int printf(const char *format, ...);
 int scanf(const char *format, ...);
 int fprintf(int fd, const char *format, ...);
 char *fgets(char *s, int size, int fd);
-int putenv(char *entry, char **environ);
 
 #endif
