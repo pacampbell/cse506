@@ -200,7 +200,7 @@ int dup(int oldfd) {
 }
 
 int dup2(int oldfd, int newfd) {
-    return syscall_1(SYS_dup2, oldfd);
+    return syscall_2(SYS_dup2, oldfd, newfd);
 }
 
 void *opendir(const char *name) {
