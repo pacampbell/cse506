@@ -1,17 +1,5 @@
 #include "cmdparse.h"
 
-static int count_tokens(const char *cmd, char token) {
-    int tokens = 0;
-    if(cmd != NULL) {
-        while(*cmd != '\0') {
-            if(*cmd++ == token) tokens++;
-        }
-        // if theres n vertices there is n + 1 nodes
-        tokens++;
-    }
-    return tokens;
-}
-
 static char** parse_cmd(char *cmd, char **fked) {
     char **tokens = NULL;
     if(cmd != NULL) {

@@ -6,6 +6,7 @@ int test_main(int argc, char *argv[], char* envp[]);
 int sbsh_main(int argc, char* argv[], char* envp[]);
 int pipe_count(char *cmd);
 int count_pipes(char *cmd);
+int special_cmds(char ***commands, char **envp);
 
 int main(int argc, char *argv[], char* envp[]) {
     // return test_main(argc, argv, envp);
@@ -92,7 +93,6 @@ int sbsh_main(int argc, char* argv[], char* envp[]) {
     char cmd[256] = {0};
     char ***commands; 
     char *ps1;
-    int rc = 0;
     int running = 1;
     int red = 0;
     //char *c;
@@ -109,19 +109,19 @@ int sbsh_main(int argc, char* argv[], char* envp[]) {
 
         while(fgets(cmd, 256, fd) != NULL) {
             commands = extract_commands(cmd);
-            //check for cd
-            if(commands[0] != NULL && strcmp(commands[0][0], "cd") == 0) {
-                chdir(commands[0][1]);
+
+            if(special_cmds(commands, envp) > 0) {
                 continue;
             }
+
             run_cmd(commands, envp);
             waitpid(-1, NULL, 0);
         }
 
         exit(1); 
     } else if(argc > 2) {
-       fprintf(STDERR_FILENO, "too many args\nUsage: %s [script]\n", argv[0]);
-       exit(1);
+        fprintf(STDERR_FILENO, "too many args\nUsage: %s [script]\n", argv[0]);
+        exit(1);
     }
 
     while(running) {
@@ -141,37 +141,48 @@ int sbsh_main(int argc, char* argv[], char* envp[]) {
         red = read(STDIN_FILENO, cmd, 256);
         *(cmd + red) = '\0';
 
-        if(strcmp(cmd, "exit\n") == 0) {
-            printf("Exitting ...\n");
-            exit(0);
-        }
-
         commands = extract_commands(cmd);
 
-        //check for cd
-        if(commands[0] != NULL && strcmp(commands[0][0], "cd") == 0) {
-            chdir(commands[0][1]);
-            continue;
-        }
-
+        //check for cd and exit
+        if(special_cmds(commands, envp) > 0) continue;
 
         run_cmd(commands, envp);
         waitpid(-1, NULL, 0);
     }
 
-    return rc;
+    return 0;
 }
 
-char *find_env_var(char* envp[], char* name) {
-    int rc;
-    char *var;
+int special_cmds(char ***commands, char **envp) {
 
-    for(rc = 0, var = *envp; var != NULL && !strbegwith(name, var); rc++, var = *(envp+rc));
-    if(var != NULL) {
-        for(; *var != '='; var++);
-        var++;
+    if(commands[0] == NULL) {
+        return 0;
     }
 
-    return var;
+    if((count_tokens(commands[0][0], '=') -1) > 0) {
+        printf("not setting a var: %s\n", commands[0][0]);
+        int rc = putenv(commands[0][0], envp);
+        printf("putenv: %d\n", rc);
+        return 1;
+    }
+
+    //check for exit
+    if(strcmp(commands[0][0], "exit") == 0) {
+        printf("Exitting ...\n");
+        exit(0);
+    }
+
+    //check for cd
+    if(strcmp(commands[0][0], "cd") == 0) {
+        if(chdir(commands[0][1])) {
+            fprintf(STDERR_FILENO, "no such folder: %s\n", commands[0][1]);
+        }
+        return 1;
+    }
+
+
+    return 0;
 }
+
+
 

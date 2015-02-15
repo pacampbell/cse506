@@ -15,4 +15,5 @@ char *strappend(char *s1, char *s2, char *s3);
 char *strip(char *src);
 char **split(const char *str, char delim);
 int strcmp(const char* s1, const char* s2);
+int count_tokens(const char *cmd, char token);
 #endif

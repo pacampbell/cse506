@@ -244,3 +244,92 @@ int closedir(struct DIR *dir) {
     free(dir);
     return close(dir->_DIR_fd);
 }
+
+char *strchr(const char *s, int c) {
+    while (*s != (char)c) {
+        if (!*s++) {
+            return 0;
+        }
+    }
+
+    return (char *)s;
+}
+
+char *find_env_var(char* envp[], char* name) {
+    int rc;
+    char *var;
+
+    for(rc = 0, var = *envp; var != NULL && !strbegwith(name, var); rc++, var = *(envp+rc));
+    if(var != NULL) {
+        for(; *var != '='; var++);
+        var++;
+    }
+
+    return var;
+}
+
+void setenv(char *cmd, char* envp[]) {
+
+}
+
+char *strncpy(char *dest, const char *src, size_t n) {
+    size_t i;
+
+    for (i = 0; i < n && src[i] != '\0'; i++)
+        dest[i] = src[i];
+    for ( ; i < n; i++)
+        dest[i] = '\0';
+
+    return dest;
+}
+
+int strncmp(const char *s1, const char *s2, size_t n) {
+    int i;
+    for(i = 0; i < n && s1[n] == s2[i] && s1[i] != '\0' && s2[i] != '\n'; i++);
+    return s1[i] - s2[i];
+}
+
+int putenv(char *entry, char **environ) {
+    unsigned length;
+    unsigned size;
+    char     *temp;
+    char     **p;
+    char     **new_environ;
+
+    /*  Find the length of the "NAME="  */
+
+    temp = strchr(entry,'=');
+    if ( temp == 0 )
+        return( -1 );
+
+    length = (unsigned) (temp - entry + 1);
+
+
+    /*  Scan through the environment looking for "NAME="  */
+
+    for ( p=environ; *p != 0 ; p++ )
+        if ( strncmp( entry, *p, length ) == 0 )
+        {
+            *p = entry;
+            return( 0 );
+        }
+
+
+    /*  The name was not found, build a bigger environment  */
+
+    size = p - environ;
+
+    new_environ = (char **) malloc( (size+2)*sizeof(char *));
+
+    if ( new_environ == (char **) NULL )
+        return( -1 );
+
+    memcpy ((char *) new_environ, (char *) environ, size*sizeof(char *));
+
+    new_environ[size]   = entry;
+    new_environ[size+1] = NULL;
+
+    environ = new_environ;
+
+    return(0);
+}

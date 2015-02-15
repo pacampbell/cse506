@@ -109,7 +109,7 @@ char *strip(char *src) {
     return src;
 }
 
-static int count_tokens(const char *cmd, char token) {
+int count_tokens(const char *cmd, char token) {
     int tokens = 0;
     if(cmd != NULL) {
         while(*cmd != '\0') {
