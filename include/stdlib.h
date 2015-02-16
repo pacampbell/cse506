@@ -78,4 +78,6 @@ void *opendir(const char *name);
 struct dirent *readdir(struct DIR *dir);
 int closedir(struct DIR *dir);
 
+char *find_env_var(char* envp[], char* name);
+
 #endif
