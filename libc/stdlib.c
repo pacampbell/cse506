@@ -10,12 +10,6 @@ void exit(int status) {
 /* Head pointer for malloc/free implementation */
 static void *head_ptr = NULL;
 
-/*
-void *malloc(size_t size) {
-    return sbrk(size);
-}
-*/
-
 void *malloc(size_t size) {
     void *ptr = NULL;
     if(size > 0) {
@@ -256,53 +250,4 @@ char *find_env_var(char* envp[], char* name) {
     }
 
     return var;
-}
-
-void setenv(char *cmd, char* envp[]) {
-
-}
-
-int putenv(char *entry, char **environ) {
-    unsigned length;
-    unsigned size;
-    char     *temp;
-    char     **p;
-    char     **new_environ;
-
-    /*  Find the length of the "NAME="  */
-
-    temp = strchr(entry,'=');
-    if ( temp == 0 )
-        return( -1 );
-
-    length = (unsigned) (temp - entry + 1);
-
-
-    /*  Scan through the environment looking for "NAME="  */
-
-    for ( p=environ; *p != 0 ; p++ )
-        if ( strncmp( entry, *p, length ) == 0 )
-        {
-            *p = entry;
-            return( 0 );
-        }
-
-
-    /*  The name was not found, build a bigger environment  */
-
-    size = p - environ;
-
-    new_environ = (char **) malloc( (size+2)*sizeof(char *));
-
-    if ( new_environ == (char **) NULL )
-        return( -1 );
-
-    memcpy ((char *) new_environ, (char *) environ, size*sizeof(char *));
-
-    new_environ[size]   = entry;
-    new_environ[size+1] = NULL;
-
-    environ = new_environ;
-
-    return(0);
 }
