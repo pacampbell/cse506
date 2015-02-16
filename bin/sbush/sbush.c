@@ -101,7 +101,7 @@ int sbsh_main(int argc, char* argv[]) {
         }
 
         while(fgets(cmd, 256, fd) != NULL) {
-            commands = extract_commands(cmd, envp);
+            commands = extract_commands(cmd, environ);
 
             if(special_cmds(commands) > 0) {
                 continue;
@@ -134,12 +134,12 @@ int sbsh_main(int argc, char* argv[]) {
         red = read(STDIN_FILENO, cmd, 256);
         *(cmd + red) = '\0';
 
-        commands = extract_commands(cmd, envp);
+        commands = extract_commands(cmd, environ);
 
         //check for cd and exit
         if(special_cmds(commands) > 0) continue;
 
-        running = !run_cmd(commands, envp);
+        running = !run_cmd(commands);
     }
 
     return 0;
