@@ -1,0 +1,7 @@
+Michael Salerno  108512298
+Paul    Campbell 108481554
+
+    - To set enviormental vars just do VARNAME=value   no spaces
+
+    - scanf only takes one pattern at a time, e.g. "%s" works but "%s%s" will not
+
