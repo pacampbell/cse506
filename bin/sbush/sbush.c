@@ -52,6 +52,7 @@ int run_cmd(char ***cmds, char* envp[]) {
                 c = strtok(NULL, ':');
             }
             fprintf(STDERR_FILENO, "No such command: %s\n", *cmds[i]);
+            return -1;
         } else if(pid < 0) {
             /* something went wrong */
             exit(1);
@@ -97,7 +98,7 @@ int sbsh_main(int argc, char* argv[], char* envp[]) {
         }
 
         while(fgets(cmd, 256, fd) != NULL) {
-            commands = extract_commands(cmd);
+            commands = extract_commands(cmd, envp);
 
             if(special_cmds(commands, envp) > 0) {
                 continue;
@@ -130,13 +131,12 @@ int sbsh_main(int argc, char* argv[], char* envp[]) {
         red = read(STDIN_FILENO, cmd, 256);
         *(cmd + red) = '\0';
 
-        commands = extract_commands(cmd);
+        commands = extract_commands(cmd, envp);
 
         //check for cd and exit
         if(special_cmds(commands, envp) > 0) continue;
 
-        run_cmd(commands, envp);
-        // waitpid(-1, NULL, 0);
+        running = !run_cmd(commands, envp);
     }
 
     return 0;
