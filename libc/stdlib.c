@@ -11,12 +11,6 @@ void exit(int status) {
 /* Head pointer for malloc/free implementation */
 static void *head_ptr = NULL;
 
-/*
-void *malloc(size_t size) {
-    return sbrk(size);
-}
-*/
-
 void *malloc(size_t size) {
     void *ptr = NULL;
     if(size > 0) {
@@ -246,16 +240,6 @@ int closedir(struct DIR *dir) {
     return close(dir->_DIR_fd);
 }
 
-char *strchr(const char *s, int c) {
-    while (*s != (char)c) {
-        if (!*s++) {
-            return 0;
-        }
-    }
-
-    return (char *)s;
-}
-
 char *find_env_var(char* envp[], char* name) {
     int rc;
     char *var;
@@ -276,22 +260,4 @@ int find_env_var_orig(char* envp[], char* name) {
     for(rc = 0; envp[rc] != NULL && !strbegwith(name, envp[rc]); rc++);
     return rc;
 }
-
-char *strncpy(char *dest, const char *src, size_t n) {
-    size_t i;
-
-    for (i = 0; i < n && src[i] != '\0'; i++)
-        dest[i] = src[i];
-    for ( ; i < n; i++)
-        dest[i] = '\0';
-
-    return dest;
-}
-
-int strncmp(const char *s1, const char *s2, size_t n) {
-    int i;
-    for(i = 0; i < n && s1[n] == s2[i] && s1[i] != '\0' && s2[i] != '\n'; i++);
-    return s1[i] - s2[i];
-}
-
 

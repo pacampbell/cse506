@@ -36,7 +36,7 @@ obj/%.o: %.c $(wildcard include/*.h include/*/*.h)
 
 obj/%.o: %.s
 	@mkdir -p $(dir $@)
-	$(CC) -c -o $@ $<
+	$(AS) -o $@ $<
 
 .PHONY: submit clean tags
 

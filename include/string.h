@@ -16,4 +16,8 @@ char *strip(char *src);
 char **split(const char *str, char delim);
 int strcmp(const char* s1, const char* s2);
 int count_tokens(const char *cmd, char token);
+
+int strncmp(const char *s1, const char *s2, size_t n);
+char *strncpy(char *dest, const char *src, size_t n);
+char *strchr(const char *s, int c);
 #endif

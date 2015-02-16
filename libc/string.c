@@ -155,3 +155,29 @@ int strcmp(const char* s1, const char* s2) {
     return *(const unsigned char*)s1-*(const unsigned char*)s2;
 }
 
+char *strncpy(char *dest, const char *src, size_t n) {
+    size_t i;
+
+    for (i = 0; i < n && src[i] != '\0'; i++)
+        dest[i] = src[i];
+    for ( ; i < n; i++)
+        dest[i] = '\0';
+
+    return dest;
+}
+
+int strncmp(const char *s1, const char *s2, size_t n) {
+    int i;
+    for(i = 0; i < n && s1[n] == s2[i] && s1[i] != '\0' && s2[i] != '\n'; i++);
+    return s1[i] - s2[i];
+}
+
+char *strchr(const char *s, int c) {
+    while (*s != (char)c) {
+        if (!*s++) {
+            return 0;
+        }
+    }
+
+    return (char *)s;
+}

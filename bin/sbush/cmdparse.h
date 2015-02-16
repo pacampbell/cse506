@@ -3,6 +3,6 @@
 #include <stdlib.h>
 #include <string.h>
 
-char*** extract_commands(const char *cmd);
+char*** extract_commands(const char *cmd_str, char *envp[]);
 
 #endif
