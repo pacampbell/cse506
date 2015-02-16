@@ -59,7 +59,7 @@ done:
 int scanf(const char *format, ...) {
     va_list val;
     int got = 0;
-    char *tmp_cp;
+    char *tmp_cp, *in_ch;
     int *in_c;
     // Store user input
     char buffer[BUFFER_SIZE];
@@ -101,6 +101,8 @@ int scanf(const char *format, ...) {
                     *in_c = convert(token, BASE_16);
                     break;
                 case 'c':
+                    in_ch = va_arg(val, char*);
+                    *in_ch = token[0];
                     break;
                 default:
                     /* Bad shouldnt get here */

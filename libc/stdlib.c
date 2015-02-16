@@ -260,4 +260,3 @@ int find_env_var_orig(char* envp[], char* name) {
     for(rc = 0; envp[rc] != NULL && !strbegwith(name, envp[rc]); rc++);
     return rc;
 }
-
