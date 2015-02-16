@@ -155,7 +155,7 @@ int special_cmds(char ***commands) {
 
     if((count_tokens(commands[0][0], '=') -1) > 0) {
         printf("not setting a var: %s\n", commands[0][0]);
-        environ = putenv(commands[0][0], environ);
+        environ = setenv(commands[0][0], environ);
         return 1;
     }
 

@@ -1,6 +1,7 @@
 #include <sys/defs.h>
 #include <string.h>
 #include <stdio.h>
+#include <stdlib.h>
 
 char **putenv(char *var, char **envp) {
 
@@ -35,5 +36,48 @@ char **putenv(char *var, char **envp) {
     memcpy(new_env[i], var, varlen);
     new_env[i][varlen] = '\0';
 
+    free(envp);
     return new_env;
+}
+
+char **rmenv(char *var, char **envp) {
+    int i;
+    int index;
+    for(i = 0; *(envp + i) != NULL; i++);
+
+    index = find_env_var_orig(envp, var);
+    if(envp[index] == NULL) return envp;
+
+    //last env
+    if(envp[index] == *(envp + i - 1)) {
+        envp[i-1] = NULL;
+        return envp;
+    }
+
+    envp[index] = envp[i-1];
+    envp[i-1] = NULL;
+
+    return envp;
+}
+
+char **setenv(char *var, char **envp) {
+    int i;
+    char *c;
+    char *eq;
+
+    for(i = 0; *(envp + i) != NULL; i++);
+    for(eq= var; *eq != '\0' && *eq != '='; eq++);
+    *eq = '\0';
+    
+    c = find_env_var(envp, var);
+    *eq = '=';
+
+    if(c == NULL) {
+        return putenv(var, envp);
+    } else {
+        *eq = '\0';
+        envp = rmenv(var, envp);
+        *eq = '=';
+        return putenv(var, envp);        
+    }
 }

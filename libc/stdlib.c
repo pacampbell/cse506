@@ -2,6 +2,7 @@
 #include <syscall.h>
 #include <string.h>
 #include <sys/mman.h>
+#include <stdio.h>
 
 void exit(int status) {
     syscall_1(SYS_exit, status);
@@ -268,8 +269,12 @@ char *find_env_var(char* envp[], char* name) {
     return var;
 }
 
-void setenv(char *cmd, char* envp[]) {
+//this one gives you the original pointer
+int find_env_var_orig(char* envp[], char* name) {
+    int rc;
 
+    for(rc = 0; envp[rc] != NULL && !strbegwith(name, envp[rc]); rc++);
+    return rc;
 }
 
 char *strncpy(char *dest, const char *src, size_t n) {

@@ -8,7 +8,6 @@
 
 #define MAX_ARGS 1
 
-char *find_env_var(char* envp[], char* name);
 
 // Stringification - https://gcc.gnu.org/onlinedocs/cpp/Stringification.html
 #define XSTR(A) STR(A)
