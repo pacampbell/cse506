@@ -51,6 +51,7 @@ int run_cmd(char ***cmds) {
             // Begin searching the path to execute binary
             strcpy(new_path, pathp);
             c = strtok(new_path, ':');
+            execve(cmds[i][0], cmds[i], environ);
             while(c != NULL) {
                 char *t = strappend(c, "/", cmds[i][0]);
                 execve(t, cmds[i], environ);
