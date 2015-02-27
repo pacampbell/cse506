@@ -82,6 +82,16 @@ int fprintf(int fd, const char *format, ...) {
     return printed;
 }
 
+/*
+=======
+	while(*format) {
+		//write(1, format, 1);
+		++printed;
+		++format;
+	}
+>>>>>>> 2c4f846c4dbb274d424459f7a54164c7fa3ddd87
+*/
+
 int printf(const char *format, ...) {
     va_list val;
     int printed = 0;
@@ -140,4 +150,3 @@ int printf(const char *format, ...) {
     }
     return printed;
 }
-
