@@ -11,10 +11,10 @@ void start(uint32_t* modulep, void* physbase, void* physfree)
 	while(modulep[0] != 0x9001) modulep += modulep[1]+2;
 	for(smap = (struct smap_t*)(modulep+2); smap < (struct smap_t*)((char*)modulep+modulep[1]+2*4); ++smap) {
 		if (smap->type == 1 /* memory */ && smap->length != 0) {
-			printf("Available Physical Memory [%x-%x]\n", smap->base, smap->base + smap->length);
+			printk("Available Physical Memory [%x-%x]\n", smap->base, smap->base + smap->length);
 		}
 	}
-	printf("tarfs in [%p:%p]\n", &_binary_tarfs_start, &_binary_tarfs_end);
+	printk("tarfs in [%p:%p]\n", &_binary_tarfs_start, &_binary_tarfs_end);
 	// kernel starts here
 }
 
@@ -27,7 +27,7 @@ struct tss_t tss;
 void boot(void)
 {
 	// note: function changes rsp, local stack variables can't be practically used
-	register char *s, *v;
+	// register char *s, *v;
 	__asm__(
 		"movq %%rsp, %0;"
 		"movq %1, %%rsp;"
@@ -41,7 +41,9 @@ void boot(void)
 		&physbase,
 		(void*)(uint64_t)loader_stack[4]
 	);
+	/*
 	s = "!!!!! start() returned !!!!!";
 	for(v = (char*)0xb8000; *s; ++s, v += 2) *v = *s;
+	*/
 	while(1);
 }

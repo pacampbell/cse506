@@ -19,8 +19,8 @@ char **putenv(char *var, char **envp);
 }
 
 int run_cmd(char ***cmds) {
-    int old_fds[2];
-    int new_fds[2];
+    int old_fds[2] = {0};
+    int new_fds[2] = {0};
     for(int i = 0; cmds[i] != NULL; i++) {
         int pid;
         // Create a new pipe if there is more commands

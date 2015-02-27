@@ -60,6 +60,10 @@ obj/%.asm.o: %.s
 	@mkdir -p $(dir $@)
 	$(AS) -o $@ $<
 
+obj/%.o: %.s
+	@mkdir -p $(dir $@)
+	$(AS) -o $@ $<
+
 .PHONY: submit clean
 
 SUBMITTO:=~mferdman/cse506-submit/
