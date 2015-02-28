@@ -39,7 +39,7 @@ void putck(char color, char c) {
 
 
 volatile char *video_seek(int offset) {
-    volatile char *address = VIDEO_MEM + cursor_x + (cursor_y * 2) + offset;
+    volatile char *address = VIDEO_MEM + (cursor_x + (cursor_y * 2) + (offset * 2));
     if(address < VIDEO_MEM) {
         address = VIDEO_MEM;
     } else if(address > VIDEO_MEM_END) {
