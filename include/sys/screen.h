@@ -6,7 +6,7 @@
 #define TERMINAL_COLUMNS 80
 #define TERMINAL_ROWS 25
 #define VIDEO_MEM_END_OFFSET (TERMINAL_COLUMNS * TERMINAL_ROWS)
-#define VIDEO_MEM_END ((VIDEO_MEM_START) + (VIDEO_MEM_END_OFFSET))
+#define VIDEO_MEM_END (volatile char*)((VIDEO_MEM_START) + (VIDEO_MEM_END_OFFSET))
 
 /* Clears the terminal */
 void cls(void);
