@@ -17,14 +17,14 @@ void putk(char c) {
 void putck(char color, char c) {
     if(c != '\n') {
         // Write the character
-        *(VIDEO_MEM + (cursor_y * TERMINAL_COLUMNS) + cursor_x) = c;
+        *(VIDEO_MEM + (cursor_y * (TERMINAL_COLUMNS * 2)) + cursor_x) = c;
         // Write the color information
-        *(VIDEO_MEM + (cursor_y * TERMINAL_COLUMNS) + cursor_x + 1) = color;
+        *(VIDEO_MEM + (cursor_y * (TERMINAL_COLUMNS * 2)) + cursor_x + 1) = color;
         // Increment the current cursor by 1 whole position (2-bytes)
         cursor_x += 2;
         // Check to see if we should increment by column
     }
-    if(c == '\n' || cursor_x == 80) {
+    if(c == '\n' || cursor_x == (TERMINAL_COLUMNS * 2)) {
         cursor_x = 0;
         cursor_y += 1;
     }
