@@ -64,7 +64,7 @@ obj/%.o: %.s
 	@mkdir -p $(dir $@)
 	$(AS) -o $@ $<
 
-.PHONY: submit clean
+.PHONY: submit clean tags
 
 SUBMITTO:=~mferdman/cse506-submit/
 
@@ -77,7 +77,7 @@ submit: clean
 
 clean:
 	find $(ROOTLIB) $(ROOTBIN) -type f ! -name .empty -print -delete
-	rm -rfv obj kernel newfs.506 $(ROOTBOOT)/kernel/kernel $(USER).iso
+	rm -rfv obj kernel newfs.506 $(ROOTBOOT)/kernel/kernel $(USER).iso $(USER).img
 
 tags:
 	find . -name "*.[ch]" > cscope.files
