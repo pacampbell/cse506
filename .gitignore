@@ -8,4 +8,5 @@ cscope*
 kernel
 *.img
 *.iso
+newfs.506
 
