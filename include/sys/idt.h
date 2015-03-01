@@ -97,7 +97,7 @@ extern void isr_31();
 #define HW_ISR_STACK_FAULT 0x0C
 #define HW_ISR_GENERAL_PROTECTION_FAULT 0x0D
 #define HW_ISR_PAGE_FAULT 0x0E
-#define HW_ISR_RESERVED_15 0x0F
+#define HW_ISR_RESERVED_15 0x0F     /* Some places call this unknwon interrupt */
 #define HW_ISR_MATH_FAULT 0x10
 #define HW_ISR_ALIGNMENT_CHECK 0x11
 #define HW_ISR_MACHINE_CHECK 0x12

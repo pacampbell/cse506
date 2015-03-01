@@ -1,5 +1,6 @@
 #ifndef _ISR_H
 #define _ISR_H
+#include <sys/idt.h>
 #include <sys/defs.h>
 typedef struct registers
 {

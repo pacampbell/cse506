@@ -22,6 +22,8 @@ void init_idt(void) {
     /* Set interrupt vectors for the processor defined interrupts */
     idt_set_gate(HW_ISR_DIV_BY_ZERO, (uint64_t)isr_0, 0x08, 0x8E);
     idt_set_gate(HW_ISR_DEBUGGER, (uint64_t)isr_1, 0x08, 0x8E);
+    printk("Set IDT entries\n");
+    /*
     idt_set_gate(HW_ISR_NMI, (uint64_t)isr_2, 0x08, 0x8E);
     idt_set_gate(HW_ISR_BREAKPOINT, (uint64_t)isr_3, 0x08, 0x8E);
     idt_set_gate(HW_ISR_OVERFLOW, (uint64_t)isr_4, 0x08, 0x8E);
@@ -40,7 +42,9 @@ void init_idt(void) {
     idt_set_gate(HW_ISR_ALIGNMENT_CHECK, (uint64_t)isr_17, 0x08, 0x8E);
     idt_set_gate(HW_ISR_MACHINE_CHECK, (uint64_t)isr_18, 0x08, 0x8E);
     idt_set_gate(HW_ISR_SIMD_FP_EXCEPTION, (uint64_t)isr_19, 0x08, 0x8E);
+    */
     /* Interrupts [20,31] are reserved but not used */
+    /*
     idt_set_gate(20, (uint64_t)isr_20, 0x08, 0x8E);
     idt_set_gate(21, (uint64_t)isr_21, 0x08, 0x8E);
     idt_set_gate(22, (uint64_t)isr_22, 0x08, 0x8E);
@@ -53,7 +57,11 @@ void init_idt(void) {
     idt_set_gate(29, (uint64_t)isr_29, 0x08, 0x8E);
     idt_set_gate(30, (uint64_t)isr_0, 0x08, 0x8E);
     idt_set_gate(31, (uint64_t)isr_1, 0x08, 0x8E);
+    */
     /* TODO: Set kernel defined interrupts here */
+
+    // Flush the idt
+    idt_flush((uint64_t)&idt_ptr);
     printk("Finished init_idt\n");
 }
 

@@ -1,5 +1,8 @@
+#define __KERNEL__
+
 #include <sys/sbunix.h>
 #include <sys/gdt.h>
+#include <sys/idt.h>
 #include <sys/tarfs.h>
 
 void start(uint32_t* modulep, void* physbase, void* physfree)
@@ -15,7 +18,25 @@ void start(uint32_t* modulep, void* physbase, void* physfree)
 		}
 	}
 	printk("tarfs in [%p:%p]\n", &_binary_tarfs_start, &_binary_tarfs_end);
+
+	__asm__ __volatile__("int $0x0");
+	__asm__ __volatile__("int $0x1");
+
 	// kernel starts here
+	// cls();
+	char *test = "\nHello, World! Do I work? I need to test out a really really long string. like super duper long so it takes up a lot of characters\nDoes this newline actually work?\rOverwrite the line we are currently at.";
+	while(*test) {
+		putk(*test++);
+		for(int i = 0; i < 10000000; i++) ;
+	}
+	/*
+	cls();
+	test = "Writing another string.";
+	while(*test) {
+		putk(*test++);
+		for(int i = 0; i < 10000000; i++) ;
+	}
+	*/
 }
 
 #define INITIAL_STACK_SIZE 4096
@@ -34,7 +55,9 @@ void boot(void)
 		:"=g"(loader_stack)
 		:"r"(&stack[INITIAL_STACK_SIZE])
 	);
+	// Initialize the descript tables and tss
 	reload_gdt();
+	init_idt();
 	setup_tss();
 	start(
 		(uint32_t*)((char*)(uint64_t)loader_stack[3] + (uint64_t)&kernmem - (uint64_t)&physbase),
