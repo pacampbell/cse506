@@ -1,14 +1,12 @@
-#include "timer.h"
-#include "isr.h"
-#include "monitor.h"
+#include <sys/timer.h>
+#include <sys/isr.h>
+void printk(const char *format, ...);
 
 u32int tick = 0;
 
 static void timer_callback(registers_t regs) {
     tick++;
-    monitor_write("Tick: ");
-    monitor_write_dec(tick);
-    monitor_write("\n");
+    printk("Tick: %d\n", tick);
 }
 
 void init_timer(u32int frequency) {
