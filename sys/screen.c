@@ -15,6 +15,12 @@ void putk(char c) {
 }
 
 void putck(char color, char c) {
+    // If we have run out of rows scroll the screen
+    if(cursor_y >= TERMINAL_ROWS) {
+        scroll();
+        cursor_y -= 1;
+    }
+    // Just dump the text if the string contains ascii
     if(c != '\n' && c != '\r' && c != '\b') {
         // Write the character
         *(VIDEO_MEM + (cursor_y * (TERMINAL_COLUMNS * 2)) + cursor_x) = c;
@@ -46,4 +52,16 @@ volatile char *video_seek(int offset) {
         address = VIDEO_MEM_END;
     }
     return address;
+}
+
+void scroll(void) {
+    int row_offset = TERMINAL_COLUMNS * 2;
+    // Copy everything up
+    for(int i = row_offset; i < VIDEO_MEM_END_OFFSET; i++) {
+        *(VIDEO_MEM + i - row_offset) = *(VIDEO_MEM + i);
+    }
+    // Clear the last row
+    for(int i = VIDEO_MEM_END_OFFSET - row_offset; i < VIDEO_MEM_END_OFFSET; i++) {
+        *(VIDEO_MEM + i) = 0;
+    }
 }
