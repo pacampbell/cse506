@@ -5,4 +5,7 @@ rootfs
 *.swp
 tags
 cscope*
+kernel
+*.img
+*.iso
 
