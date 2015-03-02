@@ -63,7 +63,8 @@ void start(uint32_t* modulep, void* physbase, void* physfree)
 
 	// kernel starts here
 	// cls();
-	char *test = "\nHello, World! Do I work? I need to test out a really really long string. like super duper long so it takes up a lot of characters\nDoes this newline actually work?\rOverwrite the line we are currently at.";
+	char *test = "\nHello, World! Do I work? I need to test out a really really long string. like super duper long so it takes up a lot of characters\n"
+            "Does this newline actually work?\rOverwrite the line we are currently at.";
 	while(*test) {
 		putk(*test++);
 		for(int i = 0; i < 10000000; i++) ;
