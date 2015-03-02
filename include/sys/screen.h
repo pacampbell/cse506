@@ -5,7 +5,7 @@
 #define VIDEO_MEM (volatile char*)(VIDEO_MEM_START)
 #define TERMINAL_COLUMNS 80
 #define TERMINAL_ROWS 25
-#define VIDEO_MEM_END_OFFSET (TERMINAL_COLUMNS * TERMINAL_ROWS)
+#define VIDEO_MEM_END_OFFSET (TERMINAL_COLUMNS * 2 * TERMINAL_ROWS)
 #define VIDEO_MEM_END (volatile char*)((VIDEO_MEM_START) + (VIDEO_MEM_END_OFFSET))
 
 /* Clears the terminal */
@@ -23,6 +23,11 @@ void putk(char c);
  * @param c Char to write to the terminal.
  */
 void putck(char color, char c);
+
+/**
+ * Scrolls the screen up by one row when too much text is on the screen.
+ */
+void scroll(void);
 
 /**
  * Seeks to a position in video memory.

@@ -19,8 +19,47 @@ void start(uint32_t* modulep, void* physbase, void* physfree)
 	}
 	printk("tarfs in [%p:%p]\n", &_binary_tarfs_start, &_binary_tarfs_end);
 
-	__asm__ __volatile__("int $0x0");
-	__asm__ __volatile__("int $0x1");
+	__asm__ __volatile__("int $0");
+	__asm__ __volatile__("int $0");
+	__asm__ __volatile__("int $0");
+	__asm__ __volatile__("int $1");
+	__asm__ __volatile__("int $2");
+	__asm__ __volatile__("int $3");
+	__asm__ __volatile__("int $4");
+	__asm__ __volatile__("int $5");
+	__asm__ __volatile__("int $6");
+	__asm__ __volatile__("int $7");
+	__asm__ __volatile__("int $8");
+	__asm__ __volatile__("int $9");
+	__asm__ __volatile__("int $10");
+	__asm__ __volatile__("int $11");
+	__asm__ __volatile__("int $12");
+	__asm__ __volatile__("int $13");
+	__asm__ __volatile__("int $14");
+	__asm__ __volatile__("int $15");
+	__asm__ __volatile__("int $16");
+	__asm__ __volatile__("int $17");
+	__asm__ __volatile__("int $18");
+	__asm__ __volatile__("int $19");
+	/* Reserved calls */
+	__asm__ __volatile__("int $20");
+	__asm__ __volatile__("int $21");
+	__asm__ __volatile__("int $22");
+	__asm__ __volatile__("int $23");
+	__asm__ __volatile__("int $24");
+	__asm__ __volatile__("int $25");
+	__asm__ __volatile__("int $26");
+	__asm__ __volatile__("int $27");
+	__asm__ __volatile__("int $28");
+	__asm__ __volatile__("int $30");
+	// __asm__ __volatile__("int $31");
+
+	/*
+	int zero = 0;
+	int c = 5 / zero;
+
+	printk("Result = %d\n", c);
+	*/
 
 	// kernel starts here
 	// cls();
