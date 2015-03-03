@@ -3,6 +3,7 @@
 
 #include <sys/screen.h>
 #include <sys/defs.h>
+#include <sys/timer.h>
 
 void printk(const char *fmt, ...);
 

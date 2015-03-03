@@ -1,5 +1,6 @@
 #include <sys/idt.h>
 
+
 idt_entry_t idt_entries[MAX_IDT_ENTRIES];
 idt_ptr_t idt_ptr;
 
@@ -8,6 +9,7 @@ void printk(const char *fmt, ...);
 
 /* Function defined in idt.s */
 extern void idt_flush(uint64_t idt_address);
+extern void remap_pic(void);
 
 /* Adds functions to the idt */
 static void idt_set_gate(uint8_t number, uint64_t base, uint16_t selector, uint8_t flags);
@@ -52,6 +54,28 @@ void init_idt(void) {
     idt_set_gate(29, (uint64_t)isr_29, 0x08, 0x8E);
     idt_set_gate(30, (uint64_t)isr_30, 0x08, 0x8E);
     idt_set_gate(31, (uint64_t)isr_31, 0x08, 0x8E);
+    /* Set up the PIC IRQs */
+    remap_pic();
+
+    idt_set_gate(32, (uint64_t)irq_0, 0x08, 0x8E);
+    idt_set_gate(33, (uint64_t)irq_1, 0x08, 0x8E);
+    idt_set_gate(34, (uint64_t)irq_2, 0x08, 0x8E);
+    idt_set_gate(35, (uint64_t)irq_3, 0x08, 0x8E);
+    idt_set_gate(36, (uint64_t)irq_4, 0x08, 0x8E);
+    idt_set_gate(37, (uint64_t)irq_5, 0x08, 0x8E);
+    idt_set_gate(38, (uint64_t)irq_6, 0x08, 0x8E);
+    idt_set_gate(39, (uint64_t)irq_7, 0x08, 0x8E);
+    idt_set_gate(40, (uint64_t)irq_8, 0x08, 0x8E);
+    idt_set_gate(41, (uint64_t)irq_9, 0x08, 0x8E);
+    idt_set_gate(42, (uint64_t)irq_10, 0x08, 0x8E);
+    idt_set_gate(43, (uint64_t)irq_11, 0x08, 0x8E);
+    idt_set_gate(44, (uint64_t)irq_12, 0x08, 0x8E);
+    idt_set_gate(45, (uint64_t)irq_13, 0x08, 0x8E);
+    idt_set_gate(46, (uint64_t)irq_14, 0x08, 0x8E);
+    idt_set_gate(47, (uint64_t)irq_15, 0x08, 0x8E);
+
+    printk("PIC IRQS set\n");
+
     /* TODO: Set kernel defined interrupts here */
 
     // Flush the idt
