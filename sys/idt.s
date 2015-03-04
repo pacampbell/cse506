@@ -4,27 +4,36 @@
 .globl remap_pic
 idt_flush:
    lidt [rdi]
-   ret
+   retq
 
 remap_pic:
-    mov al, 0x11
-    out 0x20, al     # restart PIC1
-    out 0xA0, al     # restart PIC2
+    mov al, 0x11     # Initilize the command
+    out 0x20, al     # Send the INIT command to PIC1
+    out 0xA0, al     # Send the INIT command to PIC2
 
-    mov al, 0x20
+    mov al, 0x20     # Set the start of PIC1 interrupts
     out 0x21, al     # PIC1 now starts at 32
-    mov al, 0x28
+
+    mov al, 0x28     # Set the start of PIC2 interrupts
     out 0xA1, al     # PIC2 now starts at 40
 
-    mov al, 0x04
-    out 0x21, al     # setup cascading
+    mov al, 0x04     # Setup the MASTER pic
+    out 0x21, al     # PIC1 is now master
+
     mov al, 0x02
     out 0xA1, al
 
-    mov al, 0x01
+    mov al, 0x01     # 8086 mode
     out 0x21, al
-    out 0xA1, al     # done!
-    ret
+    out 0xA1, al
+
+    # mov al, 0xFB     # Mask of all IRQ's except the cascaded
+    # out 0x21, al
+
+    # mov al, 0xFF     # Masks off all IRQS on PIC2
+    # out 0xA1, al
+
+    retq
 
 
 .extern isr_common_stub

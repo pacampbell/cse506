@@ -6,6 +6,7 @@ void printk(const char *fmt, ...);
 isr_t interrupt_handlers[256];
 
 void irq_handler(registers_t regs) {
+    printk("Irq_handler\n");
     // Send an EOI (end of interrupt) signal to the PICs.
     // If this interrupt involved the slave.
     if (regs.int_no >= 40) {
@@ -91,6 +92,8 @@ void printk(const char *fmt, ...);
 }
 
 void isr_handler(registers_t regs) {
+    /*
     char *str_interrupt = strintno(regs.int_no);
     printk("recieved interrupt[%d]: %s\n", regs.int_no, str_interrupt);
+    */
 }

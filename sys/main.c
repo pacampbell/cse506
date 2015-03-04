@@ -57,12 +57,15 @@ void start(uint32_t* modulep, void* physbase, void* physfree)
 	__asm__ __volatile__("int $30");
 	// __asm__ __volatile__("int $31");
 	*/
+
+
 	/*
 	int zero = 0;
 	int c = 5 / zero;
 
 	printk("Result = %d\n", c);
 	*/
+
 
 	// kernel starts here
 	// cls();
