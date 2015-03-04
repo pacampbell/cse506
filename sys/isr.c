@@ -1,6 +1,8 @@
 #include <sys/isr.h>
 #include <sys/common.h>
 
+void printk(const char *fmt, ...);
+
 isr_t interrupt_handlers[256];
 
 void irq_handler(registers_t regs) {
@@ -27,7 +29,7 @@ void register_interrupt_handler(uint8_t n, isr_t handler) {
 /* FIXME: need for debugging; should remove this at some point .. */
 void printk(const char *fmt, ...);
 
-static char* strintno(uint64_t int_no) {
+/*static*/ char* strintno(uint64_t int_no) {
     switch(int_no) {
         case HW_ISR_DIV_BY_ZERO:
             return "DIV_BY_ZERO";
