@@ -7,6 +7,8 @@ and Z meas the Z was pressed.
 
 
 
+Our Makefile was modified to allow crt1.s to compile in bin directory. 
+
 The provided Makefile:
   1) builds a kernel
   2) copies it into rootfs/boot/kernel/kernel
