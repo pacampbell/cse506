@@ -1,5 +1,6 @@
 #define __KERNEL__
 
+#include <sys/try.h>
 #include <sys/sbunix.h>
 #include <sys/gdt.h>
 #include <sys/idt.h>
@@ -59,12 +60,10 @@ void start(uint32_t* modulep, void* physbase, void* physfree)
 	*/
 
 
-	/*
-	int zero = 0;
-	int c = 5 / zero;
+//	int zero = 0;
+//	int c = 5 / zero;
 
-	printk("Result = %d\n", c);
-	*/
+//	printk("Result = %d\n", c);
 
 
 	// kernel starts here
@@ -106,9 +105,12 @@ void boot(void)
 	);
 	// Initialize the descript tables and tss
 	reload_gdt();
-	init_idt();
 	setup_tss();
+        __asm("cli");
+        PIC_remap(0x20, 0x28);
+	init_idt();
 	init_timer(50);
+         __asm("sti");
 	start(
 		(uint32_t*)((char*)(uint64_t)loader_stack[3] + (uint64_t)&kernmem - (uint64_t)&physbase),
 		&physbase,
