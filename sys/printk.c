@@ -9,7 +9,7 @@ static char char_table[] = {'0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'A
 #define BASE_10 10
 #define BASE_16 16
 
-static void print_base(int v, int base, int *counter, int steps) {
+static void print_base(size_t v, int base, int *counter, int steps) {
     if(v == 0 && steps == 0) {
         putk(char_table[v % base]);
         *counter += 1;
@@ -28,6 +28,7 @@ void printk(const char *format, ...) {
     int printed = 0;
     // Temps used for printing
     int tmp_int = 0;
+    void *ptr = NULL;
     unsigned int tmp_hex = 0;
     char *tmp_cp;
     volatile char *video_memory = (volatile char*)0xb8000;
@@ -64,6 +65,13 @@ void printk(const char *format, ...) {
                     format++;
                     break;
                 case 'p':
+                    ptr = va_arg(val, void*);
+                    // Convert the number to hex
+                    putk('0');
+                    putk('x');
+                    print_base((size_t)ptr, BASE_16, &printed, 0);
+                    format++;
+                    break;
                 case 'x':
                     tmp_hex = va_arg(val, unsigned int);
                     // Convert the number to hex
