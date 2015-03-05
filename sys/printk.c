@@ -53,12 +53,14 @@ void printk(const char *format, ...) {
                     *video_memory = '%';
                     video_memory += 2;
                     printed += 1;
+                    format++;
                     break;
                 case 's':
                     tmp_cp = va_arg(val, char*);
                     for(int i = 0; i < strlen(tmp_cp); ++i) {
                         putk(*(tmp_cp + i));
                     }
+                    format++;
                     break;
                 case 'd':
                     tmp_int = va_arg(val, int);
@@ -70,20 +72,24 @@ void printk(const char *format, ...) {
                     }
                     // Convert the number to decimal
                     print_base(tmp_int, BASE_10, &printed, 0);
+                    format++;
                     break;
                 case 'p':
                 case 'x':
                     tmp_hex = va_arg(val, unsigned int);
                     // Convert the number to hex
                     print_base(tmp_hex, BASE_16, &printed, 0);
+                    format++;
                     break;
                 case 'c':
                     tmp_int = va_arg(val, int);
                     //write(STDOUT_FILENO, &tmp_int, sizeof(char));
                     putk(tmp_int);
+                    format++;
                     break;
                 default:
                     printk("\n-----\nyou broke printk\n-----\n");
+                    format++;
                     break;
             }
             // Increment onto the format character

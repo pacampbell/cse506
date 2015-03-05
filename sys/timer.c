@@ -6,7 +6,7 @@ static uint32_t tick = 0;
 
 static void timer_callback(registers_t regs) {
     tick++;
-    printk("Tick: %d\n", tick);
+    //printk("Tick: %d\n", tick);
 }
 
 void init_timer(uint32_t frequency) {

@@ -80,7 +80,7 @@ clean:
 	rm -rfv obj kernel newfs.506 $(ROOTBOOT)/kernel/kernel $(USER).iso $(USER).img
 
 tags:
-	find . -name "*.[ch]" > cscope.files
+	find . -name "*.[chw]" > cscope.files
 	ctags -R *
 	cscope -b -q -k
 
