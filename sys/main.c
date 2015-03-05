@@ -4,9 +4,9 @@
 #include <sys/gdt.h>
 #include <sys/idt.h>
 #include <sys/tarfs.h>
+#include <sys/keyboard.h>
 
-void start(uint32_t* modulep, void* physbase, void* physfree)
-{
+void start(uint32_t* modulep, void* physbase, void* physfree) {
 	struct smap_t {
 		uint64_t base, length;
 		uint32_t type;
@@ -92,8 +92,7 @@ uint32_t* loader_stack;
 extern char kernmem, physbase;
 struct tss_t tss;
 
-void boot(void)
-{
+void boot(void) {
 	// note: function changes rsp, local stack variables can't be practically used
 	// register char *s, *v;
 	__asm__(
@@ -107,6 +106,7 @@ void boot(void)
 	setup_tss();
 	init_idt();
 	init_timer(50);
+        init_keyboard();
          __asm("sti");
 	start(
 		(uint32_t*)((char*)(uint64_t)loader_stack[3] + (uint64_t)&kernmem - (uint64_t)&physbase),
