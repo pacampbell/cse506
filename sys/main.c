@@ -1,6 +1,5 @@
 #define __KERNEL__
 
-#include <sys/try.h>
 #include <sys/sbunix.h>
 #include <sys/gdt.h>
 #include <sys/idt.h>
@@ -106,8 +105,6 @@ void boot(void)
 	// Initialize the descript tables and tss
 	reload_gdt();
 	setup_tss();
-        __asm("cli");
-        PIC_remap(0x20, 0x28);
 	init_idt();
 	init_timer(50);
          __asm("sti");
