@@ -1,12 +1,24 @@
+#define __KERNEL__
 #include <sys/timer.h>
 #include <sys/isr.h>
-void printk(const char *format, ...);
+#include <sys/screen.h>
+#include <sbunix/string.h>
+#include <sbunix/kernel.h>
 
 static uint32_t tick = 0;
+static char string_buffer[1024];
+
+static void print_timer(void) {
+    itoa((int)tick, string_buffer);
+    int start_x = 79 - strlen(string_buffer);
+    for(int i = 0; string_buffer[i] != '\0'; i++) {
+        putk_xy(string_buffer[i], start_x + i, 24);
+    }
+}
 
 static void timer_callback(registers_t regs) {
+    print_timer();
     tick++;
-    //printk("Tick: %d\n", tick);
 }
 
 void init_timer(uint32_t frequency) {
@@ -28,6 +40,4 @@ void init_timer(uint32_t frequency) {
     // Send the frequency divisor.
     outb(0x40, l);
     outb(0x40, h);
-
-    printk("Init timer with %d frequency.\n", frequency);
 }

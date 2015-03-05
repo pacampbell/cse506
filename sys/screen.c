@@ -43,6 +43,22 @@ void putck(char color, char c) {
     }
 }
 
+void putk_xy(char c, int x, int y) {
+    putck_xy(0, c, x, y);
+}
+
+void putck_xy(char color, char c, int x, int y) {
+    // Just dump the text if the string contains ascii
+    if(c != '\n' && c != '\r' && c != '\b') {
+        // Adjust X to be divisble by 2
+        x *= 2;
+        // Write the character
+        *(VIDEO_MEM + (y * (TERMINAL_COLUMNS * 2)) + x) = c;
+        // Write the color information
+        *(VIDEO_MEM + (y * (TERMINAL_COLUMNS * 2)) + x + 1) = color;
+    }
+}
+
 
 volatile char *video_seek(int offset) {
     volatile char *address = VIDEO_MEM + (cursor_x + (cursor_y * 2) + (offset * 2));

@@ -5,6 +5,8 @@
 #include <sys/idt.h>
 #include <sys/tarfs.h>
 #include <sys/keyboard.h>
+#include <sbunix/kernel.h>
+
 
 void start(uint32_t* modulep, void* physbase, void* physfree) {
 	struct smap_t {

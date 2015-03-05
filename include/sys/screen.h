@@ -25,6 +25,23 @@ void putk(char c);
 void putck(char color, char c);
 
 /**
+ * Puts a character at the (x,y) position with the default color.
+ * @param c Char to write to the terminal.
+ * @param x X-coordinate to write on the terminal.
+ * @param y Y-coordinate to write on the terminal.
+ */
+void putk_xy(char c, int x, int y);
+
+/**
+ * Puts a character at the (x,y) position with a color values.
+ * @param color 1-byte containing the background and forground color.
+ * @param c Char to write to the terminal.
+ * @param x X-coordinate to write on the terminal.
+ * @param y Y-coordinate to write on the terminal.
+ */
+void putck_xy(char color, char c, int x, int y);
+
+/**
  * Scrolls the screen up by one row when too much text is on the screen.
  */
 void scroll(void);

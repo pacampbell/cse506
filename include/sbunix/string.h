@@ -5,5 +5,6 @@
     #define _STRING_H
         #include <sys/defs.h>
         void memset(void *buff, char value, uint64_t size);
+        size_t strlen(const char *str);
     #endif
 #endif

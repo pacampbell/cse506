@@ -1,8 +1,7 @@
+#define __KERNEL__
 #include <sys/sbunix.h>
+#include <sbunix/string.h>
 #include <stdarg.h>
-
-typedef uint64_t size_t;
-
 
 static char char_table[] = {'0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'A', 'B',
     'C', 'D', 'E', 'F'};
@@ -22,16 +21,6 @@ static void print_base(int v, int base, int *counter, int steps) {
         putk(char_table[v % base]);
         *counter += 1;
     }
-}
-
-
-
-size_t strlen(const char *s) {
-    size_t length = 0;
-    if(s != NULL) {
-        for(; *s++ != '\0'; length++) ;
-    }
-    return length;
 }
 
 void printk(const char *format, ...) {
