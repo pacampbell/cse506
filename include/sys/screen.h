@@ -53,5 +53,6 @@ void scroll(void);
  * @return Returns the video address based on the provided offset.
  */
 volatile char *video_seek(int offset);
+void setxy(int x, int y);
 
 #endif
