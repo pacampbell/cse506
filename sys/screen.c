@@ -14,6 +14,11 @@ void putk(char c) {
     putck(0, c);
 }
 
+void setxy(int x, int y) {
+    cursor_x = x;
+    cursor_y = y;
+}
+
 void putck(char color, char c) {
     // If we have run out of rows scroll the screen
     if(cursor_y >= TERMINAL_ROWS) {

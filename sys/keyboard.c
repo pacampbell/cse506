@@ -1,7 +1,16 @@
 #include <sys/isr.h>
 #include <sys/keyboard.h>
+#include <sys/screen.h>
+
+#define CTRL_DN 0x1D
+#define CTRL_UP 0x9D
+#define SHFT_DN 0x2A
+#define SHFT_UP 0xAA
 
 void printk(const char *format, ...);
+
+int is_shft_dn = 0;
+int is_cntrl_dn = 0;
 
 char* map[] = {
     "??", "??","1","2","3","4","5","6","7","8","9","0","-","=","<-","tab","Q","W","E","R","T",
@@ -13,9 +22,43 @@ char* map[] = {
 };
 
 static void keyboard_callback(registers_t regs) {
-    uint8_t b = inb(0x60);
     //printk("Keyboard: %x\n", b & 0xFF);
-    if(b > 0 && b < 87)printk("got: %s\n", map[b & 0xFF]);
+    uint8_t b = inb(0x60);
+
+    if(b == CTRL_UP) {
+        is_cntrl_dn = 0;
+        return;
+    } else if(b == CTRL_DN) {
+        is_cntrl_dn =1;
+        return;
+    }
+
+    if(b == SHFT_UP) {
+        is_shft_dn = 0;
+        return;
+    } else if(b == SHFT_DN) {
+        is_shft_dn =1;
+        return;
+    }
+
+
+    setxy(70, 24);
+    if(is_shft_dn) {
+        printk("S");
+    } else {
+        printk(" ");
+    }
+
+    //setxy(78, 24);
+    if(is_cntrl_dn) {
+        printk("^");
+    } else {
+        printk(" ");
+    }
+
+
+    //setxy(50,24);
+    if(b > 0 && b < 87 && b != CTRL_DN && b != CTRL_UP && b != SHFT_DN && b != SHFT_UP)printk("%s          ", map[b & 0xFF]);
 }
 
 void init_keyboard(void) {
