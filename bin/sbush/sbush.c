@@ -8,12 +8,12 @@ int sbsh_main(int argc, char* argv[]);
 int pipe_count(char *cmd);
 int count_pipes(char *cmd);
 int special_cmds(char ***commands);
+char **putenv(char *var, char **envp);
 
 char **environ;
 
 int main(int argc, char *argv[], char* envp[]) {
     // return test_main(argc, argv, envp);
-char **putenv(char *var, char **envp);
     environ = putenv(NULL, envp);
     return sbsh_main(argc, argv);
 }
