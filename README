@@ -1,6 +1,9 @@
 Michael Salerno  108512298
 Paul    Campbell 108481554
 
+The print outs for the key presses are at the bottem in the middle.
+is follow the format ^SZ there if the ^ shows then ctrl was pressed, if S shows then shift was pressed
+and Z meas the Z was pressed.
 
 Our Makefile was modified to allow crt1.s to compile in bin directory. 
 
