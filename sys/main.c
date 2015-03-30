@@ -6,7 +6,7 @@
 #include <sys/tarfs.h>
 #include <sys/keyboard.h>
 #include <sbunix/kernel.h>
-
+#include <sbunix/pgtable.h>
 
 void start(uint32_t* modulep, void* physbase, void* physfree) {
 	struct smap_t {
@@ -20,6 +20,8 @@ void start(uint32_t* modulep, void* physbase, void* physfree) {
 		}
 	}
 	printk("tarfs in [%p:%p]\n", &_binary_tarfs_start, &_binary_tarfs_end);
+	// Setup paging
+	initializePaging();
 }
 
 #define INITIAL_STACK_SIZE 4096
