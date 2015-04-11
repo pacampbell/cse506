@@ -5,13 +5,10 @@
     #define _PGTABLE_H
         #include <sys/defs.h>
 
-        #define PAGE_DIRECTORY_SIZE 1024
-        #define PAGE_TABLE_SIZE 1024
-        #define PAGE_TABLE_ALIGNMENT_BOUNDRY 4096
-
         void initializePaging(void);
-        void loadPageDirectory(unsigned int *address);
+        void loadPageDirectory(uint64_t *address);
         void enablePaging(void);
+        void enablepae(void);
         void disablePaging(void);
     #endif
 #endif

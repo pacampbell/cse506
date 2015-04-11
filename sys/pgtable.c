@@ -2,40 +2,79 @@
 #include <sbunix/pgtable.h>
 #include <sys/sbunix.h>
 
-// Create the page table directory
-uint32_t page_directory[PAGE_DIRECTORY_SIZE] __attribute__((aligned(PAGE_TABLE_ALIGNMENT_BOUNDRY)));
-// Create the first page table entry
-uint32_t first_page_table[PAGE_TABLE_SIZE] __attribute__((aligned(PAGE_TABLE_ALIGNMENT_BOUNDRY)));
+uint64_t page_dir_ptr_tab[4] __attribute__((aligned(0x20)));
+// 512 entries
+uint64_t page_dir[512] __attribute__((aligned(0x1000)));  // must be aligned to page boundary
+uint64_t page_tab[512] __attribute__((aligned(0x1000)));
 
 void initializePaging(void) {
-    // Initialize page directory
-	for(int i = 0; i < PAGE_DIRECTORY_SIZE; i++) {
-		/**
-		+-----------------+-------+------+---+---+------+-----+-----+---+
-		| Frame Address   | AVAIL | RSVD | D | A | RSVD | U/S | R/W | P |
-		+-----------------+-------+------+---+---+------+-----+-----+---+
-		R/W, Not Present, and Kernel Access only
-		*/
-		page_directory[i] = 0x00000002;
-	}
-	// Initialize first level
-	for(int i = 0; i < PAGE_TABLE_SIZE; i++) {
-		first_page_table[i] = (i * 0x1000) | 3;
-	}
+    /**
+    +-----------------+-------+------+---+---+------+-----+-----+---+
+    | Frame Address   | AVAIL | RSVD | D | A | RSVD | U/S | R/W | P |
+    +-----------------+-------+------+---+---+------+-----+-----+---+
+    */
+
+    // set the page directory into the PDPT and mark it present
+    page_dir_ptr_tab[0] = (uint64_t)&page_dir | 1;
+    //set the page table into the PD and mark it present/writable
+    page_dir[0] = (uint64_t)&page_tab | 3;
+    unsigned int i, address = 0;
+    for(i = 0; i < 512; i++) {
+        page_tab[i] = address | 3; // map address and mark it present/writable
+        address = address + 0x1000;
+    }
+
     // Call functions to set up
-    printk("Page Directory Address: %p\n", page_directory);
     disablePaging();
-	// loadPageDirectory(page_directory);
+    // enablepae();
+	// loadPageDirectory(page_dir_ptr_tab);
 	// enablePaging();
 }
 
 void disablePaging(void) {
+    uint64_t rv = 0;
+    __asm__ __volatile__ (
+        // "movq $0x1, %%rax;"
+        // "cpuid;"
+        // "movq %%rax, %0;"
+        "movq $0xC0000080, %%rcx;"
+        "rdmsr;"
+        "movq %%rax, %0;"
+        : "=r"(rv)
+        :
+        : "%rax", "%rcx"
+    );
+
+    printk("msr: 0x%x\n", rv);
+}
+
+void loadPageDirectory(uint64_t *address) {
+    __asm__ __volatile__ (
+        "movq %0, %%cr3"
+        :
+        : "r" (&page_dir_ptr_tab)
+    );
+}
+
+void enablepae(void) {
+    __asm__ __volatile__(
+        "movq %%cr4, %%rax;"
+        "bts $5, %%rax;"
+        "movq %%rax, %%cr4;"
+        :
+        :
+        : "%rax"
+    );
+}
+
+void enablePaging(void) {
     __asm__ __volatile__(
         "movq %%cr0, %%rax;"
-         "andq $0x7FFFFFFF, %%rax;"
-         "movq %%rax, %%cr0;"
-         :
-         :
-         : "%rax"
+        "movq $0x80000000, %%rdx;"
+        "orq %%rdx, %%rax;"
+        "movq %%rax, %%cr0;"
+        :
+        :
+        : "%rax", "%rdx"
     );
 }
