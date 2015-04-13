@@ -13,6 +13,9 @@ void start(uint32_t* modulep, void* physbase, void* physfree) {
         uint64_t base, length;
         uint32_t type;
     }__attribute__((packed)) *smap;
+
+    // Initialize the page free list
+    init_free_pg_list(physfree);
     while(modulep[0] != 0x9001) modulep += modulep[1]+2;
     for(smap = (struct smap_t*)(modulep+2); smap < (struct smap_t*)((char*)modulep+modulep[1]+2*4); ++smap) {
         if (smap->type == 1 /* memory */ && smap->length != 0) {
@@ -21,7 +24,12 @@ void start(uint32_t* modulep, void* physbase, void* physfree) {
     }
     printk("tarfs in [%p:%p]\n", &_binary_tarfs_start, &_binary_tarfs_end);
     // Setup paging
-    initializePaging();
+    initializePaging((uint64_t)physbase, (uint64_t)physfree);
+
+    // Setup timer and keyboard here
+    init_timer(50);
+    init_keyboard();
+    __asm("sti");
 }
 
 #define INITIAL_STACK_SIZE 4096
@@ -43,9 +51,6 @@ void boot(void) {
     reload_gdt();
     setup_tss();
     init_idt();
-    init_timer(50);
-    init_keyboard();
-    __asm("sti");
     start(
             (uint32_t*)((char*)(uint64_t)loader_stack[3] + (uint64_t)&kernmem - (uint64_t)&physbase),
             &physbase,

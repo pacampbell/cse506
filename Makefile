@@ -1,7 +1,7 @@
 CC=gcc
 #CC=clang
 AS=as
-CFLAGS=-O0 -std=c99 -D__thread= -Wall -Werror -nostdinc -Iinclude -msoft-float -mno-sse -mno-red-zone -fno-builtin -fPIC -march=amdfam10 -g3 -fno-stack-protector
+CFLAGS=-O0 -g -std=c99 -D__thread= -Wall -Werror -nostdinc -Iinclude -msoft-float -mno-sse -mno-red-zone -fno-builtin -fPIC -march=amdfam10 -g3 -fno-stack-protector
 LD=ld
 LDLAGS=-nostdlib
 AR=ar
@@ -85,4 +85,4 @@ tags:
 	cscope -b -q -k
 
 run: all
-	qemu-system-x86_64 -curses -cdrom $(USER).iso -drive id=disk,file=$(USER).img,if=none -device ahci,id=ahci -device ide-drive,drive=disk,bus=ahci.0 -net nic -net user,hostfwd=tcp::10080-:80 -net user,hostfwd=tcp::10023-:23 --no-reboot -gdb tcp::9998
+	qemu-system-x86_64 -serial file:debug.log -curses -cdrom $(USER).iso -drive id=disk,file=$(USER).img,if=none -device ahci,id=ahci -device ide-drive,drive=disk,bus=ahci.0 -net nic -net user,hostfwd=tcp::10080-:80 -net user,hostfwd=tcp::10023-:23 --no-reboot -gdb tcp::9998

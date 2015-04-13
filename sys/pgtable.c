@@ -1,11 +1,9 @@
 #define __KERNEL__
 #include <sbunix/pgtable.h>
 #include <sys/sbunix.h>
+#include <sbunix/string.h>
 
-uint64_t page_dir_ptr_tab[4] __attribute__((aligned(0x20)));
-// 512 entries
-uint64_t page_dir[512] __attribute__((aligned(0x1000)));  // must be aligned to page boundary
-uint64_t page_tab[512] __attribute__((aligned(0x1000)));
+extern char kernmem;
 
 uint32_t *free_pg_list;
 void* free_pg_list_end;
@@ -47,7 +45,7 @@ void init_free_pg_list(void *physfree) {
 }
 
 /**
- * page: the page cunt not the page address
+ * page: the page count not the page address
  */
 uint32_t is_pg_free(int page) {
     int word_num = (page / WORD_SIZE);
@@ -69,74 +67,67 @@ uint32_t set_pg_free(int page, int free) {
     return free_pg_list[word_num];
 }
 
-void initializePaging(void) {
-    /**
-      +-----------------+-------+------+---+---+------+-----+-----+---+
-      | Frame Address   | AVAIL | RSVD | D | A | RSVD | U/S | R/W | P |
-      +-----------------+-------+------+---+---+------+-----+-----+---+
-      */
+void initializePaging(uint64_t physbase, uint64_t physfree) {
 
-    // set the page directory into the PDPT and mark it present
-    page_dir_ptr_tab[0] = (uint64_t)&page_dir | 1;
-    //set the page table into the PD and mark it present/writable
-    page_dir[0] = (uint64_t)&page_tab | 3;
-    unsigned int i, address = 0;
-    for(i = 0; i < 512; i++) {
-        page_tab[i] = address | 3; // map address and mark it present/writable
-        address = address + 0x1000;
+    int page_index = get_free_page();       // Get a free page from the page allocator
+    set_pg_free(page_index, 0);             // Mark the page in use
+    // Get the page address
+    pml4_t *pml4 = (pml4_t*) pg_to_addr(page_index);
+    // Zero out the page
+    memset(pml4, 0, PAGE_SIZE);
+    // Travese multi-level pt structures to get the page table
+    get_pt(pml4, (uint64_t)&kernmem);
+
+    /* TODO: Remap the kernel into the page */
+    /* TODO: Remap video memory */
+    /* TODO: Set CR3 */
+}
+
+pt_t* get_pt(pml4_t *pml4, unit64_t virtual_address) {
+    uint64_t pml4_index = extract_pml4(virtual_address);
+    uint64_t pdpt_index = extract_directory_ptr(virtual_address);
+    uint64_t pd_index = extract_directory(virtual_address);
+    // Now begin finding the base address for each step of the walk
+    // also zero out lower 12 bits for permissions and copy the rest
+    uint64_t pdpt_base_addr = pml4->entries[pml4_index] & 0xFFFFFFFFFFFFF000;
+    // Check to see if we have empty entry
+    if(pdpt_base_addr == 0x0) {
+        // TODO: Get and set pdpt
     }
-
-    // Call functions to set up
-    disablePaging();
-    // enablepae();
-    // loadPageDirectory(page_dir_ptr_tab);
-    // enablePaging();
+    uint64_t pd_base_addr = ((pdpt_t*)pdpt_base_addr)->entries[pdpt_index] & 0xFFFFFFFFFFFFF000;
+    // Check to see if we have empty entry
+    if(pd_base_addr == 0x0) {
+        // TODO: Get and set pd
+    }
+    uint64_t pt_base_addr = ((pd_t*)pd_base_addr)->entries[pd_index] & 0xFFFFFFFFFFFFF000;
+    if(pt_base_addr == 0x0) {
+        // TODO: Get and set pt
+    }
+    return (pt_t*)pt_base_addr;
 }
 
-void disablePaging(void) {
-    uint64_t rv = 0;
-    __asm__ __volatile__ (
-            // "movq $0x1, %%rax;"
-            // "cpuid;"
-            // "movq %%rax, %0;"
-            "movq $0xC0000080, %%rcx;"
-            "rdmsr;"
-            "movq %%rax, %0;"
-            : "=r"(rv)
-            :
-            : "%rax", "%rcx"
-            );
 
-    printk("msr: 0x%x\n", rv);
+inline uint64_t extract_bits(uint64_t virtual_address, unsigned short start, unsigned short end) {
+    uint64_t mask = (1 << (end + 1 - start)) - 1;
+    return (virtual_address >> start) & mask;
 }
 
-void loadPageDirectory(uint64_t *address) {
-    __asm__ __volatile__ (
-            "movq %0, %%cr3"
-            :
-            : "r" (&page_dir_ptr_tab)
-            );
+inline uint64_t extract_pml4(uint64_t virtual_address) {
+    return extract_bits(virtual_address, 39, 47);
 }
 
-void enablepae(void) {
-    __asm__ __volatile__(
-            "movq %%cr4, %%rax;"
-            "bts $5, %%rax;"
-            "movq %%rax, %%cr4;"
-            :
-            :
-            : "%rax"
-            );
+inline uint64_t extract_directory_ptr(uint64_t virtual_address) {
+    return extract_bits(virtual_address, 30, 38);
 }
 
-void enablePaging(void) {
-    __asm__ __volatile__(
-            "movq %%cr0, %%rax;"
-            "movq $0x80000000, %%rdx;"
-            "orq %%rdx, %%rax;"
-            "movq %%rax, %%cr0;"
-            :
-            :
-            : "%rax", "%rdx"
-            );
+inline uint64_t extract_directory(uint64_t virtual_address) {
+    return extract_bits(virtual_address, 21, 29);
+}
+
+inline uint64_t extract_table(uint64_t virtual_address) {
+    return extract_bits(virtual_address, 12, 20);
+}
+
+inline uint64_t extract_offset(uint64_t virtual_address) {
+    return extract_bits(virtual_address, 0, 11);
 }
