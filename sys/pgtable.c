@@ -21,7 +21,7 @@ int addr_to_pg(void* addr) {
 int get_free_page() {
     int pg = 0;
 
-    for(pg = 0; pg < MAX_PAGES && !is_pg_free(pg); pg++);
+    for(; pg < MAX_PAGES && !is_pg_free(pg); pg++);
 
     if(pg >= MAX_PAGES)
         return -1;
