@@ -12,6 +12,9 @@
         void init_free_pg_list(void *physfree);
         uint32_t is_pg_free(int page);
         uint32_t set_pg_free(int page, int free);
+        int get_free_page();
+        void* pg_to_addr(int pg);
+        int addr_to_pg(void* addr);
 
         void initializePaging(void);
         void loadPageDirectory(uint64_t *address);

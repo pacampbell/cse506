@@ -10,6 +10,25 @@ uint64_t page_tab[512] __attribute__((aligned(0x1000)));
 uint32_t *free_pg_list;
 void* free_pg_list_end;
 
+void* pg_to_addr(int pg) {
+    return (pg * PAGE_SIZE) + ((char*)free_pg_list_end);
+}
+
+int addr_to_pg(void* addr) {
+    return ((char*)addr - (char*)free_pg_list_end) / PAGE_SIZE;
+}
+
+int get_free_page() {
+    int pg = 0;
+
+    for(pg = 0; pg < MAX_PAGES && !is_pg_free(pg); pg++);
+
+    if(pg >= MAX_PAGES)
+        return -1;
+
+    return pg;
+}
+
 /**
  * physfree: starts the free list at this location
  */
