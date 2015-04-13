@@ -8,12 +8,17 @@
 #include <sbunix/kernel.h>
 #include <sbunix/pgtable.h>
 
+void *kern_free_ptr;
+void *kern_base_ptr;
+
 void start(uint32_t* modulep, void* physbase, void* physfree) {
     struct smap_t {
         uint64_t base, length;
         uint32_t type;
     }__attribute__((packed)) *smap;
-
+    // Save pointers for kernel
+    kern_free_ptr = physfree;
+    kern_base_ptr = physbase;
     // Initialize the page free list
     init_free_pg_list(physfree);
     while(modulep[0] != 0x9001) modulep += modulep[1]+2;

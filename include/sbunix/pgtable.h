@@ -9,6 +9,17 @@
         #define WORD_SIZE 32
         #define PAGE_SIZE 0x1000
 
+        /* Permission bits - Chapter 4-18 Vol 3A */
+        #define P 0x1           // Present
+        #define RW 0x2          // Read/Write
+        #define US 0x4          // User/Supervisor
+        #define PWT 0x8         // Page-level write-through
+        #define PCD 0x10        // Page-level cache disable
+        #define A 0x20          // Accessed
+
+
+
+        /* Multi level page table directories */
         struct pml4_t {
             uint64_t entries[512];
         };
@@ -39,6 +50,7 @@
 
         void initializePaging(uint64_t physbase, uint64_t physfree);
         void loadPageDirectory(uint64_t *address);
+        void* kmalloc_pg(void);
 
         /* Page table helper methods */
         uint64_t extract_pml4(uint64_t virtual_address);

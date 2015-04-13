@@ -4,6 +4,8 @@
 #include <sbunix/string.h>
 
 extern char kernmem;
+extern void *kern_free_ptr;
+extern void *kern_base_ptr;
 
 uint32_t *free_pg_list;
 void* free_pg_list_end;
@@ -32,7 +34,6 @@ int get_free_page() {
  */
 void init_free_pg_list(void *physfree) {
     free_pg_list = (uint32_t *) physfree;
-
     //get how many words needed for bitmap
     int size = (MAX_PAGES / WORD_SIZE);
     uint32_t all_on = 0xFFFFFFFF;
@@ -68,11 +69,8 @@ uint32_t set_pg_free(int page, int free) {
 }
 
 void initializePaging(uint64_t physbase, uint64_t physfree) {
-
-    int page_index = get_free_page();       // Get a free page from the page allocator
-    set_pg_free(page_index, 0);             // Mark the page in use
-    // Get the page address
-    pml4_t *pml4 = (pml4_t*) pg_to_addr(page_index);
+    // Get a new page to setup the pml4
+    pml4_t *pml4 = (pml4_t*) kmalloc_pg();
     // Zero out the page
     memset(pml4, 0, PAGE_SIZE);
     // Travese multi-level pt structures to get the page table
@@ -94,20 +92,52 @@ pt_t* get_pt(pml4_t *pml4, uint64_t virtual_address) {
     uint64_t pdpt_base_addr = pml4->entries[pml4_index] & 0xFFFFFFFFFFFFF000;
     // Check to see if we have empty entry
     if(pdpt_base_addr == 0x0) {
-        // TODO: Get and set pdpt
+        // Get a new page
+        pdpt_t *page = (pdpt_t*) kmalloc_pg();
+        // Move the kernel free pointer by 1 page
+        kern_free_ptr = kern_free_ptr + PAGE_SIZE;
+        // Zero out the memory
+        memset(page, 0, PAGE_SIZE);
+        // Set the page into the current index and set permissions in the lower 12 bits
+        pml4->entries[pml4_index] = ((uint64_t)page) | P | RW | US;
+        // FInally set the new page to pdpt_base
+        pdpt_base_addr = (uint64_t)page;
     }
     uint64_t pd_base_addr = ((pdpt_t*)pdpt_base_addr)->entries[pdpt_index] & 0xFFFFFFFFFFFFF000;
     // Check to see if we have empty entry
     if(pd_base_addr == 0x0) {
-        // TODO: Get and set pd
+        // Get a new page
+        pd_t *page = (pd_t*) kmalloc_pg();
+        // Move the kernel free pointer by 1 page
+        kern_free_ptr = kern_free_ptr + PAGE_SIZE;
+        // Zero out the memory
+        memset(page, 0, PAGE_SIZE);
+        // Set the page into the current index and set permissions in the lower 12 bits
+        ((pdpt_t*)pdpt_base_addr)->entries[pdpt_index] = ((uint64_t)page) | P | RW | US;
+        // Finally set the new page to pd_base
+        pd_base_addr = (uint64_t)page;
     }
     uint64_t pt_base_addr = ((pd_t*)pd_base_addr)->entries[pd_index] & 0xFFFFFFFFFFFFF000;
     if(pt_base_addr == 0x0) {
-        // TODO: Get and set pt
+        // Get a new page
+        pt_t *page = (pt_t*) kmalloc_pg();
+        // Move the kernel free pointer by 1 page
+        kern_free_ptr = kern_free_ptr + PAGE_SIZE;
+        // Zero out the memory
+        memset(page, 0, PAGE_SIZE);
+        // Set the page into the current index and set permissions in the lower 12 bits
+        ((pd_t*)pd_base_addr)->entries[pd_index] = ((uint64_t)page) | P | RW | US;
+        // Finally set the new page to pd_base
+        pt_base_addr = (uint64_t)page;
     }
     return (pt_t*)pt_base_addr;
 }
 
+void* kmalloc_pg(void) {
+    int page_index = get_free_page();       // Get a free page from the page allocator
+    set_pg_free(page_index, 0);             // Mark the page in use
+    return pg_to_addr(page_index);          // Convert the page index to an address
+}
 
 inline uint64_t extract_bits(uint64_t virtual_address, unsigned short start, unsigned short end) {
     uint64_t mask = (1 << (end + 1 - start)) - 1;
