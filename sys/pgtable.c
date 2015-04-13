@@ -76,7 +76,9 @@ void initializePaging(uint64_t physbase, uint64_t physfree) {
     // Zero out the page
     memset(pml4, 0, PAGE_SIZE);
     // Travese multi-level pt structures to get the page table
-    get_pt(pml4, (uint64_t)&kernmem);
+    pt_t* page_table = get_pt(pml4, (uint64_t)&kernmem);
+
+    printk("Page table address: %p\n", page_table);
 
     /* TODO: Remap the kernel into the page */
     /* TODO: Remap video memory */
