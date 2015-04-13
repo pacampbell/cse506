@@ -27,7 +27,7 @@
 
         typedef struct pml4_t pml4_t;
         typedef struct pdpt_t pdpt_t;
-        typedef struct pde_t pde_t;
+        typedef struct pd_t pd_t;
         typedef struct pt_t pt_t;
 
         void init_free_pg_list(void *physfree);
@@ -54,6 +54,6 @@
          * @param virtual_address The virtual address to translate.
          * @param Returns the address of the page table from the translation.
          */
-        uint64_t get_pt(uint64_t pml4, unit64_t virtual_address);
+        pt_t* get_pt(pml4_t *pml4, uint64_t virtual_address);
     #endif
 #endif

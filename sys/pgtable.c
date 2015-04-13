@@ -83,7 +83,7 @@ void initializePaging(uint64_t physbase, uint64_t physfree) {
     /* TODO: Set CR3 */
 }
 
-pt_t* get_pt(pml4_t *pml4, unit64_t virtual_address) {
+pt_t* get_pt(pml4_t *pml4, uint64_t virtual_address) {
     uint64_t pml4_index = extract_pml4(virtual_address);
     uint64_t pdpt_index = extract_directory_ptr(virtual_address);
     uint64_t pd_index = extract_directory(virtual_address);
