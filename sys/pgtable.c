@@ -2,6 +2,7 @@
 #include <sbunix/pgtable.h>
 #include <sys/sbunix.h>
 #include <sbunix/string.h>
+#include <sys/screen.h>
 
 extern char kernmem;
 extern void *kern_free_ptr;
@@ -74,13 +75,47 @@ void initializePaging(uint64_t physbase, uint64_t physfree) {
     // Zero out the page
     memset(pml4, 0, PAGE_SIZE);
     // Travese multi-level pt structures to get the page table
-    pt_t* page_table = get_pt(pml4, (uint64_t)&kernmem);
+    uint64_t kernel_virtual_address = (uint64_t)&kernmem;
+    pt_t* page_table = get_pt(pml4, kernel_virtual_address);
+    /* Remap the kernel */
+    uint64_t kern_physbase = physbase;
+	uint64_t kern_physfree = physfree;
+    uint64_t kern_virt_base_addr = kernel_virtual_address & VIRTUAL_BASE;
+    // Loop through and set values
+    while(kern_physbase <= kern_physfree) {
+        uint64_t address = kern_virt_base_addr | kern_physbase;
+        page_table->entries[extract_table(address)] = kern_physbase | P | RW | US;
+        kern_physbase += PAGE_SIZE;
+    }
+    /* Remap video memory */
+    uint64_t video_mem_base = (uint64_t)VIDEO_MEM_START;
+    uint64_t video_mem_limit = (uint64_t)VIDEO_MEM_END;
+    uint64_t virtual_video_addr = (uint64_t)PHYS_TO_VIRT(video_mem_base);
+    // Get the page table
+    page_table = get_pt(pml4, virtual_video_addr);
+    // Compute the virtual base address
+    uint64_t video_virtual_base_addr = virtual_video_addr & VIRTUAL_BASE;
+    uint64_t video_phybase = video_mem_base;
+	uint64_t video_physfree = video_mem_limit;
+    // Loop and set entries
+    while(video_phybase <= video_physfree) {
+        uint64_t address = video_virtual_base_addr | kern_physbase;
+        page_table->entries[extract_table(address)] = video_phybase | P | RW | US;
+        video_phybase += PAGE_SIZE;
+    }
+    /* Set CR3 */
+    printk("Setting CR3\n");
+    pml4->entries[510] = (uint64_t)pml4 | P | RW | US; // ? Why do we do this?
 
-    printk("Page table address: %p\n", page_table);
-
-    /* TODO: Remap the kernel into the page */
-    /* TODO: Remap video memory */
-    /* TODO: Set CR3 */
+    __asm__ __volatile__("mov %0, %%cr3;"
+                        : "=r"((uint64_t)pml4)
+                        :
+                        :
+                        );
+    // reset freelist and videomemory pointers
+    free_pg_list = (uint32_t*) PHYS_TO_VIRT(free_pg_list);
+    map_video_mem();
+    printk("After setting CR3\n");
 }
 
 pt_t* get_pt(pml4_t *pml4, uint64_t virtual_address) {
@@ -89,7 +124,7 @@ pt_t* get_pt(pml4_t *pml4, uint64_t virtual_address) {
     uint64_t pd_index = extract_directory(virtual_address);
     // Now begin finding the base address for each step of the walk
     // also zero out lower 12 bits for permissions and copy the rest
-    uint64_t pdpt_base_addr = pml4->entries[pml4_index] & 0xFFFFFFFFFFFFF000;
+    uint64_t pdpt_base_addr = pml4->entries[pml4_index] & PG_ALIGN;
     // Check to see if we have empty entry
     if(pdpt_base_addr == 0x0) {
         // Get a new page
@@ -103,7 +138,7 @@ pt_t* get_pt(pml4_t *pml4, uint64_t virtual_address) {
         // FInally set the new page to pdpt_base
         pdpt_base_addr = (uint64_t)page;
     }
-    uint64_t pd_base_addr = ((pdpt_t*)pdpt_base_addr)->entries[pdpt_index] & 0xFFFFFFFFFFFFF000;
+    uint64_t pd_base_addr = ((pdpt_t*)pdpt_base_addr)->entries[pdpt_index] & PG_ALIGN;
     // Check to see if we have empty entry
     if(pd_base_addr == 0x0) {
         // Get a new page
@@ -117,7 +152,7 @@ pt_t* get_pt(pml4_t *pml4, uint64_t virtual_address) {
         // Finally set the new page to pd_base
         pd_base_addr = (uint64_t)page;
     }
-    uint64_t pt_base_addr = ((pd_t*)pd_base_addr)->entries[pd_index] & 0xFFFFFFFFFFFFF000;
+    uint64_t pt_base_addr = ((pd_t*)pd_base_addr)->entries[pd_index] & PG_ALIGN;
     if(pt_base_addr == 0x0) {
         // Get a new page
         pt_t *page = (pt_t*) kmalloc_pg();

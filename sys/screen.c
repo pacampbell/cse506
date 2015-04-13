@@ -1,5 +1,7 @@
+#define __KERNEL__
 #include <sys/screen.h>
 
+static volatile char *video_mem_base = VIDEO_MEM;
 static int cursor_x = 0, cursor_y = 0;
 
 void cls(void) {
@@ -28,9 +30,9 @@ void putck(char color, char c) {
     // Just dump the text if the string contains ascii
     if(c != '\n' && c != '\r' && c != '\b') {
         // Write the character
-        *(VIDEO_MEM + (cursor_y * (TERMINAL_COLUMNS * 2)) + cursor_x) = c;
+        *(video_mem_base + (cursor_y * (TERMINAL_COLUMNS * 2)) + cursor_x) = c;
         // Write the color information
-        *(VIDEO_MEM + (cursor_y * (TERMINAL_COLUMNS * 2)) + cursor_x + 1) = color;
+        *(video_mem_base + (cursor_y * (TERMINAL_COLUMNS * 2)) + cursor_x + 1) = color;
         // Increment the current cursor by 1 whole position (2-bytes)
         cursor_x += 2;
     }
@@ -58,17 +60,17 @@ void putck_xy(char color, char c, int x, int y) {
         // Adjust X to be divisble by 2
         x *= 2;
         // Write the character
-        *(VIDEO_MEM + (y * (TERMINAL_COLUMNS * 2)) + x) = c;
+        *(video_mem_base + (y * (TERMINAL_COLUMNS * 2)) + x) = c;
         // Write the color information
-        *(VIDEO_MEM + (y * (TERMINAL_COLUMNS * 2)) + x + 1) = color;
+        *(video_mem_base + (y * (TERMINAL_COLUMNS * 2)) + x + 1) = color;
     }
 }
 
 
 volatile char *video_seek(int offset) {
-    volatile char *address = VIDEO_MEM + (cursor_x + (cursor_y * 2) + (offset * 2));
-    if(address < VIDEO_MEM) {
-        address = VIDEO_MEM;
+    volatile char *address = video_mem_base + (cursor_x + (cursor_y * 2) + (offset * 2));
+    if(address < video_mem_base) {
+        address = video_mem_base;
     } else if(address > VIDEO_MEM_END) {
         address = VIDEO_MEM_END;
     }
@@ -79,10 +81,14 @@ void scroll(void) {
     int row_offset = TERMINAL_COLUMNS * 2;
     // Copy everything up
     for(int i = row_offset; i < VIDEO_MEM_END_OFFSET; i++) {
-        *(VIDEO_MEM + i - row_offset) = *(VIDEO_MEM + i);
+        *(video_mem_base + i - row_offset) = *(video_mem_base + i);
     }
     // Clear the last row
     for(int i = VIDEO_MEM_END_OFFSET - row_offset; i < VIDEO_MEM_END_OFFSET; i++) {
-        *(VIDEO_MEM + i) = 0;
+        *(video_mem_base + i) = 0;
     }
+}
+
+void map_video_mem(void) {
+    video_mem_base = (volatile char*)PHYS_TO_VIRT(video_mem_base);
 }

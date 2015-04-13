@@ -1,5 +1,6 @@
 #ifndef _SCREEN_H
 #define _SCREEN_H
+#include <sbunix/pgtable.h>
 
 #define VIDEO_MEM_START 0xb8000
 #define VIDEO_MEM (volatile char*)(VIDEO_MEM_START)
@@ -54,5 +55,10 @@ void scroll(void);
  */
 volatile char *video_seek(int offset);
 void setxy(int x, int y);
+
+/**
+ * Used for remapping the address of video memory to a virtual memory address.
+ */
+void map_video_mem(void);
 
 #endif

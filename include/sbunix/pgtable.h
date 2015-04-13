@@ -60,6 +60,12 @@
         uint64_t extract_offset(uint64_t virtual_address);
         uint64_t extract_bits(uint64_t virtual_address, unsigned short start, unsigned short end);
 
+        /* Macros for translating addresses; similar to linux kernel */
+        #define PG_ALIGN 0xFFFFFFFFF0000000
+        #define VIRTUAL_BASE 0xFFFFFFFFF0000000
+        #define VIRTUAL_OFFSET 0xFFFFFFFF80000000
+        #define PHYS_TO_VIRT(physical) (((uint64_t) physical + VIRTUAL_OFFSET))
+
         /**
          * Gets the page table using the virtual address
          * @param pml4 The top level paging structure in IA-32e and IA-64.
