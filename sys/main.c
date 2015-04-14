@@ -33,8 +33,8 @@ void start(uint32_t* modulep, void* physbase, void* physfree) {
     initializePaging((uint64_t)physbase, (uint64_t)physfree);
 
     // Setup timer and keyboard here
-    //init_timer(50);
-    //init_keyboard();
+    // init_timer(50);
+    // init_keyboard();
     __asm("sti");
 }
 

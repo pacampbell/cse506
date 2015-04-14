@@ -12,7 +12,7 @@ uint32_t *free_pg_list;
 void* free_pg_list_end;
 
 void* pg_to_addr(uint64_t pg) {
-    return (void*)(pg * PAGE_SIZE);// + ((char*)free_pg_list_end);
+    return (void*)((pg * PAGE_SIZE) + ((char*)free_pg_list_end));
 }
 
 int addr_to_pg(void* addr) {
@@ -79,8 +79,8 @@ void initializePaging(uint64_t physbase, uint64_t physfree) {
     memset(pml4, 0, PAGE_SIZE);
     // Travese multi-level pt structures to get the page table
     uint64_t kernel_virtual_address = (uint64_t)&kernmem;
-    // printk("Virtual Address: %p\n", kernel_virtual_address);
-    // printk("Physfree: %p\n", physfree);
+    printk("Virtual Address: %p\n", kernel_virtual_address);
+    printk("Physfree: %p\n", physfree);
     pt_t* page_table = get_pt(pml4, kernel_virtual_address);
     printk("Page Table: %p\n", page_table);
     /* Remap the kernel */
@@ -103,21 +103,21 @@ void initializePaging(uint64_t physbase, uint64_t physfree) {
         kern_physbase += PAGE_SIZE;
     }
     /* Remap video memory */
-    uint64_t video_mem_base = (uint64_t)VIDEO_MEM_START;
-    uint64_t video_mem_limit = (uint64_t)VIDEO_MEM_END;
-    uint64_t virtual_video_addr = (uint64_t)PHYS_TO_VIRT(video_mem_base);
+    // uint64_t video_mem_base = (uint64_t)VIDEO_MEM_START;
+    // uint64_t video_mem_limit = (uint64_t)VIDEO_MEM_END;
+    // uint64_t virtual_video_addr = (uint64_t)PHYS_TO_VIRT(video_mem_base);
     // Get the page table
-    page_table = get_pt(pml4, virtual_video_addr);
+    // page_table = get_pt(pml4, virtual_video_addr);
     // Compute the virtual base address
-    uint64_t video_virtual_base_addr = virtual_video_addr & VIRTUAL_BASE;
-    uint64_t video_phybase = video_mem_base;
-	uint64_t video_physfree = video_mem_limit;
+    // uint64_t video_virtual_base_addr = virtual_video_addr & VIRTUAL_BASE;
+    // uint64_t video_phybase = video_mem_base;
+	// uint64_t video_physfree = video_mem_limit;
     // Loop and set entries
-    while(video_phybase <= video_physfree) {
-        uint64_t address = video_virtual_base_addr | kern_physbase;
-        page_table->entries[extract_table(address)] = video_phybase | P | RW | US;
-        video_phybase += PAGE_SIZE;
-    }
+    // while(video_phybase <= video_physfree) {
+    //     uint64_t address = video_virtual_base_addr | kern_physbase;
+    //     page_table->entries[extract_table(address)] = video_phybase | P | RW | US;
+    //     video_phybase += PAGE_SIZE;
+    // }
     /* Set CR3 */
     // printk("Setting CR3\n");
     // pml4->entries[510] = (uint64_t)pml4 | P | RW | US; // ? Why do we do this?
@@ -128,7 +128,7 @@ void initializePaging(uint64_t physbase, uint64_t physfree) {
     //                      :
     //                      );
     // reset freelist and videomemory pointers
-    free_pg_list = (uint32_t*) PHYS_TO_VIRT(free_pg_list);
+    // free_pg_list = (uint32_t*) PHYS_TO_VIRT(free_pg_list);
     // map_video_mem();
     // printk("After setting CR3\n");
 }
