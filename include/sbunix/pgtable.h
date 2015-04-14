@@ -6,7 +6,7 @@
         #include <sys/defs.h>
 
         #define MAX_PAGES 8192
-        #define WORD_SIZE 32
+        #define WORD_SIZE_BITS 32
         #define PAGE_SIZE 0x1000
 
         /* Permission bits - Chapter 4-18 Vol 3A */
@@ -45,7 +45,7 @@
         uint32_t is_pg_free(int page);
         uint32_t set_pg_free(int page, int free);
         int get_free_page();
-        void* pg_to_addr(int pg);
+        void* pg_to_addr(uint64_t pg);
         int addr_to_pg(void* addr);
 
         void initializePaging(uint64_t physbase, uint64_t physfree);

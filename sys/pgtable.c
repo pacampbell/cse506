@@ -11,8 +11,8 @@ extern void *kern_base_ptr;
 uint32_t *free_pg_list;
 void* free_pg_list_end;
 
-void* pg_to_addr(int pg) {
-    return (pg * PAGE_SIZE) + ((char*)free_pg_list_end);
+void* pg_to_addr(uint64_t pg) {
+    return (void*)(pg * PAGE_SIZE);// + ((char*)free_pg_list_end);
 }
 
 int addr_to_pg(void* addr) {
@@ -36,7 +36,7 @@ int get_free_page() {
 void init_free_pg_list(void *physfree) {
     free_pg_list = (uint32_t *) physfree;
     //get how many words needed for bitmap
-    int size = (MAX_PAGES / WORD_SIZE);
+    int size = (MAX_PAGES / WORD_SIZE_BITS);
     uint32_t all_on = 0xFFFFFFFF;
 
     for(int i = 0; i < size; i++) {
@@ -50,8 +50,8 @@ void init_free_pg_list(void *physfree) {
  * page: the page count not the page address
  */
 uint32_t is_pg_free(int page) {
-    int word_num = (page / WORD_SIZE);
-    return free_pg_list[word_num] & ~(1 << (page / WORD_SIZE));
+    int word_num = (page / WORD_SIZE_BITS);
+    return free_pg_list[word_num] & ~(1 << (page / WORD_SIZE_BITS));
 }
 
 /**
@@ -59,11 +59,11 @@ uint32_t is_pg_free(int page) {
  * free: 0 will mark it not free, anything else sets it free
  */
 uint32_t set_pg_free(int page, int free) {
-    int word_num = (page / WORD_SIZE);
+    int word_num = (page / WORD_SIZE_BITS);
     if(free) {
-        free_pg_list[word_num] |= (1 << (page / WORD_SIZE));
+        free_pg_list[word_num] |= (1 << (page / WORD_SIZE_BITS));
     } else {
-        free_pg_list[word_num] &= ~(1 << (page / WORD_SIZE));
+        free_pg_list[word_num] &= ~(1 << (page / WORD_SIZE_BITS));
     }
 
     return free_pg_list[word_num];
