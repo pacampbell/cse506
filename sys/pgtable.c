@@ -5,8 +5,8 @@
 #include <sys/screen.h>
 
 extern char kernmem;
-extern void *kern_free_ptr;
-extern void *kern_base_ptr;
+extern void *kern_free;
+extern void *kern_base;
 
 uint32_t *free_pg_list;
 void* free_pg_list_end;
@@ -44,6 +44,8 @@ void init_free_pg_list(void *physfree) {
     }
 
     free_pg_list_end = free_pg_list + size;
+
+    kern_free += (uint64_t)(sizeof(char) * MAX_PAGES);
 }
 
 /**
@@ -72,19 +74,32 @@ uint32_t set_pg_free(int page, int free) {
 void initializePaging(uint64_t physbase, uint64_t physfree) {
     // Get a new page to setup the pml4
     pml4_t *pml4 = (pml4_t*) kmalloc_pg();
+    printk("pml4: %p\n", pml4);
     // Zero out the page
     memset(pml4, 0, PAGE_SIZE);
     // Travese multi-level pt structures to get the page table
     uint64_t kernel_virtual_address = (uint64_t)&kernmem;
+    // printk("Virtual Address: %p\n", kernel_virtual_address);
+    // printk("Physfree: %p\n", physfree);
     pt_t* page_table = get_pt(pml4, kernel_virtual_address);
+    printk("Page Table: %p\n", page_table);
     /* Remap the kernel */
-    uint64_t kern_physbase = physbase;
-	uint64_t kern_physfree = physfree;
+    uint64_t kern_physbase = (uint64_t)kern_base;
+	uint64_t kern_physfree = (uint64_t)kern_free;
     uint64_t kern_virt_base_addr = kernel_virtual_address & VIRTUAL_BASE;
+    // printk("Kernel virtual base address: %p\n", kern_virt_base_addr);
     // Loop through and set values
+    printk("kern_physbase: %p\n", kern_physbase);
+    printk("kern_physfree: %p\n", kern_physfree);
     while(kern_physbase <= kern_physfree) {
+        // printk("kern_virt_base_addr: %p\n", kern_virt_base_addr);
+        // printk("kern_physbase: %p\n", kern_physbase);
         uint64_t address = kern_virt_base_addr | kern_physbase;
+        // printk("kern_virt_base_addr | kern_physbase: %p\n", address);
+        // printk("address: %p\n", address);
+        // printk("Index: %d\n", extract_table(address));
         page_table->entries[extract_table(address)] = kern_physbase | P | RW | US;
+        // printk("Entry: %p\n", page_table->entries[extract_table(address)]);
         kern_physbase += PAGE_SIZE;
     }
     /* Remap video memory */
@@ -104,18 +119,18 @@ void initializePaging(uint64_t physbase, uint64_t physfree) {
         video_phybase += PAGE_SIZE;
     }
     /* Set CR3 */
-    printk("Setting CR3\n");
-    pml4->entries[510] = (uint64_t)pml4 | P | RW | US; // ? Why do we do this?
-
-    __asm__ __volatile__("mov %0, %%cr3;"
-                        : "=r"((uint64_t)pml4)
-                        :
-                        :
-                        );
+    // printk("Setting CR3\n");
+    // pml4->entries[510] = (uint64_t)pml4 | P | RW | US; // ? Why do we do this?
+    // //Set CR3
+    // __asm__ __volatile__("movq %0, %%cr3;"
+    //                      :
+    //                      : "r"((uint64_t)pml4)
+    //                      :
+    //                      );
     // reset freelist and videomemory pointers
     free_pg_list = (uint32_t*) PHYS_TO_VIRT(free_pg_list);
-    map_video_mem();
-    printk("After setting CR3\n");
+    // map_video_mem();
+    // printk("After setting CR3\n");
 }
 
 pt_t* get_pt(pml4_t *pml4, uint64_t virtual_address) {
@@ -130,7 +145,7 @@ pt_t* get_pt(pml4_t *pml4, uint64_t virtual_address) {
         // Get a new page
         pdpt_t *page = (pdpt_t*) kmalloc_pg();
         // Move the kernel free pointer by 1 page
-        kern_free_ptr = kern_free_ptr + PAGE_SIZE;
+        kern_free = kern_free + PAGE_SIZE;
         // Zero out the memory
         memset(page, 0, PAGE_SIZE);
         // Set the page into the current index and set permissions in the lower 12 bits
@@ -144,7 +159,7 @@ pt_t* get_pt(pml4_t *pml4, uint64_t virtual_address) {
         // Get a new page
         pd_t *page = (pd_t*) kmalloc_pg();
         // Move the kernel free pointer by 1 page
-        kern_free_ptr = kern_free_ptr + PAGE_SIZE;
+        kern_free = kern_free + PAGE_SIZE;
         // Zero out the memory
         memset(page, 0, PAGE_SIZE);
         // Set the page into the current index and set permissions in the lower 12 bits
@@ -157,7 +172,7 @@ pt_t* get_pt(pml4_t *pml4, uint64_t virtual_address) {
         // Get a new page
         pt_t *page = (pt_t*) kmalloc_pg();
         // Move the kernel free pointer by 1 page
-        kern_free_ptr = kern_free_ptr + PAGE_SIZE;
+        kern_free = kern_free + PAGE_SIZE;
         // Zero out the memory
         memset(page, 0, PAGE_SIZE);
         // Set the page into the current index and set permissions in the lower 12 bits
@@ -171,7 +186,9 @@ pt_t* get_pt(pml4_t *pml4, uint64_t virtual_address) {
 void* kmalloc_pg(void) {
     int page_index = get_free_page();       // Get a free page from the page allocator
     set_pg_free(page_index, 0);             // Mark the page in use
-    return pg_to_addr(page_index);          // Convert the page index to an address
+    void *address = pg_to_addr(page_index);          // Convert the page index to an address
+    printk("kmalloc addr: %p\n", address);
+    return address;
 }
 
 inline uint64_t extract_bits(uint64_t virtual_address, unsigned short start, unsigned short end) {

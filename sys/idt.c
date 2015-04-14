@@ -74,7 +74,7 @@ void init_idt(void) {
     idt_set_gate(46, (uint64_t)irq_14, 0x08, 0x8E);
     idt_set_gate(47, (uint64_t)irq_15, 0x08, 0x8E);
 
-    printk("PIC IRQS set\n");
+    //printk("PIC IRQS set\n");
 
     /* TODO: Set kernel defined interrupts here */
 

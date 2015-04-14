@@ -63,7 +63,7 @@
         /* Macros for translating addresses; similar to linux kernel */
         #define PG_ALIGN 0xFFFFFFFFF0000000
         #define VIRTUAL_BASE 0xFFFFFFFFF0000000
-        #define VIRTUAL_OFFSET 0xFFFFFFFF80000000
+        #define VIRTUAL_OFFSET 0xFFFFFFFF80000000               // kernmem in linker script
         #define PHYS_TO_VIRT(physical) (((uint64_t) physical + VIRTUAL_OFFSET))
 
         /**
