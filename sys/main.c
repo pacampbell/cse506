@@ -19,8 +19,9 @@ void start(uint32_t* modulep, void* physbase, void* physfree) {
     // Save pointers for kernel
     kern_free = physfree;
     kern_base = physbase;
-    // printk("physbase: %p physfree: %p\n", physfree, physbase);
-    // physfree = kern_free;
+    // Initialize the page free list
+    init_free_pg_list(physfree);
+    physfree = kern_free;
     while(modulep[0] != 0x9001) modulep += modulep[1]+2;
     for(smap = (struct smap_t*)(modulep+2); smap < (struct smap_t*)((char*)modulep+modulep[1]+2*4); ++smap) {
         if (smap->type == 1 /* memory */ && smap->length != 0) {
@@ -28,8 +29,6 @@ void start(uint32_t* modulep, void* physbase, void* physfree) {
         }
     }
     // printk("tarfs in [%p:%p]\n", &_binary_tarfs_start, &_binary_tarfs_end);
-    // Initialize the page free list
-    init_free_pg_list(physfree);
     // Setup paging
     initializePaging((uint64_t)physbase, (uint64_t)physfree);
 
