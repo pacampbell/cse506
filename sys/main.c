@@ -36,7 +36,7 @@ void start(uint32_t* modulep, void* physbase, void* physfree) {
     // Setup timer and keyboard here
     // init_timer(50);
     // init_keyboard();
-    // __asm("sti");
+    __asm("sti");
 
     // kmain();
 }
