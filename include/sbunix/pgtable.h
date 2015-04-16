@@ -60,6 +60,9 @@
         uint64_t extract_offset(uint64_t virtual_address);
         uint64_t extract_bits(uint64_t virtual_address, unsigned short start, unsigned short end);
 
+        void set_cr3(pml4_t *pml4);
+        pml4_t* get_cr3(void);
+
         /* Macros for translating addresses; similar to linux kernel */
         #define PG_ALIGN 0xFFFFFFFFF0000000
         #define VIRTUAL_BASE 0xFFFFFFFFF0000000
