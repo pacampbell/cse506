@@ -139,7 +139,7 @@ void initializePaging(uint64_t physbase, uint64_t physfree) {
     // printk("Setting CR3\n");
     // pml4->entries[510] = (uint64_t)pml4 | P | RW | US; // ? Why do we do this?
     // Set CR3
-    // set_cr3(pml4);
+    set_cr3(pml4);
     // reset freelist and videomemory pointers
     // free_pg_list = (uint32_t*) PHYS_TO_VIRT(free_pg_list);
     // map_video_mem();
