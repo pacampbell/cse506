@@ -71,6 +71,15 @@ uint32_t set_pg_free(int page, int free) {
     return free_pg_list[word_num];
 }
 
+void set_kern_pg_used(uint64_t beg, uint64_t end) {
+    int beg_i = beg / PAGE_SIZE;
+    int end_i = end / PAGE_SIZE;
+
+    for(; beg_i < end_i; beg_i++) {
+       set_pg_free(beg_i, (uint64_t)kern_base <= (beg_i * PAGE_SIZE) && (beg_i * PAGE_SIZE) <= (uint64_t)kern_free);
+    }
+}
+
 void initializePaging(uint64_t physbase, uint64_t physfree) {
     // Get a new page to setup the pml4
     pml4_t *pml4 = (pml4_t*) kmalloc_pg();
@@ -130,7 +139,7 @@ void initializePaging(uint64_t physbase, uint64_t physfree) {
     // printk("Setting CR3\n");
     // pml4->entries[510] = (uint64_t)pml4 | P | RW | US; // ? Why do we do this?
     // Set CR3
-    // set_cr3(pml4);
+    set_cr3(pml4);
     // reset freelist and videomemory pointers
     // free_pg_list = (uint32_t*) PHYS_TO_VIRT(free_pg_list);
     // map_video_mem();
