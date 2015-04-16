@@ -47,6 +47,7 @@
         int get_free_page();
         void* pg_to_addr(uint64_t pg);
         int addr_to_pg(void* addr);
+        void set_kern_pg_used(uint64_t beg, uint64_t end);
 
         void initializePaging(uint64_t physbase, uint64_t physfree);
         void loadPageDirectory(uint64_t *address);
