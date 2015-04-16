@@ -26,18 +26,12 @@ void start(uint32_t* modulep, void* physbase, void* physfree) {
     for(smap = (struct smap_t*)(modulep+2); smap < (struct smap_t*)((char*)modulep+modulep[1]+2*4); ++smap) {
         if (smap->type == 1 /* memory */ && smap->length != 0) {
             // printk("Available Physical Memory [%x-%x]\n", smap->base, smap->base + smap->length);
+            set_kern_pg_used(smap->base,smap->base + smap->length);
         }
     }
     // printk("tarfs in [%p:%p]\n", &_binary_tarfs_start, &_binary_tarfs_end);
     // Setup paging
     initializePaging((uint64_t)physbase, (uint64_t)physfree);
-
-    while(modulep[0] != 0x9001) modulep += modulep[1]+2;
-    for(smap = (struct smap_t*)(modulep+2); smap < (struct smap_t*)((char*)modulep+modulep[1]+2*4); ++smap) {
-        if (smap->type == 1 /* memory */ && smap->length != 0) {
-            set_kern_pg_used(smap->base,smap->base + smap->length);
-        }
-    }
 
     // Setup timer and keyboard here
     // init_timer(50);
