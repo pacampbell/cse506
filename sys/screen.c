@@ -89,6 +89,10 @@ void scroll(void) {
     }
 }
 
+void printk(char *fmt, ...);
+
 void map_video_mem(void) {
+    printk("in screen.c:video_mem_base:before %p\n", video_mem_base);
     video_mem_base = (volatile char*)PHYS_TO_VIRT(video_mem_base);
+    printk("in screen.c:video_mem_base:after %p\n", video_mem_base);
 }
