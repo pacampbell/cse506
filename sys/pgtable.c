@@ -94,7 +94,7 @@ void initializePaging(uint64_t physbase, uint64_t physfree) {
     // printk("Virtual Address: %p\n", kernel_virtual_address);
     // printk("Physfree: %p\n", physfree);
     pt_t* page_table = get_pt(pml4, kernel_virtual_address);
-    // printk("Page Table: %p\n", page_table);
+    printk("Kernel Page Table: %p\n", page_table);
     /* Remap the kernel */
     uint64_t kern_physbase = (uint64_t)kern_base;
 	uint64_t kern_physfree = (uint64_t)kern_free;
@@ -120,43 +120,37 @@ void initializePaging(uint64_t physbase, uint64_t physfree) {
         // int k = 0;
         // while(k++ < 10000000);
     }
-    printk("Total Pages Mapped: %d\n", pages);
+    // printk("Total Pages Mapped: %d\n", pages);
     printk("Address of last pte: %p\n", page_table->entries[66]);
     /* Remap video memory */
     // FIXME: Code under here cause faults
-    uint64_t video_mem_base = (uint64_t)VIDEO_MEM_START;
-    uint64_t video_mem_limit = (uint64_t)VIDEO_MEM_END;
-    printk("video_mem_base: %p\n", video_mem_base);
-    printk("video_mem_limit: %p\n", video_mem_limit);
-    uint64_t virtual_video_addr = (uint64_t)PHYS_TO_VIRT(video_mem_base);
-    printk("virtual_video_addr: %p\n", virtual_video_addr);
+    // Map the video memory
+    uint64_t video_phybase = VIDEO_MEM_START;
+    // uint64_t video_physfree = video_mem_limit;
+    uint64_t video_vma = video_phybase | kern_virt_base_addr;
+    printk("video_vma: %p\n", video_vma);
     // Get the page table
-    page_table = get_pt(pml4, virtual_video_addr);
-    // Compute the virtual base address
-    uint64_t video_phybase = video_mem_base;
-    uint64_t video_physfree = video_mem_limit;
-    uint64_t video_virtual_base_addr = PHYS_TO_VIRT(video_phybase);
-    printk("video_virtual_base_addr: %p\n", video_virtual_base_addr);
-    // Loop and set entries
-    while(video_phybase <= video_physfree) {
-         uint64_t address = video_virtual_base_addr | video_phybase;
-         page_table->entries[extract_table(address)] = video_phybase | P | RW | US;
-         printk("video_virtual: %p\n", address);
-         printk("video_phybase: %p\n", video_phybase);
-         video_phybase += PAGE_SIZE;
-         printk("PTE: %p\n", page_table->entries[extract_table(address)]);
-    }
+    page_table = get_pt(pml4, video_vma);
+    printk("video pt: %p\n", page_table);
+    // Set video mem page permissions
+    page_table->entries[extract_table(video_vma)] = video_phybase | P | RW | US;
+    printk("video: %p\n", page_table->entries[extract_table(video_vma)]);
+    // Increment the kernel memory by 1 more page
+    kern_physbase += PAGE_SIZE;
+    // tell the driver to use new address
+    map_video_mem(video_vma);
     // __asm__ __volatile__("cli; hlt;");
-    printk("video_phybase: %p\n", video_phybase);
+    // printk("video_phybase: %p\n", video_phybase);
     /* Set CR3 */
-    printk("Setting CR3\n");
+    // printk("Setting CR3\n");
     // pml4->entries[510] = (uint64_t)pml4 | P | RW | US; // ? Why do we do this?
     // Set CR3
     set_cr3(pml4);
+    //__asm__ __volatile__("cli; hlt;");
     // reset freelist and videomemory pointers
-    free_pg_list = (uint32_t*) PHYS_TO_VIRT(free_pg_list);
-    map_video_mem();
-    // printk("After setting CR3\n");
+    // free_pg_list = (uint32_t*) PHYS_TO_VIRT(free_pg_list);
+    // map_video_mem();
+    printk("After setting CR3\n");
 }
 
 pt_t* get_pt(pml4_t *pml4, uint64_t virtual_address) {
@@ -165,9 +159,9 @@ pt_t* get_pt(pml4_t *pml4, uint64_t virtual_address) {
     uint64_t pd_index = extract_directory(virtual_address);
     // Now begin finding the base address for each step of the walk
     // also zero out lower 12 bits for permissions and copy the rest
-    printk("pml4 index: %d\n", pml4_index);
+    //printk("pml4 index: %d\n", pml4_index);
     uint64_t pdpt_base_addr = pml4->entries[pml4_index] & PG_ALIGN;
-    printk("pdpt_base_addr: %p\n", pdpt_base_addr);
+    //printk("pdpt_base_addr: %p\n", pdpt_base_addr);
     // Check to see if we have empty entry
     if(pdpt_base_addr == 0x0) {
         // Get a new page
@@ -178,14 +172,14 @@ pt_t* get_pt(pml4_t *pml4, uint64_t virtual_address) {
         memset(page, 0, PAGE_SIZE);
         // Set the page into the current index and set permissions in the lower 12 bits
         pml4->entries[pml4_index] = ((uint64_t)page) | P | RW | US;
-        printk("pml4e final: %p\n", pml4->entries[pml4_index]);
+        //printk("pml4e final: %p\n", pml4->entries[pml4_index]);
         // Finally set the new page to pdpt_base
         pdpt_base_addr = (uint64_t)page;
     }
 
-    printk("pdpt_index: %d\n", pdpt_index);
+    //printk("pdpt_index: %d\n", pdpt_index);
     uint64_t pd_base_addr = ((pdpt_t*)pdpt_base_addr)->entries[pdpt_index] & PG_ALIGN;
-    printk("pd_base_addr: %p\n", pd_base_addr);
+    //printk("pd_base_addr: %p\n", pd_base_addr);
     // Check to see if we have empty entry
     if(pd_base_addr == 0x0) {
         // Get a new page
@@ -196,14 +190,14 @@ pt_t* get_pt(pml4_t *pml4, uint64_t virtual_address) {
         memset(page, 0, PAGE_SIZE);
         // Set the page into the current index and set permissions in the lower 12 bits
         ((pdpt_t*)pdpt_base_addr)->entries[pdpt_index] = ((uint64_t)page) | P | RW | US;
-        printk("pdpte final: %p\n", ((pdpt_t*)pdpt_base_addr)->entries[pdpt_index]);
+        //printk("pdpte final: %p\n", ((pdpt_t*)pdpt_base_addr)->entries[pdpt_index]);
         // Finally set the new page to pd_base
         pd_base_addr = (uint64_t)page;
     }
 
-    printk("pd_index: %d\n", pd_index);
+    //printk("pd_index: %d\n", pd_index);
     uint64_t pt_base_addr = ((pd_t*)pd_base_addr)->entries[pd_index] & PG_ALIGN;
-    printk("pt_base_addr: %p\n", pt_base_addr);
+    //printk("pt_base_addr: %p\n", pt_base_addr);
     if(pt_base_addr == 0x0) {
         // Get a new page
         pt_t *page = (pt_t*) kmalloc_pg();
@@ -213,7 +207,7 @@ pt_t* get_pt(pml4_t *pml4, uint64_t virtual_address) {
         memset(page, 0, PAGE_SIZE);
         // Set the page into the current index and set permissions in the lower 12 bits
         ((pd_t*)pd_base_addr)->entries[pd_index] = ((uint64_t)page) | P | RW | US;
-        printk("pte final: %p\n", ((pd_t*)pd_base_addr)->entries[pd_index]);
+        //printk("pte final: %p\n", ((pd_t*)pd_base_addr)->entries[pd_index]);
         // Finally set the new page to pd_base
         pt_base_addr = (uint64_t)page;
     }
@@ -225,7 +219,7 @@ void* kmalloc_pg(void) {
     int page_index = get_free_page();       // Get a free page from the page allocator
     set_pg_free(page_index, 0);             // Mark the page in use
     void *address = pg_to_addr(page_index);          // Convert the page index to an address
-    printk("kmalloc addr: %p\n", address);
+    //printk("kmalloc addr: %p\n", address);
     return address;
 }
 

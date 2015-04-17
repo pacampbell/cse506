@@ -58,7 +58,8 @@ void setxy(int x, int y);
 
 /**
  * Used for remapping the address of video memory to a virtual memory address.
+ * @param vma Virtual memory address that maps to the start of video memory.
  */
-void map_video_mem(void);
+ void map_video_mem(uint64_t vma);
 
 #endif
