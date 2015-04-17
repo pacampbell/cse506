@@ -86,71 +86,42 @@ void set_kern_pg_used(uint64_t beg, uint64_t end) {
 void initializePaging(uint64_t physbase, uint64_t physfree) {
     // Get a new page to setup the pml4
     pml4_t *pml4 = (pml4_t*) kmalloc_pg();
-    // printk("pml4: %p\n", pml4);
     // Zero out the page
     memset(pml4, 0, PAGE_SIZE);
     // Travese multi-level pt structures to get the page table
     uint64_t kernel_virtual_address = (uint64_t)&kernmem;
-    // printk("Virtual Address: %p\n", kernel_virtual_address);
-    // printk("Physfree: %p\n", physfree);
     pt_t* page_table = get_pt(pml4, kernel_virtual_address);
-    printk("Kernel Page Table: %p\n", page_table);
     /* Remap the kernel */
     uint64_t kern_physbase = (uint64_t)kern_base;
 	uint64_t kern_physfree = (uint64_t)kern_free;
     uint64_t kern_virt_base_addr = kernel_virtual_address & VIRTUAL_BASE;
-    // printk("Kernel virtual base address: %p\n", kern_virt_base_addr);
     // Loop through and set values
-    // printk("kern_physbase: %p\n", kern_physbase);
-    // printk("kern_physfree: %p\n", kern_physfree);
-    // printk("kern_virt_base_addr: %p\n", kern_virt_base_addr);
-    int pages = 0;
+    uint64_t kern_vma = 0;
     while(kern_physbase <= kern_physfree) {
-        // printk("kern_virt_base_addr: %p\n", kern_virt_base_addr);
-        // printk("kern_physbase: %p\n", kern_physbase);
-        uint64_t address = kern_virt_base_addr | kern_physbase;
-        // printk("kern_virt_base_addr | kern_physbase: %p\n", address);
-        // printk("address: %p\n", address);
-        // printk("Index: %d\n", extract_table(address));
-        page_table->entries[extract_table(address)] = kern_physbase | P | RW | US;
-        // printk("Entry: %p\n", page_table->entries[extract_table(address)]);
+        kern_vma = kern_virt_base_addr | kern_physbase;
+        page_table->entries[extract_table(kern_vma)] = kern_physbase | P | RW | US;
         kern_physbase += PAGE_SIZE;
-        pages++;
-        // printk("PTE: %p\n", page_table->entries[extract_table(address)]);
-        // int k = 0;
-        // while(k++ < 10000000);
     }
-    // printk("Total Pages Mapped: %d\n", pages);
-    printk("Address of last pte: %p\n", page_table->entries[66]);
-    /* Remap video memory */
-    // FIXME: Code under here cause faults
-    // Map the video memory
+    /* Remap video memory; its only 4000 bytes so fits in 1 page */
     uint64_t video_phybase = VIDEO_MEM_START;
     // uint64_t video_physfree = video_mem_limit;
     uint64_t video_vma = video_phybase | kern_virt_base_addr;
-    printk("video_vma: %p\n", video_vma);
     // Get the page table
     page_table = get_pt(pml4, video_vma);
-    printk("video pt: %p\n", page_table);
     // Set video mem page permissions
     page_table->entries[extract_table(video_vma)] = video_phybase | P | RW | US;
-    printk("video: %p\n", page_table->entries[extract_table(video_vma)]);
     // Increment the kernel memory by 1 more page
     kern_physbase += PAGE_SIZE;
-    // tell the driver to use new address
-    map_video_mem(video_vma);
-    // __asm__ __volatile__("cli; hlt;");
-    // printk("video_phybase: %p\n", video_phybase);
     /* Set CR3 */
-    // printk("Setting CR3\n");
-    // pml4->entries[510] = (uint64_t)pml4 | P | RW | US; // ? Why do we do this?
+    // pml4->entries[510] = (uint64_t)pml4 | P | RW | US; // self referencing impl...
     // Set CR3
     set_cr3(pml4);
-    //__asm__ __volatile__("cli; hlt;");
+    // tell the print driver to use new address
+    map_video_mem(video_vma);
     // reset freelist and videomemory pointers
     // free_pg_list = (uint32_t*) PHYS_TO_VIRT(free_pg_list);
-    // map_video_mem();
-    printk("After setting CR3\n");
+    printk("Remapped kernel mem [%p:%p]\n", kernel_virtual_address, kern_vma);
+    printk("Remapped video mem [%p:%p]\n", video_vma, video_vma + 4000);
 }
 
 pt_t* get_pt(pml4_t *pml4, uint64_t virtual_address) {

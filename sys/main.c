@@ -29,13 +29,13 @@ void start(uint32_t* modulep, void* physbase, void* physfree) {
             set_kern_pg_used(smap->base,smap->base + smap->length);
         }
     }
-    // printk("tarfs in [%p:%p]\n", &_binary_tarfs_start, &_binary_tarfs_end);
+    printk("tarfs in [%p:%p]\n", &_binary_tarfs_start, &_binary_tarfs_end);
     // Setup paging
     initializePaging((uint64_t)physbase, (uint64_t)physfree);
 
     // Setup timer and keyboard here
-    // init_timer(50);
-    // init_keyboard();
+    init_timer(50);
+    init_keyboard();
     __asm("sti");
 
     // kmain();
