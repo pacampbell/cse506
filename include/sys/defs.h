@@ -15,5 +15,12 @@ typedef unsigned char   uint8_t;
 // typedef          char    int8_t;
 
 typedef uint64_t size_t;
+typedef int64_t ssize_t;
+
+/* boolean typedefs */
+typedef enum _bool {
+    true = 1,
+    false = 0
+} bool;
 
 #endif /* _DEFS_H */
