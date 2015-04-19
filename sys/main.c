@@ -7,6 +7,7 @@
 #include <sys/keyboard.h>
 #include <sbunix/kernel.h>
 #include <sbunix/pgtable.h>
+#include <sbunix/kmain.h>
 
 void *kern_free;
 void *kern_base;
@@ -37,8 +38,8 @@ void start(uint32_t* modulep, void* physbase, void* physfree) {
     init_timer(50);
     init_keyboard();
     __asm("sti");
-
-    // kmain();
+    // Initial work is setup, move to the kernel main function
+    kmain();
 }
 
 #define INITIAL_STACK_SIZE 4096
