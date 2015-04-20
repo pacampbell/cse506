@@ -69,6 +69,7 @@
         #define VIRTUAL_BASE 0xFFFFFFFFF0000000
         #define VIRTUAL_OFFSET 0xFFFFFFFF80000000               // kernmem in linker script
         #define PHYS_TO_VIRT(physical) (((uint64_t) physical + VIRTUAL_OFFSET))
+        #define VIRT_TO_PHYS(virtual) (((uint64_t) virtual - VIRTUAL_OFFSET))
 
         /**
          * Gets the page table using the virtual address

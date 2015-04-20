@@ -89,8 +89,6 @@ void scroll(void) {
     }
 }
 
-void printk(char *fmt, ...);
-
 void map_video_mem(uint64_t vma) {
     video_mem_base = (volatile char*)vma;
 }

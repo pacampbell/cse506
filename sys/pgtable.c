@@ -119,7 +119,7 @@ void initializePaging(uint64_t physbase, uint64_t physfree) {
     // tell the print driver to use new address
     map_video_mem(video_vma);
     // reset freelist and videomemory pointers
-    // free_pg_list = (uint32_t*) PHYS_TO_VIRT(free_pg_list);
+    free_pg_list = (uint32_t*) PHYS_TO_VIRT(free_pg_list);
     printk("Remapped kernel mem [%p:%p]\n", kernel_virtual_address, kern_vma);
     printk("Remapped video mem [%p:%p]\n", video_vma, video_vma + 4000);
 }

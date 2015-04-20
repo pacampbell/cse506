@@ -5,6 +5,7 @@
 #include <sys/idt.h>
 #include <sys/tarfs.h>
 #include <sys/keyboard.h>
+#include <sys/task.h>
 #include <sbunix/kernel.h>
 #include <sbunix/pgtable.h>
 #include <sbunix/kmain.h>
@@ -38,8 +39,10 @@ void start(uint32_t* modulep, void* physbase, void* physfree) {
     init_timer(50);
     init_keyboard();
     __asm("sti");
-    // Initial work is setup, move to the kernel main function
-    kmain();
+    // Initialize the scheduler
+    initialize_scheudler(kmain);
+    // Start the scheduler
+    preempt();
 }
 
 #define INITIAL_STACK_SIZE 4096
