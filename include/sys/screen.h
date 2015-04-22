@@ -60,6 +60,13 @@ void setxy(int x, int y);
  * Used for remapping the address of video memory to a virtual memory address.
  * @param vma Virtual memory address that maps to the start of video memory.
  */
- void map_video_mem(uint64_t vma);
+void map_video_mem(uint64_t vma);
+
+/**
+ * Clears a row of the display starting at x to the end.
+ * @param x The starting x location to clear from.
+ * @param y The row we are clearing.
+ */
+void clear_row(int x, int y);
 
 #endif
