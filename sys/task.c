@@ -167,7 +167,7 @@ void preempt(void) {
     }
     printk("REMOVE ME %p\n", task);
     // Attempt to switch tasks; Assembly magic voodo
-    // switch_tasks(task, current_task);
+    switch_tasks(task, current_task);
 }
 
 void switch_tasks(Task *old, Task *new) {
