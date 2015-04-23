@@ -3,12 +3,12 @@
 #include <sys/sbunix.h>
 #include <sys/task.h>
 
-void awesomefunc() {
+void awesomefunc(void) {
     printk("Scheduled task!!! woot woot\n");
     preempt();
 }
 
-void idle() {
+void idle(void) {
     while(1) {
         printk("idle loop\n");
         preempt();
@@ -17,7 +17,8 @@ void idle() {
 
 void kmain(void) {
     printk("In kmain!\n");
-    create_kernel_task("idle", idle);
+    Task *idle_task = create_kernel_task("idle", idle);
+    dump_task(idle_task);
     create_kernel_task("awesomefunc", awesomefunc);
     /* Now schedule the task! */
     preempt();

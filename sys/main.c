@@ -38,6 +38,7 @@ void start(uint32_t* modulep, void* physbase, void* physfree) {
     initializePaging((uint64_t)physbase, (uint64_t)physfree);
     // Create the kmain task
     Task *kmain_task = create_kernel_task("KMAIN", kmain);
+    dump_task(kmain_task);
     // Setup timer and keyboard here
     init_timer(50);
     init_keyboard();
