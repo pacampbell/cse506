@@ -3,6 +3,9 @@
 #else
     #ifndef _PGTABLE_H
     #define _PGTABLE_H
+        #include <sys/sbunix.h>
+        #include <sbunix/string.h>
+        #include <sys/screen.h>
         #include <sys/defs.h>
 
         #define MAX_PAGES 8192

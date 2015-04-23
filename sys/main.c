@@ -7,7 +7,7 @@
 #include <sys/keyboard.h>
 #include <sys/task.h>
 #include <sbunix/kernel.h>
-#include <sbunix/pgtable.h>
+#include <sys/pgtable.h>
 #include <sbunix/kmain.h>
 
 void *kern_free;
@@ -34,15 +34,14 @@ void start(uint32_t* modulep, void* physbase, void* physfree) {
     printk("tarfs in [%p:%p]\n", &_binary_tarfs_start, &_binary_tarfs_end);
     // Setup paging
     initializePaging((uint64_t)physbase, (uint64_t)physfree);
-
+    // Create the kmain task
+    Task *kmain_task = create_kernel_task("KMAIN", kmain);
     // Setup timer and keyboard here
     init_timer(50);
     init_keyboard();
     __asm("sti");
-    // Initialize the scheduler
-    initialize_scheudler(kmain);
-    // Start the scheduler
-    preempt();
+    // Start kmain
+    set_task(kmain_task);
 }
 
 #define INITIAL_STACK_SIZE 4096

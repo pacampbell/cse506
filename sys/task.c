@@ -1,7 +1,7 @@
 #define __KERNEL__
 #include <sys/task.h>
 
-extern void printk();
+extern struct tss_t tss;
 
 static Task *tasks;
 static Task *current_task;
@@ -78,61 +78,85 @@ static void dump_task(Task *task) {
             static char *state_map[5] = {"NEW", "READY", "RUNNING", "WAITING", "TERMINATED"};
             /* Dump kernel meta data */
             printk("[Task State Dump]\n");
-            printk("name: %s pid: %d\n", task->name == NULL ? "NULL" : task->name, task->pid);
+            printk("Address: %p\n", task);
+            printk("name: %s pid: %d type: %s\n", task->name == NULL ? "NULL" : task->name, task->pid, task->type == KERNEL ? "KERNEL" : "USER");
             printk("state: [%s](%d) priority: 0x%x\n", state_map[task->state], task->state, task->priority);
             printk("previous: %p next: %p\n", task->prev, task->next);
             printk("stack: %p\n", task->stack);
-            /* Dump register contents */
+            // /* Dump register contents */
             printk("[Register Dump]\n");
             printk("rax: 0x%x rbx: 0x%x rcx: 0x%x rdx: 0x%x\n", task->registers.rax, task->registers.rbx, task->registers.rcx, task->registers.rdx);
             printk(" r8: 0x%x  r9: 0x%x r10: 0x%x r11: 0x%x\n", task->registers.r8, task->registers.r9, task->registers.r10, task->registers.r11);
             printk("r12: 0x%x r13: 0x%x r14: 0x%x r15: 0x%x\n", task->registers.r12, task->registers.r13, task->registers.r14, task->registers.r15);
             printk("rsi: 0x%x rdi: 0x%x\n", task->registers.rsi, task->registers.rdi);
-            printk("rbp: 0x%x rip: 0x%x rsp: 0x%x\n", task->registers.rbp, task->registers.rip, task->registers.rsp);
-            printk("cr3: 0x%x rflags: 0x%x\n", task->registers.cr3, task->registers.rflags);
+            printk("rip: %p rbp: %p rsp: %p\n", task->registers.rip, task->registers.rbp, task->registers.rsp);
+            printk("cr3: %p rflags: 0x%x\n\n", task->registers.cr3, task->registers.rflags);
         }
     #endif
 }
 
-void initialize_scheudler(void(*kmain)()) {
-    // Allocate a new task
-    Task *kernel_task = (Task*) PHYS_TO_VIRT(kmalloc_pg());
-    memset(kernel_task, 0, sizeof(Task));
-    // Get the kernel pml4
+Task* create_kernel_task(const char *name, void(*code)()) {
+    // Get the kernel page tables
     pml4_t *kernel_pml4 = (pml4_t *)get_cr3();
     // Get the kernel flags
     uint64_t kernel_rflags = get_rflags();
-    // Create new task
-    create_new_task(kernel_task, kmain, "KERNEL", MAX_PRIORITY, kernel_rflags, (uint64_t*)kernel_pml4);
-    // Dump the task
-    dump_task(kernel_task);
-    // Assign the kernel as the current task
-    current_task = kernel_task;
-    // Add the kernel to the list of tasks
+    // Allocate space for a new kernel task
+    Task *kernel_task = (Task*) PHYS_TO_VIRT(kmalloc_pg());
+    // Create space for a new stack
+    uint64_t kernel_task_stack = (uint64_t) PHYS_TO_VIRT(kmalloc_pg());
+    // Initialize the task
+    create_new_task(kernel_task, name, KERNEL, MAX_PRIORITY, kernel_rflags,
+                    kernel_pml4, kernel_task_stack, code);
+    // Add the task to the scheduler list
     insert_into_list(&tasks, kernel_task);
+    // Print out contents of the task
+    dump_task(kernel_task);
+    return kernel_task;
 }
 
-void initialize_task(const char *name, priority_t priority, void(*main)()) {
-    // Allocate a new task
-    Task *task = (Task*) PHYS_TO_VIRT(kmalloc_pg());
-    memset(task, 0, sizeof(Task));
-    // Allocate a new pml4
-    pml4_t *task_pml4 = (pml4_t *) PHYS_TO_VIRT(kmalloc_pg());
-    memset(task_pml4, 0, PAGE_SIZE);        // Zero out memory
-    task_pml4 = (pml4_t *) VIRT_TO_PHYS(task_pml4); // Convert address back to physical for cr3
-    // Grab the current state of rflags
-    uint64_t rflags = get_rflags();
-    // Create new task
-    create_new_task(task, main, name, priority, rflags, (uint64_t*)task_pml4);
-    // Insert this task into the list
-    insert_into_list(&tasks, task);
+void setup_stack(Task *task) {
+    __asm__ __volatile__(
+        /* Store the initial stack pointer */
+        "movq %%rsp, %%rax;"
+        "movq %1, %%rcx;"
+        /* Set the stack pointer to the new tasks stack */
+        "movq %2, %%rsp;"
+        /* Push the instruction pointer onto the stack */
+        "pushq %3;"
+        /* Push all of the registers onto the stack */
+        "pushq %4;" // rbp
+        "pushq %5;" // rax
+        "pushq %6;" // rbx
+        "pushq %7;" // rcx
+        "pushq %8;" // rdx
+        "pushq %9;" // rsi
+        "pushq %10;" // rdi
+        "pushq %11;" // r8
+        "pushq %12;" // r9
+        "pushq %13;" // r10
+        "pushq %14;" // r11
+        "pushq %15;" // r12
+        "pushq %16;" // r13
+        "pushq %17;" // r14
+        "pushq %18;" // r15
+        /* Save the new value of the stack pointer */
+        "movq %%rsp, 64(%%rcx);"
+        /* Set the stack pointer back to what it was */
+        "movq %%rax, %%rsp;"
+        : "=r"(task)
+        : "m"(task), "m"(task->registers.rsp), "m"(task->registers.rip), "m"(task->registers.rbp), "m"(task->registers.rax), "m"(task->registers.rbx), "m"(task->registers.rcx), "m"(task->registers.rdx), "m"(task->registers.rsi), "m"(task->registers.rdi), "m"(task->registers.r8), "m"(task->registers.r9), "m"(task->registers.r10), "m"(task->registers.r11), "m"(task->registers.r12), "m"(task->registers.r13), "m"(task->registers.r14), "m"(task->registers.r15)
+        : "rax", "rcx", "rdi"
+    );
 }
 
-void create_new_task(Task* task, void(*main)(), const char *name, priority_t priority, uint64_t flags, uint64_t *pml4) {
+Task* create_new_task(Task* task, const char *name, task_type_t type, priority_t priority, uint64_t flags, pml4_t *pml4, uint64_t stack, void(*main)()) {
     task->name = name;
     task->priority = priority;
     task->state = NEW;
+    task->type = type;
     task->pid = allocate_pid();
+    /* Set the address of the stack */
+    task->stack = stack;
     /* Zero out the general purpose registers */
     task->registers.rax = 0;
     task->registers.rbx = 0;
@@ -152,10 +176,14 @@ void create_new_task(Task* task, void(*main)(), const char *name, priority_t pri
     task->registers.rflags = flags;
     task->registers.rip = (uint64_t)main;
     task->registers.cr3 = (uint64_t)pml4;
-    task->registers.rsp = (uint64_t)task->stack;
+    task->registers.rsp = stack + PAGE_SIZE - 8; // Start the stack pointer at the other side
+    task->registers.rbp = task->registers.rsp;
     /* This task is the end of the list */
     task->next = NULL;
-    task->prev = 0;
+    task->prev = NULL;
+    // Initialize the stack
+    setup_stack(task);
+    return task;
 }
 
 void preempt(void) {
@@ -165,71 +193,87 @@ void preempt(void) {
         // Set the current task back to the head of the list
         current_task = tasks;
     }
-    printk("REMOVE ME %p\n", task);
     // Attempt to switch tasks; Assembly magic voodo
-    // switch_tasks(task, current_task);
+    switch_tasks(task, current_task);
+}
+
+void set_task(Task *task) {
+    current_task = task;
+    task->state = RUNNING;
+    // Set cr3
+    // set_cr3((pml4_t*)(task->registers.cr3));
+    // Set the control register
+    __asm__ __volatile__(
+        "movq %0, %%rsp;"
+        "popq %%r15;"
+        "popq %%r14;"
+        "popq %%r13;"
+        "popq %%r12;"
+        "popq %%r11;"
+        "popq %%r10;"
+        "popq %%r9;"
+        "popq %%r8;"
+        "popq %%rdi;"
+        "popq %%rsi;"
+        "popq %%rdx;"
+        "popq %%rcx;"
+        "popq %%rbx;"
+        "popq %%rax;"
+        "popq %%rbp;"
+        :
+        : "m"(task->registers.rsp)
+        :
+    );
 }
 
 void switch_tasks(Task *old, Task *new) {
-    printk("%d\n", sizeof(Task));
-    // dump_task(old);
+    printk("old: %p new: %p\n", old, new);
     // Make sure both are not null
     // and both are not the same (no need to swap if same)
-    if(old != NULL && new != NULL /* && old != new */) {
+    if(old != NULL && new != NULL && old != new) {
+        old->state = READY;
+        new->state = RUNNING;
         // Get the cr3 value
         old->registers.cr3 = (uint64_t) get_cr3();
         // Get the flags value
         old->registers.rflags = get_rflags();
+        /* Save the current register state */
         __asm__ __volatile__(
-            /* Push all registers onto stack */
-            "pushfq;"
-            /* Save register state for current process */
-            "movq %%rax, 0(%0);"
-            "movq %%rbx, 8(%0);"
-            "movq %%rcx, 16(%0);"
-            "movq %%rdx, 24(%0);"
-            "movq %%rsi, 32(%0);"
-            "movq %%rdi, 40(%0);"
-            "movq %%rbp, 48(%0);"
-            "movq $., 56(%0);"
-            "movq %%rsp, 64(%0);"
-            "movq %%r8, 72(%0);"
-            "movq %%r9, 80(%0);"
-            "movq %%r10, 88(%0);"
-            "movq %%r11, 96(%0);"
-            "movq %%r12, 104(%0);"
-            "movq %%r13, 112(%0);"
-            "movq %%r14, 120(%0);"
-            "movq %%r15, 128(%0);"
-            // "cli; hlt;"
-            /* Put the new values in */
-            "movq 0(%1), %%rax;"
-            "movq 8(%1), %%rbx;"
-            "movq 16(%1), %%rcx;"
-            "movq 24(%1), %%rdx;"
-            "movq 32(%1), %%rsi;"
-            "movq 40(%1), %%rdi;"
-            "movq 48(%1), %%rbp;"
-            "movq 64(%1), %%rsp;"
-            "movq 72(%1), %%r8;"
-            "movq 80(%1), %%r9;"
-            "movq 88(%1), %%r10;"
-            "movq 96(%1), %%r11;"
-            "movq 104(%1), %%r12;"
-            "movq 112(%1), %%r13;"
-            "movq 120(%1), %%r14;"
-            "movq 128(%1), %%r15;"
-            /* TODO: START HERE */
-
-            // "movq 0(%1), %%rax;"
-            // "movq ;"
-            : "=r"(old)
-            : "r"(new)
-            :
+            /* Save registers */
+             "movq %%rax, %3;"
+             "movq %%rbx, %4;"
+             "movq %%rcx, %5;"
+             "movq %%rdx, %6;"
+             "movq %%rsi, %7;"
+             "movq %%rdi, %8;"
+             "movq %%r8, %9;"
+             "movq %%r9, %10;"
+             "movq %%r10, %11;"
+             "movq %%r11, %12;"
+             "movq %%r12, %13;"
+             "movq %%r13, %14;"
+             "movq %%r14, %15;"
+             "movq %%r15, %16;"
+             /* Save special registers */
+             "movq %%rsp, %0;"
+             "movq %%rbp, %2;"
+             /* Get the instruction pointer*/
+             "popq %%rax;"
+             "popq %%rax;"
+             : "=m"(old->registers.rsp), "=m"(old->registers.rip), "=m"(old->registers.rbp), "=m"(old->registers.rax), "=m"(old->registers.rbx), "=m"(old->registers.rcx), "=m"(old->registers.rdx), "=m"(old->registers.rsi), "=m"(old->registers.rdi), "=m"(old->registers.r8), "=m"(old->registers.r9), "=m"(old->registers.r10), "=m"(old->registers.r11), "=m"(old->registers.r12), "=m"(old->registers.r13), "=m"(old->registers.r14), "=m"(old->registers.r15)
+             : 
+             : "rax", "memory"
         );
+        /* Prepare the stack for the next time its called */
+        setup_stack(old);
+        // printk("rip: %p\n", old->registers.rip);
+        //  __asm__ __volatile__("cli; hlt;");
+        dump_task(old);
+        // Now set the new task
+        set_task(new);
     }
-    printk("\n");
-    dump_task(old);
+    // SHOULD NEVER GET HERE ?
+    printk("If you see this something probably went wrong.\n");
 }
 
 bool insert_into_list(Task **list, Task *task) {

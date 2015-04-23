@@ -1,6 +1,7 @@
 #ifndef _SCREEN_H
 #define _SCREEN_H
-#include <sbunix/pgtable.h>
+#include <sys/defs.h>
+#include <sys/pgtable.h>
 
 #define VIDEO_MEM_START 0xb8000
 #define VIDEO_MEM (volatile char*)(VIDEO_MEM_START)

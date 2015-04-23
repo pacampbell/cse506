@@ -4,16 +4,24 @@
 #include <sys/task.h>
 
 void awesomefunc() {
-    printk("Scheduled task!!! woot woot");
+    printk("Scheduled task!!! woot woot\n");
+    preempt();
+}
+
+void idle() {
+    while(1) {
+        printk("idle loop\n");
+        preempt();
+    } 
 }
 
 void kmain(void) {
     printk("In kmain!\n");
-    void initialize_scheudler();
-    /* Now that we are in a somewhat stable state initialize tasks for kernel */
-    initialize_task("awesomefunc", 0xffffffffffffffff, awesomefunc);
+    create_kernel_task("idle", idle);
+    create_kernel_task("awesomefunc", awesomefunc);
     /* Now schedule the task! */
-    // preempt();
+    preempt();
     /* Hopefully we get here eventually! */
     printk("Back in the kernel!\n");
+    while(1);
 }
