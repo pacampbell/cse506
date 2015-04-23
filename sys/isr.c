@@ -91,6 +91,10 @@ void printk(const char *fmt, ...);
 }
 
 void isr_handler(registers_t regs) {
+    if (interrupt_handlers[regs.int_no] != 0) {
+        isr_t handler = interrupt_handlers[regs.int_no];
+        handler(regs);
+    }
     /*
     char *str_interrupt = strintno(regs.int_no);
     printk("recieved interrupt[%d]: %s\n", regs.int_no, str_interrupt);

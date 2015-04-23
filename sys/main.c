@@ -5,6 +5,7 @@
 #include <sys/idt.h>
 #include <sys/tarfs.h>
 #include <sys/keyboard.h>
+#include <sys/pg_fault.h>
 #include <sys/task.h>
 #include <sbunix/kernel.h>
 #include <sbunix/pgtable.h>
@@ -33,12 +34,20 @@ void start(uint32_t* modulep, void* physbase, void* physfree) {
     }
     printk("tarfs in [%p:%p]\n", &_binary_tarfs_start, &_binary_tarfs_end);
     // Setup paging
+    init_pg_fault();
     initializePaging((uint64_t)physbase, (uint64_t)physfree);
 
     // Setup timer and keyboard here
     init_timer(50);
     init_keyboard();
     __asm("sti");
+
+
+    //test pg fault
+    uint64_t *ptr = (uint64_t*)0xA000000000000000;
+    uint64_t do_page_fault = *ptr;
+    printk("PAGEFAULT: %c!!!!!!!!\n", (char) do_page_fault);
+
     // Initialize the scheduler
     initialize_scheudler(kmain);
     // Start the scheduler
