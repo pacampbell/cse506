@@ -72,8 +72,18 @@
          * Pushes values into the stack for the newly created task.
          * @param task Task stack to initialize.
          */
-        void setup_stack(Task *task);
+        void setup_new_stack(Task *task);
 
+        /**
+         * Same as setup_new_stack except it doesn't push the 
+         * rip value onto the stack.
+         */
+        void prepare_stack(Task *task);
+
+        /**
+         * Dumps the contents of a task.
+         */
+        void dump_task(Task *task);
         /**
          * Sets the current task to be ran.
          */

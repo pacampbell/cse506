@@ -26,6 +26,7 @@ static void pg_fault_callback(registers_t regs) {
     printk("%x\n", f);
 
 
+    /*
     if(p) {
         printk("The fault was caused by a page-level protection violation.\n");
     } else {
@@ -55,7 +56,7 @@ static void pg_fault_callback(registers_t regs) {
     } else {
         printk("The fault was not caused by an instruction fetch.\n");
     }
-
+    */
 
     __asm__ __volatile__("cli;hlt;");
 }
