@@ -27,6 +27,19 @@ void putk(char c);
 void putck(char color, char c);
 
 /**
+ * Writes a string to the screen at the current cursor.
+ * @param color 1-byte containing the background and forground color.
+ * @param the char pointer to the string to write.
+ */
+void putsck(char color, char* str);
+
+/**
+ * Writes red and white text to the screen
+ * @param the point er to the string to write.
+ */
+void panic(char *str);
+
+/**
  * Puts a character at the (x,y) position with the default color.
  * @param c Char to write to the terminal.
  * @param x X-coordinate to write on the terminal.

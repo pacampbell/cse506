@@ -21,6 +21,13 @@ void setxy(int x, int y) {
     cursor_y = y;
 }
 
+void panic(char *str) {
+    //cls();
+    //putsck(0x4F, "!!!KERNEL PANIC!!!\n");
+    putsck(0x4F, str);
+
+}
+
 void putck(char color, char c) {
     // If we have run out of rows scroll the screen
     if(cursor_y >= TERMINAL_ROWS) {
@@ -53,6 +60,12 @@ void putck(char color, char c) {
     } else if(c == '\b') {
         // Go back by 1 character in the current row
         cursor_x = cursor_x - 2 < 0 ? 0 : cursor_x - 2;
+    }
+}
+
+void putsck(char color, char* str) {
+    for(; *str; str++) {
+        putck(color, *str);
     }
 }
 

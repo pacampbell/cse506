@@ -9,9 +9,7 @@ static void pg_fault_callback(registers_t regs) {
     uint64_t faulting_address;
     __asm__ __volatile__("mov %%cr2, %0" : "=r" (faulting_address));
 
-    printk("!!!!!!!!!!!!!!!!!!!!!!!\n");
-    printk("!!!!!!PAGE FAULT!!!!!!!\n");
-    printk("!!!!!!!!!!!!!!!!!!!!!!!\n");
+    panic("!!!!!!!PAGE FAULT!!!!!!!\n");
     printk("address: %p\n", faulting_address);
     printk("bits   : ");
 
@@ -26,6 +24,7 @@ static void pg_fault_callback(registers_t regs) {
     printk("%x", u);
     printk("%x", r);
     printk("%x\n", f);
+
 
     if(p) {
         printk("The fault was caused by a page-level protection violation.\n");
