@@ -1,28 +1,59 @@
 #define __KERNEL__
-#include <sys/timer.h>
 #include <sys/isr.h>
 #include <sys/screen.h>
 #include <sbunix/string.h>
 #include <sbunix/kernel.h>
-
-static uint32_t tick = 0;
-static char string_buffer[1024];
-
-static void print_timer(void) {
-    itoa((int)tick, string_buffer);
-    int start_x = 79 - strlen(string_buffer);
-    for(int i = 0; string_buffer[i] != '\0'; i++) {
-        putk_xy(string_buffer[i], start_x + i, 24);
-    }
-}
+#include <sys/sbunix.h>
 
 static void pg_fault_callback(registers_t regs) {
-    print_timer();
-    tick++;
+    uint64_t faulting_address;
+    __asm__ __volatile__("mov %%cr2, %0" : "=r" (faulting_address));
+
+    printk("!!!!!!!!!!!!!!!!!!!!!!!\n");
+    printk("!!!!!!PAGE FAULT!!!!!!!\n");
+    printk("!!!!!!!!!!!!!!!!!!!!!!!\n");
+    printk("bits: %x\n", faulting_address);
+
+    int p = extract_bits(faulting_address, 0, 0);
+    int w = extract_bits(faulting_address, 1, 1);
+    int u = extract_bits(faulting_address, 2, 2);
+    int r = extract_bits(faulting_address, 3, 3);
+    int f = extract_bits(faulting_address, 4, 4);
+
+    if(p) {
+        printk("The fault was caused by a page-level protection violation.\n");
+    } else {
+        printk("The fault was caused by a non-present page.\n");
+    }
+    
+    if(w) {
+        printk("The access causing the fault was a write.\n");
+    } else {
+        printk("The access causing the fault was a read.\n");
+    }
+
+    if(u) {
+        printk("A user-mode access caused the fault.\n");
+    } else {
+        printk("A supervisor-mode access caused the fault.\n");
+    }
+
+    if(r) {
+        printk("The fault was caused by a reserved bit set to 1 in some paging-structure entry.\n");
+    } else {
+        printk("The fault was not caused by reserved bit violation.\n");
+    }
+
+    if(f) {
+        printk("The fault was caused by an instruction fetch.\n");
+    } else {
+        printk("The fault was not caused by an instruction fetch.\n");
+    }
+
+
+    __asm__ __volatile__("cli;hlt;");
 }
 
-void init_pg_fault(uint32_t frequency) {
-    // Firstly, register our pg fault callback.
-    register_interrupt_handler(IRQ14, &pg_fault_callback);
-
+void init_pg_fault() {
+    register_interrupt_handler(14, &pg_fault_callback);
 }
