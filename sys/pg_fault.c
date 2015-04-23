@@ -12,13 +12,20 @@ static void pg_fault_callback(registers_t regs) {
     printk("!!!!!!!!!!!!!!!!!!!!!!!\n");
     printk("!!!!!!PAGE FAULT!!!!!!!\n");
     printk("!!!!!!!!!!!!!!!!!!!!!!!\n");
-    printk("bits: %x\n", faulting_address);
+    printk("address: %p\n", faulting_address);
+    printk("bits   : ");
 
-    int p = extract_bits(faulting_address, 0, 0);
-    int w = extract_bits(faulting_address, 1, 1);
-    int u = extract_bits(faulting_address, 2, 2);
-    int r = extract_bits(faulting_address, 3, 3);
-    int f = extract_bits(faulting_address, 4, 4);
+    int p = extract_bits(regs.err_code, 0, 0);
+    int w = extract_bits(regs.err_code, 1, 1);
+    int u = extract_bits(regs.err_code, 2, 2);
+    int r = extract_bits(regs.err_code, 3, 3);
+    int f = extract_bits(regs.err_code, 4, 4);
+
+    printk("%x", p);
+    printk("%x", w);
+    printk("%x", u);
+    printk("%x", r);
+    printk("%x\n", f);
 
     if(p) {
         printk("The fault was caused by a page-level protection violation.\n");
