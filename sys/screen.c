@@ -38,9 +38,15 @@ void putck(char color, char c) {
     }
     // Begin checking for special situations
     if(c == '\n' || cursor_x == (TERMINAL_COLUMNS * 2)) {
+        // Clear the rest of the row
+        if(c == '\n') {
+            clear_row(cursor_x, cursor_y);
+        }
         // Increment to the next row and reset the column
         cursor_x = 0;
         cursor_y += 1;
+        // Clear the row
+        clear_row(cursor_x, cursor_y);
     } else if(c == '\r') {
         // Set the cursor back to the start of the current row
         cursor_x = 0;
@@ -91,4 +97,13 @@ void scroll(void) {
 
 void map_video_mem(uint64_t vma) {
     video_mem_base = (volatile char*)vma;
+}
+
+void clear_row(int x, int y) {
+    if( y < TERMINAL_ROWS) {
+        for(int i = x; i < (TERMINAL_COLUMNS * 2); i++) {
+            // zero out the entry
+            *(video_mem_base + (y * (TERMINAL_COLUMNS * 2)) + i) = 0;
+        }
+    }
 }

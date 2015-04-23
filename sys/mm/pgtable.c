@@ -1,8 +1,5 @@
 #define __KERNEL__
-#include <sbunix/pgtable.h>
-#include <sys/sbunix.h>
-#include <sbunix/string.h>
-#include <sys/screen.h>
+#include <sys/pgtable.h>
 
 extern char kernmem;
 extern void *kern_free;
