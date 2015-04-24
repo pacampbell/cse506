@@ -75,12 +75,6 @@
         void setup_new_stack(Task *task);
 
         /**
-         * Same as setup_new_stack except it doesn't push the 
-         * rip value onto the stack.
-         */
-        void prepare_stack(Task *task);
-
-        /**
          * Dumps the contents of a task.
          */
         void dump_task(Task *task);
@@ -88,6 +82,8 @@
          * Sets the current task to be ran.
          */
         void set_task(Task *task);
+
+        void run_task(Task *task);
         // Switch tasks
         void switch_tasks(Task *old, Task *new);
         // preempt

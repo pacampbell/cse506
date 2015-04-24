@@ -123,67 +123,18 @@ void setup_new_stack(Task *task) {
     __asm__ __volatile__(
         /* Store the initial stack pointer */
         "movq %%rsp, %%rax;"
-        "movq %1, %%rcx;"
+        "movq %1, %%rdi;"
         /* Set the stack pointer to the new tasks stack */
         "movq %2, %%rsp;"
         /* Push the instruction pointer onto the stack */
         "pushq %3;"
-        /* Push all of the registers onto the stack */
-        "pushq %4;" // rbp
-        "pushq %5;" // rax
-        "pushq %6;" // rbx
-        "pushq %7;" // rcx
-        "pushq %8;" // rdx
-        "pushq %9;" // rsi
-        "pushq %10;" // rdi
-        "pushq %11;" // r8
-        "pushq %12;" // r9
-        "pushq %13;" // r10
-        "pushq %14;" // r11
-        "pushq %15;" // r12
-        "pushq %16;" // r13
-        "pushq %17;" // r14
-        "pushq %18;" // r15
         /* Save the new value of the stack pointer */
-        "movq %%rsp, 64(%%rcx);"
+        "movq %%rsp, 0x40(%%rdi);"
         /* Set the stack pointer back to what it was */
         "movq %%rax, %%rsp;"
         : "=r"(task)
-        : "m"(task), "m"(task->registers.rsp), "m"(task->registers.rip), "m"(task->registers.rbp), "m"(task->registers.rax), "m"(task->registers.rbx), "m"(task->registers.rcx), "m"(task->registers.rdx), "m"(task->registers.rsi), "m"(task->registers.rdi), "m"(task->registers.r8), "m"(task->registers.r9), "m"(task->registers.r10), "m"(task->registers.r11), "m"(task->registers.r12), "m"(task->registers.r13), "m"(task->registers.r14), "m"(task->registers.r15)
-        : "rax", "rcx", "rdi"
-    );
-}
-
-void prepare_stack(Task *task) {
-    __asm__ __volatile__(
-        /* Store the initial stack pointer */
-        "movq %%rsp, %%rax;"
-        "movq %1, %%rcx;"
-        /* Set the stack pointer to the new tasks stack */
-        "movq %2, %%rsp;"
-        /* Push all of the registers onto the stack */
-        "pushq %3;" // rbp
-        "pushq %4;" // rax
-        "pushq %5;" // rbx
-        "pushq %6;" // rcx
-        "pushq %7;" // rdx
-        "pushq %8;" // rsi
-        "pushq %9;" // rdi
-        "pushq %10;" // r8
-        "pushq %11;" // r9
-        "pushq %12;" // r10
-        "pushq %13;" // r11
-        "pushq %14;" // r12
-        "pushq %15;" // r13
-        "pushq %16;" // r14
-        "pushq %17;" // r15
-        /* Save the new value of the stack pointer */
-        "movq %%rsp, 0x40(%%rcx);"
-        /* Set the stack pointer back to what it was */
-        "movq %%rax, %%rsp;"
-        : "=r"(task)
-        : "m"(task), "m"(task->registers.rsp), "m"(task->registers.rbp), "m"(task->registers.rax), "m"(task->registers.rbx), "m"(task->registers.rcx), "m"(task->registers.rdx), "m"(task->registers.rsi), "m"(task->registers.rdi), "m"(task->registers.r8), "m"(task->registers.r9), "m"(task->registers.r10), "m"(task->registers.r11), "m"(task->registers.r12), "m"(task->registers.r13), "m"(task->registers.r14), "m"(task->registers.r15)
-        : "rax", "rcx", "rdi"
+        : "m"(task), "m"(task->registers.rsp), "m"(task->registers.rip)
+        : "rax", "rdi"
     );
 }
 
@@ -225,66 +176,72 @@ Task* create_new_task(Task* task, const char *name, task_type_t type, priority_t
 }
 
 void preempt(void) {
-    Task *task = current_task;
-    current_task = current_task->next;
+    Task *old_task = current_task;
+    current_task = old_task->next;
     if(current_task == NULL) {
         // Set the current task back to the head of the list
         current_task = tasks;
     }
     // Attempt to switch tasks; Assembly magic voodo
-    switch_tasks(task, current_task);
+    switch_tasks(old_task, current_task);
 }
 
 void set_task(Task *task) {
     current_task = task;
-    task->state = RUNNING;
-    // Set cr3
-    // set_cr3((pml4_t*)(task->registers.cr3));
-    // Set the control register
+    current_task->state = RUNNING;
+    
+    // printk("Scheduling: %s\n", task->name);
     __asm__ __volatile__(
-        "movq %0, %%rsp;"
-        "popq %%r15;"
-        "popq %%r14;"
-        "popq %%r13;"
-        "popq %%r12;"
-        "popq %%r11;"
-        "popq %%r10;"
-        "popq %%r9;"
-        "popq %%r8;"
-        "popq %%rdi;"
-        "popq %%rsi;"
-        "popq %%rdx;"
-        "popq %%rcx;"
-        "popq %%rbx;"
-        "popq %%rax;"
-        "popq %%rbp;"
+        /* Save the argument in the register */
+        "movq %0, %%rax;"
+        /* Set the rest of the registers */
+        "movq 0x8(%%rax), %%rbx;"
+        "movq 0x10(%%rax), %%rcx;"
+        "movq 0x18(%%rax), %%rdx;"
+        "movq 0x20(%%rax), %%rsi;"
+        "movq 0x28(%%rax), %%rdi;"
+        "movq 0x48(%%rax), %%r8;"
+        "movq 0x50(%%rax), %%r9;"
+        "movq 0x58(%%rax), %%r10;"
+        "movq 0x60(%%rax), %%r11;"
+        "movq 0x68(%%rax), %%r12;"
+        "movq 0x70(%%rax), %%r13;"
+        "movq 0x78(%%rax), %%r14;"
+        "movq 0x80(%%rax), %%r15;"
+        /* Set the stack pointer */
+        "movq 0x30(%%rax), %%rbp;"
+        "movq 0x40(%%rax), %%rsp;"
+        /* Set rax */
+        "movq 0x0(%%rax), %%rax;"
         :
-        : "m"(task->registers.rsp)
-        :
+        : "r"(task)
+        : "memory"
     );
 }
 
 void switch_tasks(Task *old, Task *new) {
+    printk("old: %p new %p\n", old, new);
     // Make sure both are not null
     // and both are not the same (no need to swap if same)
     if(old != NULL && new != NULL && old != new) {
         old->state = READY;
-        new->state = RUNNING;
-        // Get the cr3 value
-        old->registers.cr3 = (uint64_t) get_cr3();
-        // Get the flags value
-        old->registers.rflags = get_rflags();
         /* Save the current register state */
         __asm__ __volatile__(
+            /* save rax so we can use it for scratch */
             "movq %%rax, 0x0(%0);"
+            /* Save cr3 */
+            "movq %%cr3, %%rax;"
+            "movq %%rax, 0x88(%0);"
+            /* Save flags */
+            "pushfq;"
+            "popq %%rax;"
+            "movq %%rax, 0x90(%0);"
+            /* Save the rest */
             "movq %%rbx, 0x8(%0);"
             "movq %%rcx, 0x10(%0);"
             "movq %%rdx, 0x18(%0);"
             "movq %%rsi, 0x20(%0);"
             "movq %%rdi, 0x28(%0);"
-            "movq %%rbp, 0x30(%0);"
-            /* "movq %%rsp, 0x38(%0);" // Need to get this value from stack */
-            "movq %%rsp, 0x40(%0);"
             "movq %%r8, 0x48(%0);"
             "movq %%r9, 0x50(%0);"
             "movq %%r10, 0x58(%0);"
@@ -293,16 +250,21 @@ void switch_tasks(Task *old, Task *new) {
             "movq %%r13, 0x70(%0);"
             "movq %%r14, 0x78(%0);"
             "movq %%r15, 0x80(%0);"
-            : "=r"(old)
+            /* set rbp */
+            "movq %%rbp, 0x30(%0);"
+            /* set rsp */
+            "add $16, %%rsp;"
+            "movq %%rsp, 0x40(%0);"
             : 
+            : "r"(old)
             : "memory"
         );
-        dump_task(old);
-        // Push everything back onto the stack for next time
-        prepare_stack(old);
-        dump_task(old);
-        // Now set the new task
+        dump_task(new);
+        printk("name: %s rbp: %p, rsp: %p\n", new->name, new->registers.rbp, new->registers.rsp);
+        // Now run the new task
         set_task(new);
+        // FIXME: Remove
+        printk("%s returned from hell\n", new->name);
     }
     // Should get here when scheduled again
     printk("Task got scheduled again\n");
