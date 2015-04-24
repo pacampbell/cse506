@@ -32,13 +32,13 @@ static void pg_fault_callback(registers_t regs) {
     } else {
         printk("The fault was caused by a non-present page.\n");
     }
-    
+    */
     if(w) {
         printk("The access causing the fault was a write.\n");
     } else {
         printk("The access causing the fault was a read.\n");
     }
-
+    /*
     if(u) {
         printk("A user-mode access caused the fault.\n");
     } else {

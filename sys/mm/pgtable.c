@@ -184,11 +184,15 @@ pt_t* get_pt(pml4_t *pml4, uint64_t virtual_address) {
 }
 
 void* kmalloc_pg(void) {
-    int page_index = get_free_page();       // Get a free page from the page allocator
+    uint32_t page_index = get_free_page();       // Get a free page from the page allocator
     set_pg_free(page_index, 0);             // Mark the page in use
     void *address = pg_to_addr(page_index);          // Convert the page index to an address
-    //printk("kmalloc addr: %p\n", address);
     return address;
+}
+
+void kfree_pg(void *address) {
+    uint32_t page_index = addr_to_pg((void*)VIRT_TO_PHYS(address));
+    set_pg_free(page_index, 1);
 }
 
 inline uint64_t extract_bits(uint64_t virtual_address, unsigned short start, unsigned short end) {

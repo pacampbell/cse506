@@ -4,25 +4,26 @@
 #include <sys/task.h>
 
 void awesomefunc(void) {
-    printk("Scheduled task!!! woot woot\n");
-    preempt();
+    printk("I'm awesome!!! woot woot\n");
+    preempt(true);
 }
 
 void idle(void) {
     while(1) {
         printk("idle loop\n");
-        preempt();
+        preempt(false);
     } 
 }
 
 void kmain(void) {
-    printk("In kmain!\n");
-    Task *idle_task = create_kernel_task("idle", idle);
-    dump_task(idle_task);
     create_kernel_task("awesomefunc", awesomefunc);
-    /* Now schedule the task! */
-    preempt();
-    /* Hopefully we get here eventually! */
-    printk("Back in the kernel!\n");
-    while(1);
+    create_kernel_task("idle", idle);
+    /* Let something else run! */
+    preempt(false);
+    /* We are back... now what? */
+    while(1) {
+        /* Hopefully we get here eventually! */
+        printk("In kmain!\n");
+        preempt(false);
+    }
 }
