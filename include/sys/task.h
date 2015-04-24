@@ -87,11 +87,11 @@
         // Switch tasks
         void switch_tasks(Task *old, Task *new);
         // preempt
-        void preempt(void);
+        void preempt(bool discard);
         // Methods for getting tasks
         bool insert_into_list(Task **list, Task *task);
-        Task *get_task_by_pid(pid_t pid);
-        Task *remove_task_by_pid(pid_t pid);
+        Task *get_task_by_pid(Task **list, pid_t pid);
+        Task *remove_task_by_pid(Task **list, pid_t pid);
         /* TODO: Future work - Forking functions should go in here too? */
     #endif
 #endif

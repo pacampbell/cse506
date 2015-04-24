@@ -44,7 +44,7 @@ done:
  */
 static void free_pid(pid_t pid) {
     // Make sure we didn't get a bad pid
-    if(pid >= 0){
+    if(pid >= 0) {
         // Convert the pid into a position in the pid map
         size_t array_index = pid / 64;
         size_t bit_mask = ~(1 << (pid % 64));
@@ -115,7 +115,7 @@ Task* create_kernel_task(const char *name, void(*code)()) {
     // Add the task to the scheduler list
     insert_into_list(&tasks, kernel_task);
     // Print out contents of the task
-    dump_task(kernel_task);
+    // dump_task(kernel_task);
     return kernel_task;
 }
 
@@ -138,7 +138,10 @@ void setup_new_stack(Task *task) {
     );
 }
 
-Task* create_new_task(Task* task, const char *name, task_type_t type, priority_t priority, uint64_t flags, pml4_t *pml4, uint64_t stack, void(*main)()) {
+Task* create_new_task(Task* task, const char *name, task_type_t type,
+                      priority_t priority, uint64_t flags, pml4_t *pml4,
+                      uint64_t stack, void(*main)()) {
+    /* Set the basic task values */
     task->name = name;
     task->priority = priority;
     task->state = NEW;
@@ -175,12 +178,16 @@ Task* create_new_task(Task* task, const char *name, task_type_t type, priority_t
     return task;
 }
 
-void preempt(void) {
+void preempt(bool discard) {
     Task *old_task = current_task;
     current_task = old_task->next;
     if(current_task == NULL) {
         // Set the current task back to the head of the list
         current_task = tasks;
+    }
+    if(discard) {
+        // The old process no longer wants to run
+        old_task->state = TERMINATED;
     }
     // Attempt to switch tasks; Assembly magic voodo
     switch_tasks(old_task, current_task);
@@ -189,8 +196,6 @@ void preempt(void) {
 void set_task(Task *task) {
     current_task = task;
     current_task->state = RUNNING;
-    
-    // printk("Scheduling: %s\n", task->name);
     __asm__ __volatile__(
         /* Save the argument in the register */
         "movq %0, %%rax;"
@@ -208,66 +213,113 @@ void set_task(Task *task) {
         "movq 0x70(%%rax), %%r13;"
         "movq 0x78(%%rax), %%r14;"
         "movq 0x80(%%rax), %%r15;"
-        /* Set the stack pointer */
+        /* Set the base pointer */
         "movq 0x30(%%rax), %%rbp;"
+        /* set the stack pointer */
         "movq 0x40(%%rax), %%rsp;"
         /* Set rax */
         "movq 0x0(%%rax), %%rax;"
         :
         : "r"(task)
-        : "memory"
+        :
     );
 }
 
+
+void test(uint64_t value1, uint64_t value2) {
+    printk("Value: %p %p\n", value1, value2);
+    __asm__ __volatile__("cli; hlt;");
+}
+
 void switch_tasks(Task *old, Task *new) {
-    printk("old: %p new %p\n", old, new);
     // Make sure both are not null
     // and both are not the same (no need to swap if same)
     if(old != NULL && new != NULL && old != new) {
-        old->state = READY;
-        /* Save the current register state */
+        if(old->state != TERMINATED) {
+            old->state = READY;
+            /* Save the current register state */
+            __asm__ __volatile__(
+                /* save rax so we can use it for scratch */
+                "movq %%rax, 0x0(%0);"
+                /* Save cr3 */
+                "movq %%cr3, %%rax;"
+                "movq %%rax, 0x88(%0);"
+                /* Save flags */
+                "pushfq;"
+                "popq %%rax;"
+                "movq %%rax, 0x90(%0);"
+                /* Save the rest */
+                "movq %%rbx, 0x8(%0);"
+                "movq %%rcx, 0x10(%0);"
+                "movq %%rdx, 0x18(%0);"
+                "movq %%rsi, 0x20(%0);"
+                "movq %%rdi, 0x28(%0);"
+                "movq %%r8, 0x48(%0);"
+                "movq %%r9, 0x50(%0);"
+                "movq %%r10, 0x58(%0);"
+                "movq %%r11, 0x60(%0);"
+                "movq %%r12, 0x68(%0);"
+                "movq %%r13, 0x70(%0);"
+                "movq %%r14, 0x78(%0);"
+                "movq %%r15, 0x80(%0);"
+                /* set rbp */
+                "movq %%rbp, 0x30(%0);"
+                /* set rsp */
+                "movq %%rsp, 0x40(%0);"
+                : 
+                : "r"(old)
+                :
+            );
+        } else {
+            // If the old task has terminated, clean it up
+            if(remove_task_by_pid(&tasks, old->pid) == NULL) {
+                panic("Tried to free a NULL task.\n");
+                __asm__ __volatile__("cli; hlt;");
+            }
+            printk("Removed: %s\n", old->name);
+            // Mark pid as free
+            free_pid(old->pid);
+            // Free the stack
+            kfree_pg((void*)(old->stack));
+            // Free the task struct
+            kfree_pg((void*)old);
+        }
+        // Now set the new task to run
+        current_task = new;
         __asm__ __volatile__(
-            /* save rax so we can use it for scratch */
-            "movq %%rax, 0x0(%0);"
-            /* Save cr3 */
-            "movq %%cr3, %%rax;"
-            "movq %%rax, 0x88(%0);"
-            /* Save flags */
-            "pushfq;"
-            "popq %%rax;"
-            "movq %%rax, 0x90(%0);"
-            /* Save the rest */
-            "movq %%rbx, 0x8(%0);"
-            "movq %%rcx, 0x10(%0);"
-            "movq %%rdx, 0x18(%0);"
-            "movq %%rsi, 0x20(%0);"
-            "movq %%rdi, 0x28(%0);"
-            "movq %%r8, 0x48(%0);"
-            "movq %%r9, 0x50(%0);"
-            "movq %%r10, 0x58(%0);"
-            "movq %%r11, 0x60(%0);"
-            "movq %%r12, 0x68(%0);"
-            "movq %%r13, 0x70(%0);"
-            "movq %%r14, 0x78(%0);"
-            "movq %%r15, 0x80(%0);"
-            /* set rbp */
-            "movq %%rbp, 0x30(%0);"
-            /* set rsp */
-            "add $16, %%rsp;"
-            "movq %%rsp, 0x40(%0);"
-            : 
-            : "r"(old)
+            /* Save the argument in the register */
+            "movq %0, %%rax;"
+            /* Set the rest of the registers */
+            "movq 0x8(%%rax), %%rbx;"
+            "movq 0x10(%%rax), %%rcx;"
+            "movq 0x18(%%rax), %%rdx;"
+            "movq 0x20(%%rax), %%rsi;"
+            "movq 0x28(%%rax), %%rdi;"
+            "movq 0x48(%%rax), %%r8;"
+            "movq 0x50(%%rax), %%r9;"
+            "movq 0x58(%%rax), %%r10;"
+            "movq 0x60(%%rax), %%r11;"
+            "movq 0x68(%%rax), %%r12;"
+            "movq 0x70(%%rax), %%r13;"
+            "movq 0x78(%%rax), %%r14;"
+            "movq 0x80(%%rax), %%r15;"
+            /* Set the base pointer */
+            "movq 0x30(%%rax), %%rbp;"
+            /* set the stack pointer */
+            "movq 0x40(%%rax), %%rsp;"
+            /* Set rax */
+            "movq 0x0(%%rax), %%rax;"
+            :
+            : "r"(current_task)
             : "memory"
         );
-        dump_task(new);
-        printk("name: %s rbp: %p, rsp: %p\n", new->name, new->registers.rbp, new->registers.rsp);
-        // Now run the new task
-        set_task(new);
-        // FIXME: Remove
-        printk("%s returned from hell\n", new->name);
+        if(current_task->state == NEW) {
+            current_task->state = RUNNING;
+            __asm__ __volatile("ret;");
+        } else {
+            current_task->state = RUNNING;
+        }
     }
-    // Should get here when scheduled again
-    printk("Task got scheduled again\n");
 }
 
 bool insert_into_list(Task **list, Task *task) {
@@ -292,13 +344,34 @@ bool insert_into_list(Task **list, Task *task) {
     return success;
 }
 
-Task *get_task_by_pid(pid_t pid) {
+Task *get_task_by_pid(Task **list, pid_t pid) {
+    panic("get_task_by_pid NOT IMPLEMENTED!\n");
     return NULL;
 }
 
-Task *remove_task_by_pid(pid_t pid) {
-
-    free_pid(pid);  // Give back the pid so it can be reassigned.
-
-    return NULL;
+Task *remove_task_by_pid(Task **list, pid_t pid) {
+    Task *task = NULL;
+    if(list != NULL && *list != NULL && pid >= 0) {
+        Task *ctask = *list;
+        while(ctask != NULL) {
+            if(ctask->pid == pid) {
+                // found it!
+                task = ctask;
+                if(task->prev == NULL) {
+                    // HEAD of the list
+                    *list = task->next;
+                } else {
+                    // Some other part of the list
+                    task->prev->next = task->next;
+                    if(task->next != NULL) {
+                        task->next->prev = task->prev;
+                    }
+                }
+                break;
+            } else {
+                ctask = ctask->next;
+            }
+        }
+    }
+    return task;
 }

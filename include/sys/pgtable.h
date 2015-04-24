@@ -55,6 +55,7 @@
         void initializePaging(uint64_t physbase, uint64_t physfree);
         void loadPageDirectory(uint64_t *address);
         void* kmalloc_pg(void);
+        void kfree_pg(void *address);
 
         /* Page table helper methods */
         uint64_t extract_pml4(uint64_t virtual_address);
