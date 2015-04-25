@@ -2,6 +2,7 @@
 #include <sbunix/kmain.h>
 #include <sys/sbunix.h>
 #include <sys/task.h>
+#include <sys/tarfs.h>
 
 void awesomefunc(void) {
     printk("I'm awesome!!! woot woot\n");
@@ -16,14 +17,16 @@ void idle(void) {
 }
 
 void kmain(void) {
-    create_kernel_task("awesomefunc", awesomefunc);
-    create_kernel_task("idle", idle);
+    traverse_tars();
+    while(1);
+    // create_kernel_task("awesomefunc", awesomefunc);
+    // create_kernel_task("idle", idle);
     /* Let something else run! */
-    preempt(false);
+    // preempt(false);
     /* We are back... now what? */
-    while(1) {
+    // while(1) {
         /* Hopefully we get here eventually! */
-        printk("In kmain!\n");
-        preempt(false);
-    }
+        // printk("In kmain!\n");
+        // preempt(false);
+    //}
 }
