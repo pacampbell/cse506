@@ -16,3 +16,21 @@ size_t strlen(const char *s) {
     }
     return length;
 }
+
+bool strcmp(const char *str1, const char *str2) {
+    bool equal = false;
+    if(str1 != NULL && str2 != NULL) {
+        size_t str1_len = strlen(str1);
+        size_t str2_len = strlen(str2);
+        if(str1_len == str2_len) {
+            equal = true;
+            while(*str1 != '\0') {
+                if(*str1++ != *str2++) {
+                    equal = false;
+                    break;
+                }
+            }
+        }
+    }
+    return equal;
+}

@@ -4,6 +4,7 @@
 	#ifndef __ELF_H
 	#define __ELF_H
 	#include <sys/defs.h>
+	#include <sys/sbunix.h>
 	/* TODO: Does not include dynamic linking tables */
 
 	/* Elf-64 typedefs defined from ELF-64 Object File Format, Version 1.5 
@@ -32,15 +33,29 @@
 	#define EL_NIDENT 16
 
 	/* e_type constants */
-	#define ET_NONE 0
-	#define ET_REL 1
-	#define ET_EXEC 2
-	#define ET_DYN 3
-	#define ET_CORE 4
-	#define ET_LOOS 0xfe00
+	#define ET_NONE 0				/* No file type */
+	#define ET_REL 1				/* Relocatable file type */
+	#define ET_EXEC 2				/* Executeable file type */
+	#define ET_DYN 3				/* Shared Objct file type */
+	#define ET_CORE 4				/* Core File */
+	#define ET_LOOS 0xfe00			/* Environment-specific use */
 	#define ET_HIOS 0xfeff
-	#define ET_LOPROC 0xff00
+	#define ET_LOPROC 0xff00		/* Processor-specfific use */
 	#define ET_HIPROC 0xffff
+
+	/* Values to check for */
+	#define ELFCLASS32 1
+	#define ELFCLASS64 2
+
+	#define ELFDATA2LSB 1
+	#define ELFDATA2MSB 2
+
+	#define ELFOSABI_SYSV 0
+	#define ELFOSABI_HPUX 1
+	#define ELFOSABI_STANDALONE 255
+
+	
+
 
 	/* Elf Header Struct */ 
 	typedef struct {
@@ -175,5 +190,86 @@
 		Elf64_Xword p_align;		/* Alignment of segement */
 	} Elf64_Phdr;
 
-	#endif
+	/* Helper functions */
+	void load_elf(char *data, uint64_t length);
+	bool validate_header(char *data);
+	
+
+	/* Debug macros */
+	#ifdef DEBUG
+		#define DEBUG_EL_MAGIC(e_ident) do { \
+			printk("\tMagic: %x %x %x %x %x %x %x %x %x %x %x %x %x %x %x\n", \
+				/* 0x7f 'E' 'L' 'F' */ \
+				e_ident[EL_MAG0], e_ident[EL_MAG1], \
+				e_ident[EL_MAG2], e_ident[EL_MAG3], \
+				/* 32 or 64 bit */ \
+				e_ident[EL_CLASS], \
+				/* Little Endian or Big Endian */ \
+				e_ident[EL_DATA], \
+				/* File Version */ \
+				e_ident[EL_VERSION], \
+				/* OS-Abi Identification */ \
+				e_ident[EL_ABIVERSION], \
+				/* Padding Bytes begin */ \
+				e_ident[9],  e_ident[10], e_ident[11], e_ident[12],\
+				e_ident[13], e_ident[14], e_ident[15] \
+			); \
+		} while(0)
+
+		#define DEBUG_EL_CLASS(class) do { \
+	        printk("\tClass: %s\n", class == 1 ? "ELF32" : class == 2 ? "ELF64" : "UNKNOWN"); \
+	    } while(0)
+
+	    #define DEBUG_EL_DATA(data) do { \
+	        printk("\tData: %s\n", data == 1 ? "2's complement, little endian" : data == 2 ? "2's complement, big endian" : "UNKNOWN"); \
+	    } while(0)
+
+	    #define DEBUG_EL_VERSION(version) do { \
+	        printk("\tVersion: %s\n", version == 1 ? "1 (current)" : "UNKNOWN Extension"); \
+	    } while(0)
+
+	    #define DEBUG_EL_ABI(abi) do { \
+	        printk("\tOS/ABI: %s\n", abi == 0 ? "System V ABI" : abi == 1 ? "HP-UX Operating System" : abi == 255 ? "Standalone" : "UNKNOWN"); \
+	    	printk("\tABI Version: %d\n", abi); \
+	    } while(0)
+
+	    #define DEBUG_EHDR_TYPE(type) do { \
+	    	printk("\tType: %s\n", type == ET_NONE ? "No file type" : \
+	    		                   type == ET_REL ? "Relocatable object file" : \
+	    		                   type == ET_EXEC ? "Executable file" : \
+	    		                   type == ET_DYN ? "Shared object file" : \
+	    		                   type == ET_CORE ? "Core file" : \
+	    		                   "Environment-specific or Processor-specific \
+	    		                   value" ); \
+		} while(0)
+	
+		#define DEBUG_EHDR_ENTRY_ADDR(address) printk("\tEntry point address: %p\n", address)
+		#define DEBUG_EHDR_PHOFF(offset) printk("\tStart of program headers: %d (bytes into file)\n", offset)
+	    #define DEBUG_EHDR_SHOFF(offset) printk("\tStart of section headers: %d (bytes into file)\n", offset)
+	    #define DEBUG_EHDR_EHSIZE(size)	printk("\tSize of this header: %d (bytes)\n", size)
+	    #define DEBUG_EHDR_PHSIZE(size) printk("\tSize of program headers: %d (bytes)\n", size)
+	    #define DEBUG_EHDR_SHSIZE(size) printk("\tSize of section headers: %d (bytes)\n", size)
+	    #define DEBUG_EHDR_SHSTRINDEX(index) printk("\tSection header string table index: %d\n", index)
+		#define DEBUG_EHDR_PHNUM(num) printk("\tNumber of program headers: %d\n", num)
+	    #define DEBUG_EHDR_SHNUM(num) printk("\tNumber of section headers: %d\n", num)
+	#else
+		/* e_ident[16] macros */
+	    #define DEBUG_EL_MAGIC(e_ident)
+	    #define DEBUG_EL_CLASS(class)
+	    #define DEBUG_EL_DATA(data)
+	    #define DEBUG_EL_VERSION(data)
+	    #define DEBUG_EL_ABI(abi)
+	    /* Elf64_Ehdr macros */
+	    #define DEBUG_EHDR_TYPE(type)
+	    #define DEBUG_EHDR_ENTRY_ADDR(address)
+	    #define DEBUG_EHDR_PHOFF(offset)
+	    #define DEBUG_EHDR_SHOFF(offset)
+	    #define DEBUG_EHDR_EHSIZE(size)
+	    #define DEBUG_EHDR_PHSIZE(size)
+	    #define DEBUG_EHDR_SHSIZE(size)
+	    #define DEBUG_EHDR_SHSTRINDEX(index)
+	    #define DEBUG_EHDR_PHNUM(num)
+	    #define DEBUG_EHDR_SHNUM(num)
+	#endif	/* DEBUG endif */
+	#endif /* __ELF_H endif */
 #endif

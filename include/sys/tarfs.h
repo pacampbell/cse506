@@ -1,6 +1,10 @@
 #ifndef _TARFS_H
 #define _TARFS_H
 
+#include <sys/sbunix.h>
+#include <sbunix/string.h>
+#include <sys/defs.h>
+
 extern char _binary_tarfs_start;
 extern char _binary_tarfs_end;
 
@@ -37,6 +41,13 @@ struct posix_header_ustar {
 	char pad[12];
 };
 
-void traverse_tars(void);
+struct tarfs_entry {
+	const char *path;		/* Path of the file in tarfs */
+	char *data_base;		/* Base address of file */
+	uint64_t size;			/* How large the file is in bytes */
+};
+typedef struct tarfs_entry tarfs_entry;
+
+tarfs_entry* traverse_tars(const char *path, tarfs_entry *t_entry);
 
 #endif

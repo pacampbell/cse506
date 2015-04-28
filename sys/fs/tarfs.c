@@ -1,7 +1,7 @@
 #define __KERNEL__
 #include <sys/tarfs.h>
-#include <sys/sbunix.h>
 
+/*
 static char* type(char t) {
 	switch(t) {
 		case TAR_REGTYPE:
@@ -26,6 +26,7 @@ static char* type(char t) {
 			return "";
 	}
 }
+*/
 
 static uint64_t covert_base_8(char *str) {
 	uint64_t value = 0;
@@ -36,16 +37,20 @@ static uint64_t covert_base_8(char *str) {
 	return value;
 }
 
-void traverse_tars(void) {
-	uint64_t size = &_binary_tarfs_end - &_binary_tarfs_start;
-	printk("Tarfs Size: %d bytes\n", size);
-	printk("start: %p\n", &_binary_tarfs_start);
-	printk("end: %p\n", &_binary_tarfs_end);
-
+tarfs_entry* traverse_tars(const char *path, tarfs_entry *t_entry) {
+	tarfs_entry *found = NULL;
 	struct posix_header_ustar *entry = (struct posix_header_ustar *)&_binary_tarfs_start;
 	while((uint64_t)entry < (uint64_t)(&_binary_tarfs_end)) {
 		uint64_t e_size = covert_base_8(entry->size);
-		printk("%s %d %s\n", type(entry->typeflag[0]), e_size, entry->name);
+		// See if we found the entry we are searching for.
+		if(strcmp(path, entry->name)) {
+			t_entry->path = path;
+			t_entry->size = e_size;
+			t_entry->data_base = (char*)((char*)entry + sizeof(struct posix_header_ustar));
+			found = t_entry;
+			break;
+		}
+		// If not get the next tars entry
 		entry = (struct posix_header_ustar *)((char*)entry + sizeof(struct posix_header_ustar) + e_size);
 		if(e_size > 0) {
 			// Compute the padding size
@@ -54,4 +59,5 @@ void traverse_tars(void) {
 			entry = (struct posix_header_ustar *)((char*)entry + padding);
 		}
 	}
+	return found;
 }

@@ -6,5 +6,6 @@
         #include <sys/defs.h>
         void memset(void *buff, char value, uint64_t size);
         size_t strlen(const char *str);
+        bool strcmp(const char *str1, const char *str2);
     #endif
 #endif
