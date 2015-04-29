@@ -4,9 +4,9 @@
 
 void load_elf(char *data, uint64_t length) {
 	if(validate_header(data)) {
-		printk("Valid ELF header for system.");
+		printk("Valid ELF header for system.\n");
 	} else {
-		printk("Invalid ELF header for system.");
+		printk("Invalid ELF header for system.\n");
 	}
 }
 

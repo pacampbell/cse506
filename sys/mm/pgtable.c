@@ -190,6 +190,37 @@ void* kmalloc_pg(void) {
     return address;
 }
 
+
+
+pml4_t* copy_page_tables(pml4_t *src) {
+    pml4_t *copy = NULL;
+    if(src != NULL) {
+        // Make src virtual
+        src = (pml4_t*)PHYS_TO_VIRT(src);
+        // Create a new pml4_t
+        copy = (pml4_t*) PHYS_TO_VIRT(kmalloc_pg());
+        // Zero out the page
+        memset(copy, 0, PAGE_SIZE);
+        // Begin copying the first level of the page table
+        for(int i = 0; i < MAX_TABLE_ENTRIES; i++) {
+            if(src->entries[i] != 0x0) {
+                if((src->entries[i] & (P | RW | US)) == (P | RW | US)) {
+                    // Kernel level page, just link it
+                    copy->entries[i] = src->entries[i];    
+                    printk("Kernel level page found.\n");
+                } else {
+                    // Need to make copies of the page
+                    panic("Did not implement user page copy.\n");
+                    __asm__ __volatile__("cli; hlt;");
+                }
+            }
+        }
+        // Convert the new cr3 into a physical address
+        copy = (pml4_t*) VIRT_TO_PHYS(copy);
+    }
+    return copy;
+}
+
 void kfree_pg(void *address) {
     uint32_t page_index = addr_to_pg((void*)VIRT_TO_PHYS(address));
     set_pg_free(page_index, 1);

@@ -11,6 +11,7 @@
         #define MAX_PAGES 8192
         #define WORD_SIZE_BITS 32
         #define PAGE_SIZE 0x1000
+        #define MAX_TABLE_ENTRIES 512
 
         /* Permission bits - Chapter 4-18 Vol 3A */
         #define P 0x1           // Present
@@ -24,19 +25,19 @@
 
         /* Multi level page table directories */
         struct pml4_t {
-            uint64_t entries[512];
+            uint64_t entries[MAX_TABLE_ENTRIES];
         };
 
         struct pdpt_t {
-            uint64_t entries[512];
+            uint64_t entries[MAX_TABLE_ENTRIES];
         };
 
         struct pd_t {
-            uint64_t entries[512];
+            uint64_t entries[MAX_TABLE_ENTRIES];
         };
 
         struct pt_t {
-            uint64_t entries[512];
+            uint64_t entries[MAX_TABLE_ENTRIES];
         };
 
         typedef struct pml4_t pml4_t;
@@ -56,6 +57,13 @@
         void loadPageDirectory(uint64_t *address);
         void* kmalloc_pg(void);
         void kfree_pg(void *address);
+
+        /**
+         * Makes a copy of a src page table.
+         * @param src Page table pml4 to start copying.
+         * @return Returns a copy of src.
+         */
+        pml4_t* copy_page_tables(pml4_t *src);
 
         /* Page table helper methods */
         uint64_t extract_pml4(uint64_t virtual_address);

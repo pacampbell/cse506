@@ -101,19 +101,23 @@ void dump_task(Task *task) {
     #endif
 }
 
-Task* create_kernel_task(const char *name, void(*code)()) {
+Task* create_user_task(const char *name, void(*code)()) {
     // Get the kernel page tables
     pml4_t *kernel_pml4 = (pml4_t *)get_cr3();
+    // Copy the kernels page tables
+    pml4_t *user_pml4 = copy_page_tables(kernel_pml4);
+    printk("Kernel pml4: %p\n", kernel_pml4);
+    printk("User pml4: %p\n", user_pml4);
     // Get the kernel flags
     uint64_t kernel_rflags = get_rflags();
-    // Allocate space for a new kernel task
+    // Allocate space for a new user task
     Task *user_task = (Task*) PHYS_TO_VIRT(kmalloc_pg());
     user_task->mm = NULL;
     // Create space for a new stack
     uint64_t user_task_stack = (uint64_t) PHYS_TO_VIRT(kmalloc_pg());
     // Initialize the task
     create_new_task(user_task, name, USER, NEUTRAL_PRIORITY, kernel_rflags,
-                    kernel_pml4, user_task_stack, code);
+                    user_pml4, user_task_stack, code);
     // Add the task to the scheduler list
     insert_into_list(&tasks, user_task);
     // Print out contents of the task
@@ -121,7 +125,7 @@ Task* create_kernel_task(const char *name, void(*code)()) {
     return user_task;
 }
 
-Task* create_user_task(const char *name, void(*code)()) {
+Task* create_kernel_task(const char *name, void(*code)()) {
     // Get the kernel page tables
     pml4_t *kernel_pml4 = (pml4_t *)get_cr3();
     // Get the kernel flags
@@ -233,11 +237,11 @@ void preempt(bool discard) {
     if(discard) {
         // The old process no longer wants to run
         old_task->state = TERMINATED;
-        printk("old_count: %d\n", task_count);
+        // printk("old_count: %d\n", task_count);
         task_count--;
-        printk("new_count: %d\n", task_count);
+        // printk("new_count: %d\n", task_count);
     }
-    printk("%d task_name = %s\n", task_count, current_task->name);
+    // printk("%d task_name = %s\n", task_count, current_task->name);
     // Attempt to switch tasks; Assembly magic voodo
     switch_tasks(old_task, current_task);
 }
@@ -245,9 +249,13 @@ void preempt(bool discard) {
 void set_task(Task *task) {
     current_task = task;
     current_task->state = RUNNING;
+    /* Set the rest of the registers */
     __asm__ __volatile__(
         /* Save the argument in the register */
         "movq %0, %%rax;"
+        /* Set cr3 */
+        "movq 0x88(%0), %%rdi;"
+        "movq %%rdi, %%cr3;"
         /* Set the rest of the registers */
         "movq 0x8(%%rax), %%rbx;"
         "movq 0x10(%%rax), %%rcx;"
@@ -311,9 +319,9 @@ void switch_tasks(Task *old, Task *new) {
                 "movq %%r13, 0x70(%0);"
                 "movq %%r14, 0x78(%0);"
                 "movq %%r15, 0x80(%0);"
-                /* set rbp */
+                /* save rbp */
                 "movq %%rbp, 0x30(%0);"
-                /* set rsp */
+                /* save rsp */
                 "movq %%rsp, 0x40(%0);"
                 : 
                 : "r"(old)
@@ -338,6 +346,9 @@ void switch_tasks(Task *old, Task *new) {
         __asm__ __volatile__(
             /* Save the argument in the register */
             "movq %0, %%rax;"
+            /* Set cr3 */
+            "movq 0x88(%0), %%rdi;"
+            "movq %%rdi, %%cr3;"
             /* Set the rest of the registers */
             "movq 0x8(%%rax), %%rbx;"
             "movq 0x10(%%rax), %%rcx;"
