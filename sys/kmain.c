@@ -2,15 +2,27 @@
 #include <sbunix/kmain.h>
 
 void awesomefunc(void) {
-    printk("I'm awesome!!! woot woot\n");
+    int a = 1000;
+    while(a--) {
+        printk("I'm awesome!!! woot woot %d\n", a);
+        preempt(false);
+    }
     preempt(true);
 }
 
 void idle(void) {
+    //TODO: fix this
     while(1) {
-        // printk("idle loop\n");
+        printk("idle loop\n");
+        __asm__ __volatile__("hlt;");
+        if(get_task_count() > 3) {
+            //break;
+        } 
         preempt(false);
+        
     } 
+
+    preempt(true);
 }
 
 /**
@@ -24,14 +36,18 @@ void kmain(void) {
     start_shell();
     /* Everything is started now spin */
     while(1) {
+        //TODO: fix this
+        if(false && get_task_count() <= 2) {
+            create_kernel_task("idle", idle);           /* Create the kernel idle loop */
+        }
         /* Done doing our work, now just wait */
         preempt(false);
     }
 }
 
 void init_services(void) {
-    // create_kernel_task("awesomefunc", awesomefunc);
-    create_kernel_task("idle", idle); /* Create the kernel idle loop */
+    create_user_task("awesome_user", awesomefunc); /* Create the test user task*/
+    create_kernel_task("idle", idle);           /* Create the kernel idle loop */
 }
 
 void start_shell(void) {

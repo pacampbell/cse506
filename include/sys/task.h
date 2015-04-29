@@ -8,6 +8,7 @@
         #include <sys/defs.h>
         #include <sbunix/string.h>
         #include <sys/pgtable.h>
+        #include <sys/mm/vma.h>
         /* Process/Task constants and typedefs */
         #define PID_MAP_LENGTH 65535
         #define MAX_PRIORITY 0xFFFFFFFF
@@ -47,10 +48,11 @@
             task_state_t state;                 /* State of the process */
             pid_t pid;                          /* Unique identifier of the process */
             const char *name;                   /* Convenience name; Optional */
-            priority_t priority;                /* priority value from [0, 2^64 - 1]*/
+            priority_t priority;                /* priority value from [0, 2^64 - 1] */
             task_type_t type;                   /* Type of task kernel or user */
             struct Task *next;                  /* Next task in the list */
             struct Task *prev;                  /* Previous Task in the list */
+            struct mm_struct *mm, *active_mm;     /* The mm_struct of this task */
         };
         typedef struct Task Task;
 
@@ -69,10 +71,22 @@
         Task* create_kernel_task(const char *name, void(*code)());
 
         /**
+         * Create a user task.
+         * @param name Short name identifying the name of the task.
+         * @param code Function pointer which should start at the code to be executed.
+         */
+        Task* create_user_task(const char *name, void(*code)());
+
+        /**
          * Pushes values into the stack for the newly created task.
          * @param task Task stack to initialize.
          */
         void setup_new_stack(Task *task);
+
+        /**
+         * get the number of running tasks in the list
+         */
+        int get_task_count(void);
 
         /**
          * Dumps the contents of a task.

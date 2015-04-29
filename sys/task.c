@@ -5,6 +5,7 @@ extern struct tss_t tss;
 
 static Task *tasks;
 static Task *current_task;
+static int task_count = 0;
 
 /* Used for assigning a pid to a task */
 static uint64_t pid_map[PID_MAP_LENGTH];
@@ -106,6 +107,26 @@ Task* create_kernel_task(const char *name, void(*code)()) {
     // Get the kernel flags
     uint64_t kernel_rflags = get_rflags();
     // Allocate space for a new kernel task
+    Task *user_task = (Task*) PHYS_TO_VIRT(kmalloc_pg());
+    user_task->mm = NULL;
+    // Create space for a new stack
+    uint64_t user_task_stack = (uint64_t) PHYS_TO_VIRT(kmalloc_pg());
+    // Initialize the task
+    create_new_task(user_task, name, USER, NEUTRAL_PRIORITY, kernel_rflags,
+                    kernel_pml4, user_task_stack, code);
+    // Add the task to the scheduler list
+    insert_into_list(&tasks, user_task);
+    // Print out contents of the task
+    // dump_task(kernel_task);
+    return user_task;
+}
+
+Task* create_user_task(const char *name, void(*code)()) {
+    // Get the kernel page tables
+    pml4_t *kernel_pml4 = (pml4_t *)get_cr3();
+    // Get the kernel flags
+    uint64_t kernel_rflags = get_rflags();
+    // Allocate space for a new kernel task
     Task *kernel_task = (Task*) PHYS_TO_VIRT(kmalloc_pg());
     // Create space for a new stack
     uint64_t kernel_task_stack = (uint64_t) PHYS_TO_VIRT(kmalloc_pg());
@@ -118,6 +139,7 @@ Task* create_kernel_task(const char *name, void(*code)()) {
     // dump_task(kernel_task);
     return kernel_task;
 }
+
 
 void setup_new_stack(Task *task) {
     __asm__ __volatile__(
@@ -178,6 +200,22 @@ Task* create_new_task(Task* task, const char *name, task_type_t type,
     return task;
 }
 
+int get_task_count(void) {   
+    return task_count;
+}
+
+bool is_idle_task(const char * c) {
+    if(c == NULL) return false;
+    if(*(c + 0) == 'i' &&
+            *(c + 1) == 'd' &&
+            *(c + 2) == 'l' &&
+            *(c + 3) == 'e') {
+        return true;
+    } else {
+        return false;
+    }
+}
+
 void preempt(bool discard) {
     Task *old_task = current_task;
     current_task = old_task->next;
@@ -185,10 +223,21 @@ void preempt(bool discard) {
         // Set the current task back to the head of the list
         current_task = tasks;
     }
+    if(false && is_idle_task(current_task->name)) {
+        current_task = current_task->next;
+        if(current_task == NULL) {
+            return;
+        }
+    }
+
     if(discard) {
         // The old process no longer wants to run
         old_task->state = TERMINATED;
+        printk("old_count: %d\n", task_count);
+        task_count--;
+        printk("new_count: %d\n", task_count);
     }
+    printk("%d task_name = %s\n", task_count, current_task->name);
     // Attempt to switch tasks; Assembly magic voodo
     switch_tasks(old_task, current_task);
 }
@@ -341,6 +390,7 @@ bool insert_into_list(Task **list, Task *task) {
         }
         success = true;
     }
+    if(success) task_count++;
     return success;
 }
 
