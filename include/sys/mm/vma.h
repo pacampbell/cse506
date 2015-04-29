@@ -4,7 +4,6 @@
 #include <sys/defs.h>
 #include <sys/pgtable.h>
 
-
 #define VM_READ         0x00000001      /* currently active flags */
 #define VM_WRITE        0x00000002
 #define VM_EXEC         0x00000004
@@ -36,6 +35,20 @@ struct mm_struct {
     uint64_t start_data;
     uint64_t end_code;
     uint64_t start_code;
+    uint64_t pgd; /* the page table pointer  */
 };
+void create_mm(struct mm_struct *mm,
+               uint64_t start_stack,
+               uint64_t mmap_base,
+               uint64_t brk,
+               uint64_t start_brk,
+               uint64_t end_data,
+               uint64_t start_data,
+               uint64_t end_code,
+               uint64_t start_code,
+               uint64_t pgd
+              );
+
+
 
 #endif

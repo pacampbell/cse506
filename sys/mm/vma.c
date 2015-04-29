@@ -9,7 +9,8 @@ void create_mm(struct mm_struct *mm,
                uint64_t end_data,
                uint64_t start_data,
                uint64_t end_code,
-               uint64_t start_code
+               uint64_t start_code,
+               uint64_t pgd
               ) {
 
     mm->start_stack = start_stack;
@@ -20,6 +21,7 @@ void create_mm(struct mm_struct *mm,
     mm->start_data  = start_data;
     mm->end_code    = end_code;
     mm->start_code  = start_code;
+    mm->pgd         = pgd;
 
     struct vm_area_struct *vm_ptr = (struct vm_area_struct*)kmalloc_pg();
 
