@@ -4,7 +4,7 @@
 void awesomefunc(void) {
     int a = 1000;
     while(a--) {
-        printk("I'm awesome!!! woot woot %d\n", a);
+        //printk("I'm awesome!!! woot woot %d\n", a);
         preempt(false);
     }
     preempt(true);
@@ -13,8 +13,8 @@ void awesomefunc(void) {
 void idle(void) {
     //TODO: fix this
     while(1) {
-        printk("idle loop\n");
-        //__asm__ __volatile__("hlt;");
+        //printk("idle loop\n");
+        __asm__ __volatile__("hlt;");
         if(get_task_count() > 3) {
             //break;
         } 

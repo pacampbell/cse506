@@ -101,18 +101,19 @@ void dump_task(Task *task) {
     #endif
 }
 
-Task* create_kernel_task(const char *name, void(*code)()) {
+Task* create_user_task(const char *name, void(*code)()) {
     // Get the kernel page tables
     pml4_t *kernel_pml4 = (pml4_t *)get_cr3();
+    //TODO: make a copy of this
     // Get the kernel flags
-    uint64_t kernel_rflags = get_rflags();
+    uint64_t user_rflags = get_rflags();
     // Allocate space for a new kernel task
     Task *user_task = (Task*) PHYS_TO_VIRT(kmalloc_pg());
     user_task->mm = NULL;
     // Create space for a new stack
     uint64_t user_task_stack = (uint64_t) PHYS_TO_VIRT(kmalloc_pg());
     // Initialize the task
-    create_new_task(user_task, name, USER, NEUTRAL_PRIORITY, kernel_rflags,
+    create_new_task(user_task, name, USER, NEUTRAL_PRIORITY, user_rflags,
                     kernel_pml4, user_task_stack, code);
     // Add the task to the scheduler list
     insert_into_list(&tasks, user_task);
@@ -121,7 +122,7 @@ Task* create_kernel_task(const char *name, void(*code)()) {
     return user_task;
 }
 
-Task* create_user_task(const char *name, void(*code)()) {
+Task* create_kernel_task(const char *name, void(*code)()) {
     // Get the kernel page tables
     pml4_t *kernel_pml4 = (pml4_t *)get_cr3();
     // Get the kernel flags
@@ -233,11 +234,9 @@ void preempt(bool discard) {
     if(discard) {
         // The old process no longer wants to run
         old_task->state = TERMINATED;
-        printk("old_count: %d\n", task_count);
         task_count--;
-        printk("new_count: %d\n", task_count);
     }
-    printk("%d task_name = %s\n", task_count, current_task->name);
+    //printk("%d task_name = %s\n", task_count, current_task->name);
     // Attempt to switch tasks; Assembly magic voodo
     switch_tasks(old_task, current_task);
 }
