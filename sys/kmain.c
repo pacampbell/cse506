@@ -14,7 +14,7 @@ void idle(void) {
     //TODO: fix this
     while(1) {
         printk("idle loop\n");
-        __asm__ __volatile__("hlt;");
+        //__asm__ __volatile__("hlt;");
         if(get_task_count() > 3) {
             //break;
         } 
