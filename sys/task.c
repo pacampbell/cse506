@@ -106,8 +106,6 @@ Task* create_user_task(const char *name, void(*code)()) {
     pml4_t *kernel_pml4 = (pml4_t *)get_cr3();
     // Copy the kernels page tables
     pml4_t *user_pml4 = copy_page_tables(kernel_pml4);
-    printk("Kernel pml4: %p\n", kernel_pml4);
-    printk("User pml4: %p\n", user_pml4);
     // Get the kernel flags
     uint64_t kernel_rflags = get_rflags();
     // Allocate space for a new user task

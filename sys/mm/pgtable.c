@@ -96,7 +96,7 @@ void initializePaging(uint64_t physbase, uint64_t physfree) {
     uint64_t kern_vma = 0;
     while(kern_physbase <= kern_physfree) {
         kern_vma = kern_virt_base_addr | kern_physbase;
-        page_table->entries[extract_table(kern_vma)] = kern_physbase | P | RW | US;
+        page_table->entries[extract_table(kern_vma)] = kern_physbase | KERN_SETTINGS;
         kern_physbase += PAGE_SIZE;
     }
     /* Remap video memory; its only 4000 bytes so fits in 1 page */
@@ -106,7 +106,7 @@ void initializePaging(uint64_t physbase, uint64_t physfree) {
     // Get the page table
     page_table = get_pt(pml4, video_vma);
     // Set video mem page permissions
-    page_table->entries[extract_table(video_vma)] = video_phybase | P | RW | US;
+    page_table->entries[extract_table(video_vma)] = video_phybase | KERN_SETTINGS;
     // Increment the kernel memory by 1 more page
     kern_physbase += PAGE_SIZE;
     /* Set CR3 */
@@ -139,7 +139,7 @@ pt_t* get_pt(pml4_t *pml4, uint64_t virtual_address) {
         // Zero out the memory
         memset(page, 0, PAGE_SIZE);
         // Set the page into the current index and set permissions in the lower 12 bits
-        pml4->entries[pml4_index] = ((uint64_t)page) | P | RW | US;
+        pml4->entries[pml4_index] = ((uint64_t)page) | KERN_SETTINGS;
         //printk("pml4e final: %p\n", pml4->entries[pml4_index]);
         // Finally set the new page to pdpt_base
         pdpt_base_addr = (uint64_t)page;
@@ -157,7 +157,7 @@ pt_t* get_pt(pml4_t *pml4, uint64_t virtual_address) {
         // Zero out the memory
         memset(page, 0, PAGE_SIZE);
         // Set the page into the current index and set permissions in the lower 12 bits
-        ((pdpt_t*)pdpt_base_addr)->entries[pdpt_index] = ((uint64_t)page) | P | RW | US;
+        ((pdpt_t*)pdpt_base_addr)->entries[pdpt_index] = ((uint64_t)page) | KERN_SETTINGS;
         //printk("pdpte final: %p\n", ((pdpt_t*)pdpt_base_addr)->entries[pdpt_index]);
         // Finally set the new page to pd_base
         pd_base_addr = (uint64_t)page;
@@ -174,7 +174,7 @@ pt_t* get_pt(pml4_t *pml4, uint64_t virtual_address) {
         // Zero out the memory
         memset(page, 0, PAGE_SIZE);
         // Set the page into the current index and set permissions in the lower 12 bits
-        ((pd_t*)pd_base_addr)->entries[pd_index] = ((uint64_t)page) | P | RW | US;
+        ((pd_t*)pd_base_addr)->entries[pd_index] = ((uint64_t)page) | KERN_SETTINGS;
         //printk("pte final: %p\n", ((pd_t*)pd_base_addr)->entries[pd_index]);
         // Finally set the new page to pd_base
         pt_base_addr = (uint64_t)page;
@@ -204,14 +204,49 @@ pml4_t* copy_page_tables(pml4_t *src) {
         // Begin copying the first level of the page table
         for(int i = 0; i < MAX_TABLE_ENTRIES; i++) {
             if(src->entries[i] != 0x0) {
-                if((src->entries[i] & (P | RW | US)) == (P | RW | US)) {
+                if((src->entries[i] & KERN_SETTINGS) == KERN_SETTINGS) {
                     // Kernel level page, just link it
                     copy->entries[i] = src->entries[i];    
-                    printk("Kernel level page found.\n");
-                } else {
-                    // Need to make copies of the page
-                    panic("Did not implement user page copy.\n");
-                    __asm__ __volatile__("cli; hlt;");
+                } else if((src->entries[i] & P) == P) {
+                    // Allocate and zero out the new pdpt
+                    pdpt_t *new_pml4e = (pdpt_t*) PHYS_TO_VIRT(kmalloc_pg());
+                    memset(new_pml4e, 0, PAGE_SIZE);
+                    // pdpt entry - Start walking
+                    pdpt_t *pml4e = (pdpt_t*) PHYS_TO_VIRT(src->entries[i]);
+                    // Start searching the pml4e for present pdpt
+                    for(int j = 0; j < MAX_TABLE_ENTRIES; j++) {
+                        if((pml4e->entries[j] & P) == P) {
+                            // Allocate a new pd and zero out memory
+                            pd_t *new_pdpte = (pd_t*) PHYS_TO_VIRT(kmalloc_pg());
+                            memset(new_pdpte, 0, PAGE_SIZE);
+                            // Start searching the pdpt for present pd
+                            pd_t *pdpte = (pd_t *) PHYS_TO_VIRT(pml4e->entries[j]);
+                            for(int k = 0; k < MAX_TABLE_ENTRIES; k++) {
+                                if((pdpte->entries[k] & P) == P) {
+                                    // Allocate a new page table and zero out memory
+                                    pt_t *new_pde = (pt_t*) PHYS_TO_VIRT(kmalloc_pg());
+                                    memset(new_pde, 0, PAGE_SIZE);
+                                    // Start searching the pt for present page
+                                    pt_t *pde = (pt_t*) PHYS_TO_VIRT(pdpte->entries[k]);
+                                    for(int l = 0; l < MAX_TABLE_ENTRIES; l++) {
+                                        if((pde->entries[l] & P) == P) {
+                                            // Mark the entry as copy on write 
+                                            // and read only
+                                            uint64_t address = (pde->entries[l] | COW) & ~RW;
+                                            // Add to new page table
+                                            new_pde->entries[l] = address;
+                                            // Update in old page table
+                                            pde->entries[l] = address;
+                                        }
+                                    }
+                                    // Add the pde to the Page directory
+                                    new_pdpte->entries[k] = (uint64_t) VIRT_TO_PHYS(new_pde);
+                                }
+                            }
+                            new_pml4e->entries[j] = (uint64_t) VIRT_TO_PHYS(new_pdpte);
+                        }
+                    }
+                    copy->entries[i] = (uint64_t) VIRT_TO_PHYS(new_pml4e);   
                 }
             }
         }
