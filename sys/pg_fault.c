@@ -18,12 +18,19 @@ static void pg_fault_callback(registers_t regs) {
     int u = extract_bits(regs.err_code, 2, 2);
     int r = extract_bits(regs.err_code, 3, 3);
     int f = extract_bits(regs.err_code, 4, 4);
+    int cow = extract_bits(regs.err_code, 63, 63);
 
     printk("%x", p);
     printk("%x", w);
     printk("%x", u);
     printk("%x", r);
-    printk("%x\n", f);
+    printk("%x", f);
+    printk(" %x\n", cow);
+
+
+    if(cow) {
+        printk("The access requires copy on write which is NOT implemented.\n");
+    }
 
 
     /*
@@ -38,7 +45,8 @@ static void pg_fault_callback(registers_t regs) {
     } else {
         printk("The access causing the fault was a read.\n");
     }
-    /*
+
+    /*    
     if(u) {
         printk("A user-mode access caused the fault.\n");
     } else {
