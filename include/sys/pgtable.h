@@ -13,6 +13,9 @@
         #define PAGE_SIZE 0x1000
         #define MAX_TABLE_ENTRIES 512
 
+        /* Copy on write - Use an unused bit to represent COW */
+        #define COW 0x1000000000000000
+        
         /* Permission bits - Chapter 4-18 Vol 3A */
         #define P 0x1           // Present
         #define RW 0x2          // Read/Write
@@ -21,7 +24,9 @@
         #define PCD 0x10        // Page-level cache disable
         #define A 0x20          // Accessed
 
-
+        /* Helper constants for paging */
+        #define USER_SETTINGS (P | RW | US)
+        #define KERN_SETTINGS (P | RW) 
 
         /* Multi level page table directories */
         struct pml4_t {

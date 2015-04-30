@@ -33,7 +33,7 @@
 	#define EL_NIDENT 16
 
 	/* e_type constants */
-	#define ET_NONE 0				/* No file type */
+	#define ET_NONE 0				/*      No file type     */
 	#define ET_REL 1				/* Relocatable file type */
 	#define ET_EXEC 2				/* Executeable file type */
 	#define ET_DYN 3				/* Shared Objct file type */

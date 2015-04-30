@@ -30,7 +30,7 @@ void kmain(void) {
     /* do some basic setup */
     init_services();
     /* start the shell */
-    start_shell();
+    // start_shell();
     /* Everything is started now spin */
     while(1) {
         //TODO: fix this
