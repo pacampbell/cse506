@@ -4,7 +4,7 @@
 void awesomefunc(void) {
     int a = 1000;
     while(a--) {
-        //printk("I'm awesome!!! woot woot %d\n", a);
+        // printk("I'm awesome!!! woot woot %d\n", a);
         preempt(false);
     }
     preempt(true);
