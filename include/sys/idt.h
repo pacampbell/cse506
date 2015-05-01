@@ -1,6 +1,5 @@
 #ifndef _IDT_H
 #define _IDT_H
-#define __KERNEL__
 #include <sys/defs.h>
 #include <sbunix/string.h>
 #include <sys/common.h>
@@ -45,6 +44,13 @@ struct idt_ptr_struct
    uint64_t base;                // The address of the first element in our idt_entry_t array.
 } __attribute__((packed));
 typedef struct idt_ptr_struct idt_ptr_t;
+
+typedef struct isr_stack_frame {
+	uint64_t r15, r14, r13, r12, r11, r10, r9, r8, 
+	         rdi, rsi, rdx, rcx, rbx, rax, rbp, rip,
+	      	 cs, rflags, rsp, ss;
+} isr_stack_frame_t;
+
 
 void init_idt(void);
 
@@ -116,7 +122,7 @@ extern void irq_15();
 #define HW_ISR_STACK_FAULT 0x0C
 #define HW_ISR_GENERAL_PROTECTION_FAULT 0x0D
 #define HW_ISR_PAGE_FAULT 0x0E
-#define HW_ISR_RESERVED_15 0x0F     /* Some places call this unknwon interrupt */
+#define HW_ISR_RESERVED_15 0x0F     /* Some places call this unknown interrupt */
 #define HW_ISR_MATH_FAULT 0x10
 #define HW_ISR_ALIGNMENT_CHECK 0x11
 #define HW_ISR_MACHINE_CHECK 0x12

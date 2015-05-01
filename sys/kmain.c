@@ -44,7 +44,7 @@ void kmain(void) {
 
 void init_services(void) {
     create_kernel_task("idle", idle);           /* Create the kernel idle loop */
-    create_user_task("awesome_user", awesomefunc); /* Create the test user task*/
+    // create_user_task("awesome_user", awesomefunc); /* Create the test user task*/
 }
 
 void start_shell(void) {

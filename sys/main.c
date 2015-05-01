@@ -10,6 +10,7 @@
 #include <sbunix/kernel.h>
 #include <sys/pgtable.h>
 #include <sbunix/kmain.h>
+#include <sys/syscall_k.h>
 
 void *kern_free;
 void *kern_base;
@@ -36,6 +37,8 @@ void start(uint32_t* modulep, void* physbase, void* physfree) {
     // Setup paging
     init_pg_fault();
     initializePaging((uint64_t)physbase, (uint64_t)physfree);
+    // Set up the syscall table
+    init_syscall();
     // Create the kmain task
     Task *kmain_task = create_kernel_task("KMAIN", kmain);
     // dump_task(kmain_task);
