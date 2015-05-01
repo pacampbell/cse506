@@ -121,6 +121,68 @@ void initializePaging(uint64_t physbase, uint64_t physfree) {
     printk("Remapped video mem [%p:%p]\n", video_vma, video_vma + 4000);
 }
 
+pt_t* get_pt_virt(pml4_t *pml4, uint64_t virtual_address) {
+    uint64_t pml4_index = extract_pml4(virtual_address);
+    uint64_t pdpt_index = extract_directory_ptr(virtual_address);
+    uint64_t pd_index = extract_directory(virtual_address);
+    // Now begin finding the base address for each step of the walk
+    // also zero out lower 12 bits for permissions and copy the rest
+    //printk("pml4 index: %d\n", pml4_index);
+    uint64_t pdpt_base_addr = pml4->entries[pml4_index] & PG_ALIGN;
+    //printk("pdpt_base_addr: %p\n", pdpt_base_addr);
+    // Check to see if we have empty entry
+    if(pdpt_base_addr == 0x0) {
+        // Get a new page
+        pdpt_t *page = (pdpt_t*) PHYS_TO_VIRT(kmalloc_pg());
+        // Move the kernel free pointer by 1 page
+        kern_free = kern_free + PAGE_SIZE;
+        // Zero out the memory
+        memset(page, 0, PAGE_SIZE);
+        // Set the page into the current index and set permissions in the lower 12 bits
+        pml4->entries[pml4_index] = VIRT_TO_PHYS(page) | KERN_SETTINGS;
+        //printk("pml4e final: %p\n", pml4->entries[pml4_index]);
+        // Finally set the new page to pdpt_base
+        pdpt_base_addr = (uint64_t)page;
+    }
+
+    //printk("pdpt_index: %d\n", pdpt_index);
+    uint64_t pd_base_addr = ((pdpt_t*)pdpt_base_addr)->entries[pdpt_index] & PG_ALIGN;
+    //printk("pd_base_addr: %p\n", pd_base_addr);
+    // Check to see if we have empty entry
+    if(pd_base_addr == 0x0) {
+        // Get a new page
+        pd_t *page = (pd_t*) PHYS_TO_VIRT(kmalloc_pg());
+        // Move the kernel free pointer by 1 page
+        kern_free = kern_free + PAGE_SIZE;
+        // Zero out the memory
+        memset(page, 0, PAGE_SIZE);
+        // Set the page into the current index and set permissions in the lower 12 bits
+        ((pdpt_t*)pdpt_base_addr)->entries[pdpt_index] = VIRT_TO_PHYS(page) | KERN_SETTINGS;
+        //printk("pdpte final: %p\n", ((pdpt_t*)pdpt_base_addr)->entries[pdpt_index]);
+        // Finally set the new page to pd_base
+        pd_base_addr = (uint64_t)page;
+    }
+
+    //printk("pd_index: %d\n", pd_index);
+    uint64_t pt_base_addr = ((pd_t*)pd_base_addr)->entries[pd_index] & PG_ALIGN;
+    //printk("pt_base_addr: %p\n", pt_base_addr);
+    if(pt_base_addr == 0x0) {
+        // Get a new page
+        pt_t *page = (pt_t*) PHYS_TO_VIRT(kmalloc_pg());
+        // Move the kernel free pointer by 1 page
+        kern_free = kern_free + PAGE_SIZE;
+        // Zero out the memory
+        memset(page, 0, PAGE_SIZE);
+        // Set the page into the current index and set permissions in the lower 12 bits
+        ((pd_t*)pd_base_addr)->entries[pd_index] = VIRT_TO_PHYS(((uint64_t)page)) | KERN_SETTINGS;
+        //printk("pte final: %p\n", ((pd_t*)pd_base_addr)->entries[pd_index]);
+        // Finally set the new page to pd_base
+        pt_base_addr = (uint64_t)page;
+    }
+
+    return (pt_t*)pt_base_addr;
+}
+
 pt_t* get_pt(pml4_t *pml4, uint64_t virtual_address) {
     uint64_t pml4_index = extract_pml4(virtual_address);
     uint64_t pdpt_index = extract_directory_ptr(virtual_address);
@@ -194,7 +256,7 @@ uint64_t insert_page(pml4_t *cr3, uint64_t virtual_address, uint64_t permissions
     // Make the pml4 a virtual address
     cr3 = (pml4_t *)PHYS_TO_VIRT(cr3);
     // Get the page table using this pml4 and virtual address
-    pt_t* page_table = (pt_t*) PHYS_TO_VIRT(get_pt(cr3, virtual_address));
+    pt_t* page_table = (pt_t*) get_pt_virt(cr3, virtual_address);
     // Get a new page to insert into the table
     uint64_t page = (uint64_t)kmalloc_pg() | permissions;
     // Get the page table offset from the virtual address 

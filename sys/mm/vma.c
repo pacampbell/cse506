@@ -23,7 +23,7 @@ void create_mm(struct mm_struct *mm,
     mm->start_code  = start_code;
     mm->pgd         = pgd;
 
-    struct vm_area_struct *vm_ptr = (struct vm_area_struct*)kmalloc_pg();
+    struct vm_area_struct *vm_ptr = (struct vm_area_struct*)PHYS_TO_VIRT(kmalloc_pg());
 
     //set up txt section
     mm->mmap = vm_ptr;
@@ -34,7 +34,7 @@ void create_mm(struct mm_struct *mm,
     vm_ptr->vm_prot = VM_READ | VM_EXEC;
 
     //set up data
-    vm_ptr->next = (struct vm_area_struct*)kmalloc_pg();
+    vm_ptr->next = (struct vm_area_struct*)PHYS_TO_VIRT(kmalloc_pg());
     vm_ptr->next->prev = vm_ptr;
     vm_ptr = vm_ptr->next;
     vm_ptr->vm_start = mm->start_data;
@@ -43,7 +43,7 @@ void create_mm(struct mm_struct *mm,
     vm_ptr->vm_prot = VM_READ | VM_WRITE;
 
     //set up bss
-    vm_ptr->next = (struct vm_area_struct*)kmalloc_pg();
+    vm_ptr->next = (struct vm_area_struct*)PHYS_TO_VIRT(kmalloc_pg());
     vm_ptr->next->prev = vm_ptr;
     vm_ptr = vm_ptr->next;
     vm_ptr->vm_start = mm->end_data;
@@ -52,7 +52,7 @@ void create_mm(struct mm_struct *mm,
     vm_ptr->vm_prot = VM_READ | VM_WRITE;
     
     //set up heap
-    vm_ptr->next = (struct vm_area_struct*)kmalloc_pg();
+    vm_ptr->next = (struct vm_area_struct*)PHYS_TO_VIRT(kmalloc_pg());
     vm_ptr->next->prev = vm_ptr;
     vm_ptr = vm_ptr->next;
     vm_ptr->vm_start = mm->start_brk;
@@ -61,7 +61,7 @@ void create_mm(struct mm_struct *mm,
     vm_ptr->vm_prot = VM_READ | VM_EXEC;
 
     //set up mem map
-    vm_ptr->next = (struct vm_area_struct*)kmalloc_pg();
+    vm_ptr->next = (struct vm_area_struct*)PHYS_TO_VIRT(kmalloc_pg());
     vm_ptr->next->prev = vm_ptr;
     vm_ptr = vm_ptr->next;
     vm_ptr->vm_start = 0x0;
@@ -70,7 +70,7 @@ void create_mm(struct mm_struct *mm,
     vm_ptr->vm_prot = VM_READ | VM_EXEC;
 
     //set up stack
-    vm_ptr->next = (struct vm_area_struct*)kmalloc_pg();
+    vm_ptr->next = (struct vm_area_struct*)PHYS_TO_VIRT(kmalloc_pg());
     vm_ptr->next->prev = vm_ptr;
     vm_ptr = vm_ptr->next;
     vm_ptr->vm_start = 0x0;
