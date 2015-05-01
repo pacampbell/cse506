@@ -70,6 +70,16 @@
          */
         pml4_t* copy_page_tables(pml4_t *src);
 
+        /**
+         * Inserts a page into the page table referenced by cr3
+         * mapped by the virtual address;
+         * @param cr3 The physical pml4 address.
+         * @param virtual_address Virtual address to map the page to.
+         * @param permissions Permissions for the lower 12 bits of pte.
+         * @return Returns the virtual address of the newly inserted page.
+         */
+        uint64_t insert_page(pml4_t *cr3, uint64_t virtual_address, uint64_t permissions);
+
         /* Page table helper methods */
         uint64_t extract_pml4(uint64_t virtual_address);
         uint64_t extract_directory_ptr(uint64_t virtual_address);

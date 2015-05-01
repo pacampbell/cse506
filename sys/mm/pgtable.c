@@ -190,7 +190,18 @@ void* kmalloc_pg(void) {
     return address;
 }
 
-
+uint64_t insert_page(pml4_t *cr3, uint64_t virtual_address, uint64_t permissions) {
+    // Make the pml4 a virtual address
+    cr3 = (pml4_t *)PHYS_TO_VIRT(cr3);
+    // Get the page table using this pml4 and virtual address
+    pt_t* page_table = (pt_t*) PHYS_TO_VIRT(get_pt(cr3, virtual_address));
+    // Get a new page to insert into the table
+    uint64_t page = kmalloc_pg() | permissions;
+    // Get the page table offset from the virtual address 
+    uint64_t pt_index = extract_table(virtual_address);
+    page_table->entries[pt_index] = page;
+    return PHYS_TO_VIRT(page);
+}
 
 pml4_t* copy_page_tables(pml4_t *src) {
     pml4_t *copy = NULL;
