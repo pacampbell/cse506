@@ -1,6 +1,8 @@
 #define __KERNEL__
 #include <sys/elf.h>
 #include <sbunix/string.h>
+#include <sys/mm/vma.h>
+#include <sys/pgtable.h>
 
 void print_elf_hdr(Elf64_Ehdr *hdr);
 
@@ -14,23 +16,47 @@ void load_elf(char *data, uint64_t length) {
         char* str_tab = ((char*)data + section[hdr->e_shstrndx].sh_offset);
         //char* str_tab = (char*)(section[(hdr->e_shstrndx )]);
         int num_secs = hdr->e_shnum;
-        char *name;//, *txt;
+        char *name;
+        uint64_t txt = 0, rodata = 0, data = 0, bss = 0;
         for(int i = 0; i < num_secs; i++) {
             name = &str_tab[section[i].sh_name];
             printk("name: %s\n", name);
             
             if(strcmp(".text", name)) {
-                //txt = ((char*)data + section[i].sh_offset);
-                printk("found .txt at: %p\n", section[i].sh_addr);
+                txt = section[i].sh_offset;
+                printk("found .txt at: %p\n", txt);
 
             } else if(strcmp(".rodata", name)) {
-                printk("found .rodata at: %p\n", section[i].sh_addr);
+                rodata = section[i].sh_addr;
+                //printk("found .rodata at: %p\n",rodata);
 
             } else if(strcmp(".data", name)) {
-                printk("found .data at: %p\n", section[i].sh_addr);
+                data = section[i].sh_addr;
+                //printk("found .data at: %p\n", data);
+
+            } else if(strcmp(".bss", name)) {
+                bss = section[i].sh_addr;
+                //printk("found .bss at: %p\n", data);
 
             }
+
         }
+
+        struct mm_struct *mm = (struct mm_struct*)PHYS_TO_VIRT(kmalloc_pg());
+
+        create_mm(mm,
+                  0, //start_stack,
+                  0, //mmap_base,
+                  0, //brk,
+                  0, //start_brk,
+                  bss,
+                  data,
+                  (data > rodata)?data:rodata,
+                  hdr->e_entry,
+                  0 //pgd
+                );
+
+
 
     } else {
         printk("Invalid ELF header for system.\n");
