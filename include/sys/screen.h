@@ -40,6 +40,11 @@ void putsck(char color, char* str);
 void panic(char *str);
 
 /**
+ * uses hlt and cli
+ */
+void halt();
+
+/**
  * Puts a character at the (x,y) position with the default color.
  * @param c Char to write to the terminal.
  * @param x X-coordinate to write on the terminal.

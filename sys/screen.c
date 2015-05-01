@@ -28,6 +28,10 @@ void panic(char *str) {
 
 }
 
+void halt() {
+    __asm__ __volatile__("cli; hlt;");
+}
+
 void putck(char color, char c) {
     // If we have run out of rows scroll the screen
     if(cursor_y >= TERMINAL_ROWS) {

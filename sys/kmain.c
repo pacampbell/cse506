@@ -30,7 +30,7 @@ void kmain(void) {
     /* do some basic setup */
     init_services();
     /* start the shell */
-    // start_shell();
+    start_shell();
     /* Everything is started now spin */
     while(1) {
         //TODO: fix this
@@ -53,7 +53,7 @@ void start_shell(void) {
     if(traverse_tars("bin/hello", &e) != NULL) {
         printk("name: %s\nLocation: %p\nSize: %d\n", e.path, e.data_base, e.size);
         /* Try to load file as elf */
-        load_elf(e.data_base, e.size);
+        load_elf(e.data_base, e.size, copy_page_tables(get_cr3()));
     } else {
         printk("Unable to find: %s in tarfs\n", "bin/hello");
     }
