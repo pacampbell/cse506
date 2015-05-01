@@ -105,5 +105,6 @@
          * @param Returns the address of the page table from the translation.
          */
         pt_t* get_pt(pml4_t *pml4, uint64_t virtual_address);
+        pt_t* get_pt_virt(pml4_t *pml4, uint64_t virtual_address);
     #endif
 #endif

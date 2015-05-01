@@ -54,7 +54,11 @@ void load_elf(char *data, uint64_t length, struct pml4_t *new_pml4) {
         //set up txt section
         if(PAGE_SIZE < section[txt].sh_size) {panic("ERROR: ELF txt too big\n"); halt();}
         page = insert_page(new_pml4, hdr->e_entry, USER_SETTINGS);
-        memcpy((void*)page, (void*)section[txt].sh_offset, section[txt].sh_size);
+        printk("section[txt].sh_offset: %p\n", section[txt].sh_offset);
+        printk("data: %p\n", data);
+        printk("(section[txt].sh_offset + data): %p\n", (section[txt].sh_offset + data));
+        memcpy((void*)page, (void*)(section[txt].sh_offset + data), section[txt].sh_size);
+        panic("got here :D\n");
 
         if((PAGE_SIZE + section[txt].sh_size) > low_data_addr) {
             panic("ERROR: data fits on same page as txt\n");

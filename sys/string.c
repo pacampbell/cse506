@@ -1,5 +1,6 @@
 #define __KERNEL__
 #include <sbunix/string.h>
+#include <sys/screen.h>
 
 void memset(void *buff, char value, uint64_t size) {
     if(buff != NULL) {
@@ -12,6 +13,7 @@ void memset(void *buff, char value, uint64_t size) {
 void *memcpy(void *dest, const void *src, size_t n) {
     if(dest != NULL && src != NULL) {
         for(int i = 0; i < n; i++) {
+        panic("got here :D>>>>\n");
             ((char*)dest)[i] = ((char*)src)[i];
         }
     }
