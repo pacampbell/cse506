@@ -7,6 +7,7 @@
 
 void print_elf_hdr(Elf64_Ehdr *hdr);
 
+
 void load_elf(char *data, uint64_t length, struct pml4_t *new_pml4) {
     if(validate_header(data)) {
         printk("Valid ELF header for system.\n");
@@ -19,7 +20,7 @@ void load_elf(char *data, uint64_t length, struct pml4_t *new_pml4) {
         //char* str_tab = (char*)(section[(hdr->e_shstrndx )]);
         int num_secs = hdr->e_shnum;
         char *name;
-        int txt = 0, rodata = 0, data = 0, bss = 0;
+        int txt = 0, rodata = 0, data_seg = 0, bss = 0;
         for(int i = 0; i < num_secs; i++) {
             name = &str_tab[section[i].sh_name];
             printk("name: %s\n", name);
@@ -36,7 +37,7 @@ void load_elf(char *data, uint64_t length, struct pml4_t *new_pml4) {
 
             } else if(strcmp(".data", name)) {
                 //data = section[i].sh_addr;
-                data = i;
+                data_seg = i;
                 //printk("found .data at: %p\n", data);
 
             } else if(strcmp(".bss", name)) {
@@ -48,15 +49,23 @@ void load_elf(char *data, uint64_t length, struct pml4_t *new_pml4) {
 
         }
 
+        Elf64_Phdr *phdr = (Elf64_Phdr*)( data + hdr->e_phoff);
+        printk("\n\n!!!!!!!! %d\n", hdr->e_phnum);
+        printk("phdr : %p\n", phdr);
+        printk("data: %p\n", data);
+
+        for(int i = 0; i < hdr->e_phnum; i++) {
+            printk("type: %p\n", phdr[i].p_type);
+        }
+
         uint64_t page, low_data_addr;
-        low_data_addr =  (data < rodata)?section[data].sh_addr:section[rodata].sh_addr;
+        low_data_addr =  (data_seg < rodata)?section[data_seg].sh_addr:section[rodata].sh_addr;
 
         //set up txt section
         if(PAGE_SIZE < section[txt].sh_size) {panic("ERROR: ELF txt too big\n"); halt();}
         page = insert_page(new_pml4, hdr->e_entry, USER_SETTINGS);
         printk("section[txt].sh_offset: %p\n", section[txt].sh_offset);
         printk("data: %p\n", data);
-        printk("(section[txt].sh_offset + data): %p\n", (section[txt].sh_offset + data));
         memcpy((void*)page, (void*)(section[txt].sh_offset + data), section[txt].sh_size);
         panic("got here :D\n");
 
@@ -73,8 +82,8 @@ void load_elf(char *data, uint64_t length, struct pml4_t *new_pml4) {
                 0, //brk,
                 0, //start_brk,
                 section[bss].sh_addr,
-                section[data].sh_addr,
-                (data > rodata)?section[data].sh_addr:section[rodata].sh_addr,
+                section[data_seg].sh_addr,
+                (data_seg > rodata)?section[data_seg].sh_addr:section[rodata].sh_addr,
                 hdr->e_entry,
                 0 //pgd
                 );
