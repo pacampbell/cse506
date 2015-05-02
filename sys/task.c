@@ -434,3 +434,7 @@ Task *remove_task_by_pid(Task **list, pid_t pid) {
     }
     return task;
 }
+
+Task* get_current_task(void) {
+    return current_task;
+}
