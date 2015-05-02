@@ -27,44 +27,52 @@ static void pg_fault_callback(registers_t regs) {
     printk("%x", f);
     printk(" %x\n", cow);
 
+    printk("Reason: [");
 
     if(cow) {
-        printk("The access requires copy on write which is NOT implemented.\n");
+        printk("cow ");
+        //printk("The access requires copy on write which is NOT implemented.\n");
     }
 
-
-    /*
     if(p) {
-        printk("The fault was caused by a page-level protection violation.\n");
+        printk("prot"); 
+        //printk("The fault was caused by a page-level protection violation.\n");
     } else {
-        printk("The fault was caused by a non-present page.\n");
-    }
-    */
-    if(w) {
-        printk("The access causing the fault was a write.\n");
-    } else {
-        printk("The access causing the fault was a read.\n");
+        printk("mia"); 
+        //printk("The fault was caused by a non-present page.\n");
     }
 
-    /*    
-    if(u) {
-        printk("A user-mode access caused the fault.\n");
+    if(w) {
+        printk(" write"); 
+        //printk("The access causing the fault was a write.\n");
     } else {
-        printk("A supervisor-mode access caused the fault.\n");
+        printk(" read"); 
+        //printk("The access causing the fault was a read.\n");
+    }
+    
+    if(u) {
+        printk(" user"); 
+        //printk("A user-mode access caused the fault.\n");
+    } else {
+        printk(" su"); 
+        //printk("A supervisor-mode access caused the fault.\n");
     }
 
     if(r) {
-        printk("The fault was caused by a reserved bit set to 1 in some paging-structure entry.\n");
+        printk(" reserved"); 
+        //printk("The fault was caused by a reserved bit set to 1 in some paging-structure entry.\n");
     } else {
-        printk("The fault was not caused by reserved bit violation.\n");
+        printk("");
+        //printk("The fault was not caused by reserved bit violation.\n");
     }
 
     if(f) {
-        printk("The fault was caused by an instruction fetch.\n");
+        printk("fetch]\n"); 
+        //printk("The fault was caused by an instruction fetch.\n");
     } else {
-        printk("The fault was not caused by an instruction fetch.\n");
+        printk("]\n");
+        //printk("The fault was not caused by an instruction fetch.\n");
     }
-    */
 
     __asm__ __volatile__("cli;hlt;");
 }
