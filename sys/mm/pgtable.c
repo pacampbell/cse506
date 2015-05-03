@@ -140,7 +140,7 @@ pt_t* get_pt_virt(pml4_t *pml4, uint64_t virtual_address) {
         memset(page, 0, PAGE_SIZE);
         // Set the page into the current index and set permissions in the lower 12 bits
         pml4->entries[pml4_index] = VIRT_TO_PHYS(page) | KERN_SETTINGS;
-        //printk("pml4e final: %p\n", pml4->entries[pml4_index]);
+        printk("pml4e final: %p %d\n", pml4->entries[pml4_index], pml4_index);
         // Finally set the new page to pdpt_base
         pdpt_base_addr = (uint64_t)page;
     }
@@ -158,7 +158,7 @@ pt_t* get_pt_virt(pml4_t *pml4, uint64_t virtual_address) {
         memset(page, 0, PAGE_SIZE);
         // Set the page into the current index and set permissions in the lower 12 bits
         ((pdpt_t*)pdpt_base_addr)->entries[pdpt_index] = VIRT_TO_PHYS(page) | KERN_SETTINGS;
-        //printk("pdpte final: %p\n", ((pdpt_t*)pdpt_base_addr)->entries[pdpt_index]);
+        printk("pdpte final: %p %d\n", ((pdpt_t*)pdpt_base_addr)->entries[pdpt_index], pdpt_index);
         // Finally set the new page to pd_base
         pd_base_addr = (uint64_t)page;
     }
@@ -175,7 +175,7 @@ pt_t* get_pt_virt(pml4_t *pml4, uint64_t virtual_address) {
         memset(page, 0, PAGE_SIZE);
         // Set the page into the current index and set permissions in the lower 12 bits
         ((pd_t*)pd_base_addr)->entries[pd_index] = VIRT_TO_PHYS(((uint64_t)page)) | KERN_SETTINGS;
-        //printk("pte final: %p\n", ((pd_t*)pd_base_addr)->entries[pd_index]);
+        printk("pte final: %p %d\n", ((pd_t*)pd_base_addr)->entries[pd_index], pd_index);
         // Finally set the new page to pd_base
         pt_base_addr = (uint64_t)page;
     }
@@ -253,16 +253,22 @@ void* kmalloc_pg(void) {
 }
 
 uint64_t insert_page(pml4_t *cr3, uint64_t virtual_address, uint64_t permissions) {
+    printk("add: %p, perm: %p, cr3: %p\n", virtual_address, permissions, cr3);
     // Make the pml4 a virtual address
     cr3 = (pml4_t *)PHYS_TO_VIRT(cr3);
     // Get the page table using this pml4 and virtual address
     pt_t* page_table = (pt_t*) get_pt_virt(cr3, virtual_address);
+    printk("page_table: %p\n", page_table);
     // Get a new page to insert into the table
     uint64_t page = (uint64_t)kmalloc_pg() | permissions;
     // Get the page table offset from the virtual address 
     uint64_t pt_index = extract_table(virtual_address);
+    printk("pt_index: %p\n", pt_index);
     page_table->entries[pt_index] = page;
-    return PHYS_TO_VIRT(page);
+    pdpt_t *pdpt = (pdpt_t*)PHYS_TO_VIRT(cr3->entries[0]);
+    printk("ent0: %p %p\n", pdpt->entries[0], pdpt);
+    printk("page: %p\n", page);
+    return PHYS_TO_VIRT(extract_offset(virtual_address) | (page & PG_ALIGN));
 }
 
 pml4_t* copy_page_tables(pml4_t *src) {

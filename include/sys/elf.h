@@ -191,7 +191,7 @@
 	} Elf64_Phdr;
 
 	/* Helper functions */
-        void load_elf(char *data, uint64_t length, struct pml4_t *new_pml4);
+        struct mm_struct* load_elf(char *data, uint64_t length, struct pml4_t *new_pml4);
 	bool validate_header(char *data);
 	
 

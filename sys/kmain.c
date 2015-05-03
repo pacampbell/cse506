@@ -53,7 +53,8 @@ void start_shell(void) {
     if(traverse_tars("bin/hello", &e) != NULL) {
         printk("name: %s\nLocation: %p\nSize: %d\n", e.path, e.data_base, e.size);
         /* Try to load file as elf */
-        load_elf(e.data_base, e.size, copy_page_tables(get_cr3()));
+        create_user_elf_task("test-user", e.data_base, e.size);
+        //load_elf(e.data_base, e.size, copy_page_tables(get_cr3()));
     } else {
         printk("Unable to find: %s in tarfs\n", "bin/hello");
     }

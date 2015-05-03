@@ -52,7 +52,7 @@
             task_type_t type;                   /* Type of task kernel or user */
             struct Task *next;                  /* Next task in the list */
             struct Task *prev;                  /* Previous Task in the list */
-            struct mm_struct *mm, *active_mm;     /* The mm_struct of this task */
+            struct mm_struct *mm, *active_mm;   /* The mm_struct of this task */
         };
         typedef struct Task Task;
 
@@ -62,6 +62,7 @@
          * Generic function which creates a specified task.
          */
         Task* create_new_task(Task* task, const char *name, task_type_t type, priority_t priority, uint64_t flags, pml4_t *pml4, uint64_t stack, void(*main)());
+        Task* create_new_elf_task(Task* task, const char *name, task_type_t type, priority_t priority, uint64_t flags, pml4_t *pml4, uint64_t stack, uint64_t rip); 
 
         /**
          * Create a kernel task.
@@ -76,6 +77,7 @@
          * @param code Function pointer which should start at the code to be executed.
          */
         Task* create_user_task(const char *name, void(*code)());
+        Task* create_user_elf_task(const char *name, char* elf, uint64_t size);
 
         /**
          * Pushes values into the stack for the newly created task.

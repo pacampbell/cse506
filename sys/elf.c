@@ -8,12 +8,13 @@
 void print_elf_hdr(Elf64_Ehdr *hdr);
 
 
-void load_elf(char *data, uint64_t length, struct pml4_t *new_pml4) {
+struct mm_struct* load_elf(char *data, uint64_t length, struct pml4_t *new_pml4) {
     if(validate_header(data)) {
         printk("Valid ELF header for system.\n");
         Elf64_Ehdr *hdr = (Elf64_Ehdr*)data;
 
         Elf64_Shdr *section = (Elf64_Shdr*)(hdr->e_shoff + (char*)data);
+        struct mm_struct *mm = (struct mm_struct*)PHYS_TO_VIRT(kmalloc_pg());
 
         if(hdr->e_shstrndx == 0x00) panic("NO STRING TABLE");
         char* str_tab = ((char*)data + section[hdr->e_shstrndx].sh_offset);
@@ -50,12 +51,12 @@ void load_elf(char *data, uint64_t length, struct pml4_t *new_pml4) {
         }
 
         Elf64_Phdr *phdr = (Elf64_Phdr*)( data + hdr->e_phoff);
-        printk("\n\n!!!!!!!! %d\n", hdr->e_phnum);
         printk("phdr : %p\n", phdr);
         printk("data: %p\n", data);
+        printk("entry: %p\n", hdr->e_entry);
 
         for(int i = 0; i < hdr->e_phnum; i++) {
-            printk("type: %p\n", phdr[i].p_type);
+            //printk("type: %p\n", phdr[i].p_type);
         }
 
         uint64_t page, low_data_addr;
@@ -64,10 +65,8 @@ void load_elf(char *data, uint64_t length, struct pml4_t *new_pml4) {
         //set up txt section
         if(PAGE_SIZE < section[txt].sh_size) {panic("ERROR: ELF txt too big\n"); halt();}
         page = insert_page(new_pml4, hdr->e_entry, USER_SETTINGS);
-        printk("section[txt].sh_offset: %p\n", section[txt].sh_offset);
         printk("data: %p\n", data);
         memcpy((void*)page, (void*)(section[txt].sh_offset + data), section[txt].sh_size);
-        panic("got here :D\n");
 
         if((PAGE_SIZE + section[txt].sh_size) > low_data_addr) {
             panic("ERROR: data fits on same page as txt\n");
@@ -75,7 +74,6 @@ void load_elf(char *data, uint64_t length, struct pml4_t *new_pml4) {
         }
 
 
-        struct mm_struct *mm = (struct mm_struct*)PHYS_TO_VIRT(kmalloc_pg());
         create_mm(mm,
                 0, //start_stack,
                 0, //mmap_base,
@@ -89,10 +87,12 @@ void load_elf(char *data, uint64_t length, struct pml4_t *new_pml4) {
                 );
 
 
-
+        return mm;
     } else {
         printk("Invalid ELF header for system.\n");
     }
+
+    return NULL;
 }
 
 
