@@ -353,7 +353,6 @@ void test(uint64_t value1, uint64_t value2) {
 }
 
 void switch_tasks(Task *old, Task *new) {
-    panic("here\n");
     // Make sure both are not null
     // and both are not the same (no need to swap if same)
     if(old != NULL && new != NULL && old != new) {
