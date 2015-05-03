@@ -247,8 +247,8 @@ pt_t* get_pt(pml4_t *pml4, uint64_t virtual_address) {
 
 void* kmalloc_pg(void) {
     uint32_t page_index = get_free_page();       // Get a free page from the page allocator
-    set_pg_free(page_index, 0);             // Mark the page in use
-    void *address = pg_to_addr(page_index);          // Convert the page index to an address
+    set_pg_free(page_index, 0);                  // Mark the page in use
+    void *address = pg_to_addr(page_index);      // Convert the page index to an address
     return address;
 }
 

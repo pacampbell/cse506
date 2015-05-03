@@ -1,3 +1,4 @@
+#define __KERNEL__
 #include <sys/isr.h>
 #include <sys/common.h>
 

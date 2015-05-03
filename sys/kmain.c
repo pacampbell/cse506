@@ -30,7 +30,20 @@ void kmain(void) {
     /* do some basic setup */
     init_services();
     /* start the shell */
-    start_shell();
+    // start_shell();
+    /*
+    char *str = "Test?";
+    __asm__ __volatile__(
+        "movq $1, %%rax;"
+        "movq $1, %%rdi;"
+        "movq %0, %%rsi;"
+        "movq $5, %%rdx;"
+        "syscall;" 
+        : 
+        : "r"(str)
+        : "rax"
+    );
+    */
     /* Everything is started now spin */
     while(1) {
         //TODO: fix this

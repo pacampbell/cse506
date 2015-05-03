@@ -22,8 +22,6 @@ void setxy(int x, int y) {
 }
 
 void panic(char *str) {
-    //cls();
-    //putsck(0x4F, "!!!KERNEL PANIC!!!\n");
     putsck(0x4F, str);
 
 }
