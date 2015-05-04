@@ -160,6 +160,7 @@ void syscall_common_handler(void) {
 			break;
 	}
 	__asm__ __volatile__(
+		// "hlt;"
 		"movq %0, %%rcx;"
 		"movq %1, %%r11;"
 		"sysret;"
@@ -215,4 +216,6 @@ void init_syscall() {
 	// Set the flags to clear
 	uint64_t flag_mask = IA32_FLAGS_INTERRUPT | IA32_FLAGS_DIRECTION; 
 	SET_FMASK(flag_mask);
+	// Set STAR
+	// FIXME: Need to set the CS and DS in star.. when i figure out what it is
 }
