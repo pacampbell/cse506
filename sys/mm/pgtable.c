@@ -252,6 +252,24 @@ void* kmalloc_pg(void) {
     return address;
 }
 
+void *kmalloc_vma(pml4_t *cr3, uint64_t virt_base, size_t size, uint64_t permissions) {
+    void *new_allocation = NULL;
+    if(size > 0) {
+        // Figure out how many pages we need
+        int num_pages = size / PAGE_SIZE;
+        num_pages += size % PAGE_SIZE > 0 ? 1 : 0;
+        // Allocate pages and map to virtual address
+        for(int i = 0; i < num_pages; i++) {
+            uint64_t virt_addr = virt_base + (i * PAGE_SIZE);
+            insert_page(cr3, virt_addr, permissions);
+            if(i == 0) {
+                new_allocation = (void*)virt_addr;
+            }
+        }
+    }
+    return new_allocation;
+}
+
 uint64_t insert_page(pml4_t *cr3, uint64_t virtual_address, uint64_t permissions) {
     printk("add: %p, perm: %p, cr3: %p\n", virtual_address, permissions, cr3);
     // Make the pml4 a virtual address
