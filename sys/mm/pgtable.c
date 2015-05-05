@@ -273,6 +273,7 @@ void *kmalloc_vma(pml4_t *cr3, uint64_t virt_base, size_t size, uint64_t permiss
         // Figure out how many pages we need
         int num_pages = size / PAGE_SIZE;
         num_pages += size % PAGE_SIZE > 0 ? 1 : 0;
+        printk("num_pgs: %d\n", num_pages);
         // Allocate pages and map to virtual address
         for(int i = 0; i < num_pages; i++) {
             uint64_t virt_addr = virt_base + (i * PAGE_SIZE);
@@ -283,6 +284,7 @@ void *kmalloc_vma(pml4_t *cr3, uint64_t virt_base, size_t size, uint64_t permiss
         }
         set_cr3(old_cr3);
     }
+    printk("new_alloc: %p\n", new_allocation);
     return new_allocation;
 }
 

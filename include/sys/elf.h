@@ -192,9 +192,8 @@
 	} Elf64_Phdr;
 
 	/* Helper functions */
-        struct mm_struct* load_elf(char *data, uint64_t length, struct pml4_t *new_pml4);
 	bool validate_header(char *data);
-        struct mm_struct* new_load_elf(char *data, int len, Task *task, pml4_t *proc_pml4);
+        struct mm_struct* load_elf(char *data, int len, Task *task, pml4_t *proc_pml4);
 	
 
 	/* Debug macros */
