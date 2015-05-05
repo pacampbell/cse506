@@ -112,7 +112,7 @@ Task* create_user_elf_task(const char *name, char* elf, uint64_t size) {
     // Allocate space for a new user task
     Task *user_task = (Task*) PHYS_TO_VIRT(kmalloc_pg());
     //user_task->mm = load_elf(elf, size, user_pml4);
-    user_task->mm = new_load_elf(elf, size, user_task, user_pml4);
+    user_task->mm = load_elf(elf, size, user_task, user_pml4);
     // Create space for a new stack
     uint64_t user_task_stack = (uint64_t) PHYS_TO_VIRT(kmalloc_pg());
     // Initialize the task
