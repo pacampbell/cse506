@@ -265,14 +265,22 @@ void* kmalloc_pg(void) {
     return address;
 }
 
+bool leaks_pg(uint64_t virt_base, size_t size) {
+    uint64_t boundry = (virt_base + PAGE_SIZE) & PG_ALIGN;
+    return (virt_base + size) > boundry;
+}
+
 void *kmalloc_vma(pml4_t *cr3, uint64_t virt_base, size_t size, uint64_t permissions) {
     void *new_allocation = NULL;
+    pml4_t *old_pml4 = get_cr3();
+    set_cr3(cr3);
     if(size > 0) {
         pml4_t *old_cr3 = get_cr3();
         set_cr3(cr3);
         // Figure out how many pages we need
         int num_pages = size / PAGE_SIZE;
         num_pages += size % PAGE_SIZE > 0 ? 1 : 0;
+        num_pages += leaks_pg(virt_base, size) ? 1 : 0;
         printk("num_pgs: %d\n", num_pages);
         // Allocate pages and map to virtual address
         for(int i = 0; i < num_pages; i++) {
@@ -284,6 +292,7 @@ void *kmalloc_vma(pml4_t *cr3, uint64_t virt_base, size_t size, uint64_t permiss
         }
         set_cr3(old_cr3);
     }
+    set_cr3(old_pml4);
     printk("new_alloc: %p\n", new_allocation);
     return new_allocation;
 }

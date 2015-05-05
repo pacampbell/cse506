@@ -40,7 +40,7 @@ struct mm_struct* load_elf(char *data, int len, Task *task, pml4_t *proc_pml4) {
                 memcpy((void*)prgm_hdr->p_vaddr, data + prgm_hdr->p_offset, prgm_hdr->p_filesz);
                 last_write = prgm_hdr->p_vaddr + prgm_hdr->p_filesz;
                 //memcpy((void*)prgm_hdr->p_vaddr, data + prgm_hdr->p_offset, prgm_hdr->p_memsz);
-        if(i == 1){panic("LOAD ELF ENDED\n");halt();}
+        //if(i == 1){panic("LOAD ELF ENDED\n");halt();}
 
                 set_cr3(kern_pml4);
                 vma->vm_start = prgm_hdr->p_vaddr;
