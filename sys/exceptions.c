@@ -109,14 +109,38 @@ static void page_fault(registers_t regs) {
     printk("%x", f);
     printk(" %x\n", cow);
 
+    printk("Reason: [");
 
     if(cow) {
-        printk("The access requires copy on write which is NOT implemented.\n");
+        printk("cow ");
     }
-    if(w) {
-        printk("The access causing the fault was a write.\n");
+
+    if(p) {
+        printk("prot"); 
     } else {
-        printk("The access causing the fault was a read.\n");
+        printk("mia"); 
+    }
+
+    if(w) {
+        printk(" write"); 
+    } else {
+        printk(" read"); 
+    }
+    
+    if(u) {
+        printk(" user"); 
+    } else {
+        printk(" su"); 
+    }
+
+    if(r) {
+        printk(" reserved"); 
+    }
+
+    if(f) {
+        printk("fetch]\n"); 
+    } else {
+        printk("]\n");
     }
 
     __asm__ __volatile__("cli;hlt;");

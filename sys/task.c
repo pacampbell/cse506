@@ -1,5 +1,6 @@
 #define __KERNEL__
 #include <sys/task.h>
+#include <sys/elf.h>
 
 static Task *tasks;
 static Task *current_task;
@@ -98,6 +99,30 @@ void dump_task(Task *task) {
         }
     #endif
 }
+        
+Task* create_user_elf_task(const char *name, char* elf, uint64_t size) {
+    panic("here in elf task\n");
+    // Get the kernel page tables
+    pml4_t *kernel_pml4 = (pml4_t *)get_cr3();
+    // Copy the kernels page tables
+    pml4_t *user_pml4 = copy_page_tables(kernel_pml4);
+    // Get the kernel flags
+    uint64_t kernel_rflags = get_rflags();
+    // Allocate space for a new user task
+    Task *user_task = (Task*) PHYS_TO_VIRT(kmalloc_pg());
+    user_task->mm = load_elf(elf, size, copy_page_tables(get_cr3()));
+    // Create space for a new stack
+    uint64_t user_task_stack = (uint64_t) PHYS_TO_VIRT(kmalloc_pg());
+    // Initialize the task
+    create_new_elf_task(user_task, name, USER, NEUTRAL_PRIORITY, kernel_rflags,
+                    user_pml4, user_task_stack, user_task->mm->start_code);
+    // Add the task to the scheduler list
+    insert_into_list(&tasks, user_task);
+    // Print out contents of the task
+    // dump_task(kernel_task);
+    return user_task;
+
+}
 
 Task* create_user_task(const char *name, void(*code)()) {
     // Get the kernel page tables
@@ -178,6 +203,47 @@ void setup_new_stack(Task *task) {
     //     : "rax", "rdi"
     // );
 }
+
+Task* create_new_elf_task(Task* task, const char *name, task_type_t type,
+                      priority_t priority, uint64_t flags, pml4_t *pml4,
+                      uint64_t stack, uint64_t rip) {
+    /* Set the basic task values */
+    task->name = name;
+    task->priority = priority;
+    task->state = NEW;
+    task->type = type;
+    task->pid = allocate_pid();
+    /* Set the address of the stack */
+    task->stack = stack;
+    /* Zero out the general purpose registers */
+    task->registers.rax = 0;
+    task->registers.rbx = 0;
+    task->registers.rcx = 0;
+    task->registers.rdx = 0;
+    task->registers.rsi = 0;
+    task->registers.rdi = 0;
+    task->registers.r8 = 0;
+    task->registers.r9 = 0;
+    task->registers.r10 = 0;
+    task->registers.r11 = 0;
+    task->registers.r12 = 0;
+    task->registers.r13 = 0;
+    task->registers.r14 = 0;
+    task->registers.r15 = 0;
+    /* Set state important registers */
+    task->registers.rflags = flags;
+    task->registers.rip = rip;
+    task->registers.cr3 = (uint64_t)pml4;
+    task->registers.rsp = stack + PAGE_SIZE - 8; // Start the stack pointer at the other side
+    task->registers.rbp = task->registers.rsp;
+    /* This task is the end of the list */
+    task->next = NULL;
+    task->prev = NULL;
+    // Initialize the stack
+    setup_new_stack(task);
+    return task;
+}
+
 
 Task* create_new_task(Task* task, const char *name, task_type_t type,
                       priority_t priority, uint64_t flags, pml4_t *pml4,
@@ -371,8 +437,10 @@ void switch_tasks(Task *old, Task *new) {
 
         if(current_task->state == NEW) {
             current_task->state = RUNNING;
-            // __asm__ __volatile("retq;");
-            __asm__ __volatile("iretq;");
+            dump_task(current_task);
+            printk("Task Name: %s\n", current_task->name);
+            // __asm__ __volatile__("retq;");
+            __asm__ __volatile__("iretq;");
         } else {
             current_task->state = RUNNING;
             // Check to see if the task being scheduled is user or kernel
