@@ -77,9 +77,8 @@ static void stack_segmentation_fault(registers_t regs) {
 }
 
 static void general_protection_fault(registers_t regs) {
-	//cls();
 	panic("GENERAL PROTECTION FAULT\n");
-	printk("Interrupt [%d] - Errocode: %d\n", regs.int_no, regs.err_code);
+	printk("Interrupt [%d] - Errocode: %p\n", regs.int_no, regs.err_code);
 	printk("rip: %p ss: %p cs: %p ds: %p\n", regs.rip, regs.ss, regs.cs, regs.ds);
 	panic("DUMP\n");
 	Task *ctask = get_current_task();

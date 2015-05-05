@@ -96,6 +96,8 @@ void dump_task(Task *task) {
                 task->registers.rflags);
             printk("rip: %p rbp: %p rsp: %p\n\n",
                 task->registers.rip, task->registers.rbp, task->registers.rsp);
+        } else {
+            panic("=== NULL TASK STRUCT - UNABLE TO DUMP ===\n");
         }
     #endif
 }
