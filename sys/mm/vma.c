@@ -1,5 +1,6 @@
 #define __KERNEL__
 #include <sys/mm/vma.h>
+#include <sys/screen.h>
 
 void create_mm(struct mm_struct *mm,
                uint64_t start_stack,
@@ -81,10 +82,18 @@ void create_mm(struct mm_struct *mm,
 }
 
 void add_vma(struct mm_struct *mm, struct vm_area_struct *vma) {
+    if(mm->mmap == NULL) {
+        mm->mmap = vma;
+        vma->next = NULL;
+        vma->prev = NULL;
+        return;
+    }
     struct vm_area_struct *p_vma = mm->mmap;
 
     for (; p_vma->next != NULL; p_vma = p_vma->next);
     p_vma->next = vma;
     vma->prev = p_vma;
+    vma->vm_mm = mm;
+    vma->next = NULL;
 
 }

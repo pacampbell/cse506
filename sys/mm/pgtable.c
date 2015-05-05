@@ -121,7 +121,7 @@ void initializePaging(uint64_t physbase, uint64_t physfree) {
     printk("Remapped video mem [%p:%p]\n", video_vma, video_vma + 4000);
 }
 
-pt_t* get_pt_virt(pml4_t *pml4, uint64_t virtual_address) {
+pt_t* get_pt_virt(pml4_t *pml4, uint64_t virtual_address, uint64_t permissions) {
     uint64_t pml4_index = extract_pml4(virtual_address);
     uint64_t pdpt_index = extract_directory_ptr(virtual_address);
     uint64_t pd_index = extract_directory(virtual_address);
@@ -139,10 +139,12 @@ pt_t* get_pt_virt(pml4_t *pml4, uint64_t virtual_address) {
         // Zero out the memory
         memset(page, 0, PAGE_SIZE);
         // Set the page into the current index and set permissions in the lower 12 bits
-        pml4->entries[pml4_index] = VIRT_TO_PHYS(page) | KERN_SETTINGS;
-        printk("pml4e final: %p %d\n", pml4->entries[pml4_index], pml4_index);
+        pml4->entries[pml4_index] = VIRT_TO_PHYS(page) | permissions;
+        //printk("pml4e final: %p %d\n", pml4->entries[pml4_index], pml4_index);
         // Finally set the new page to pdpt_base
         pdpt_base_addr = (uint64_t)page;
+    } else {
+        pdpt_base_addr = PHYS_TO_VIRT(pdpt_base_addr);
     }
 
     //printk("pdpt_index: %d\n", pdpt_index);
@@ -157,11 +159,14 @@ pt_t* get_pt_virt(pml4_t *pml4, uint64_t virtual_address) {
         // Zero out the memory
         memset(page, 0, PAGE_SIZE);
         // Set the page into the current index and set permissions in the lower 12 bits
-        ((pdpt_t*)pdpt_base_addr)->entries[pdpt_index] = VIRT_TO_PHYS(page) | KERN_SETTINGS;
-        printk("pdpte final: %p %d\n", ((pdpt_t*)pdpt_base_addr)->entries[pdpt_index], pdpt_index);
+        ((pdpt_t*)pdpt_base_addr)->entries[pdpt_index] = VIRT_TO_PHYS(page) | permissions;
+        //printk("pdpte final: %p %d\n", ((pdpt_t*)pdpt_base_addr)->entries[pdpt_index], pdpt_index);
         // Finally set the new page to pd_base
         pd_base_addr = (uint64_t)page;
+    } else {
+        pd_base_addr = PHYS_TO_VIRT(pd_base_addr);
     }
+
 
     //printk("pd_index: %d\n", pd_index);
     uint64_t pt_base_addr = ((pd_t*)pd_base_addr)->entries[pd_index] & PG_ALIGN;
@@ -174,11 +179,14 @@ pt_t* get_pt_virt(pml4_t *pml4, uint64_t virtual_address) {
         // Zero out the memory
         memset(page, 0, PAGE_SIZE);
         // Set the page into the current index and set permissions in the lower 12 bits
-        ((pd_t*)pd_base_addr)->entries[pd_index] = VIRT_TO_PHYS(((uint64_t)page)) | KERN_SETTINGS;
-        printk("pte final: %p %d\n", ((pd_t*)pd_base_addr)->entries[pd_index], pd_index);
+        ((pd_t*)pd_base_addr)->entries[pd_index] = VIRT_TO_PHYS(((uint64_t)page)) | permissions;
+        //printk("pte final: %p %d\n", ((pd_t*)pd_base_addr)->entries[pd_index], pd_index);
         // Finally set the new page to pd_base
         pt_base_addr = (uint64_t)page;
+    }else {
+        pt_base_addr = PHYS_TO_VIRT(pt_base_addr);
     }
+
 
     return (pt_t*)pt_base_addr;
 }
@@ -271,21 +279,15 @@ void *kmalloc_vma(pml4_t *cr3, uint64_t virt_base, size_t size, uint64_t permiss
 }
 
 uint64_t insert_page(pml4_t *cr3, uint64_t virtual_address, uint64_t permissions) {
-    printk("add: %p, perm: %p, cr3: %p\n", virtual_address, permissions, cr3);
     // Make the pml4 a virtual address
     cr3 = (pml4_t *)PHYS_TO_VIRT(cr3);
     // Get the page table using this pml4 and virtual address
-    pt_t* page_table = (pt_t*) get_pt_virt(cr3, virtual_address);
-    printk("page_table: %p cr3: %p\n", page_table, cr3->entries[0]);
-    pdpt_t *pml4e = (pdpt_t*)(PHYS_TO_VIRT(cr3->entries[0] & PG_ALIGN));
-    printk("pml4e: %p\n", pml4e->entries[0]);
+    pt_t* page_table = (pt_t*) get_pt_virt(cr3, virtual_address, permissions);
     // Get a new page to insert into the table
     uint64_t page = (uint64_t)kmalloc_pg() | permissions;
     // Get the page table offset from the virtual address 
     uint64_t pt_index = extract_table(virtual_address);
     page_table->entries[pt_index] = page;
-    pd_t *pdpte = (pd_t*)PHYS_TO_VIRT(pml4e->entries[0] & PG_ALIGN);
-    printk("ent0: %p\n", pdpte->entries[2]);
     return PHYS_TO_VIRT(page & PG_ALIGN);
 }
 

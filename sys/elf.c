@@ -15,31 +15,33 @@ struct mm_struct* new_load_elf(char *data, int len, Task *task, pml4_t *proc_pml
 
         //create new mm_struct
         struct mm_struct *mm = (struct mm_struct*)PHYS_TO_VIRT(kmalloc_pg());
+        memset(mm, 0, sizeof(struct mm_struct));
         if(hdr->e_shstrndx == 0x00) panic("NO STRING TABLE");
 
         mm->start_code = ((Elf64_Ehdr*) data)->e_entry;
 
         pml4_t *kern_pml4 = get_cr3();
 
+        Elf64_Phdr *prgm_hdr = (Elf64_Phdr*)(data + hdr->e_phoff);
 
-        for(Elf64_Phdr *prgm_hdr = (Elf64_Phdr*)(data + hdr->e_phoff); ((Elf64_Phdr*)(data + hdr->e_phoff)) + hdr->e_phnum; prgm_hdr++) {
+        for(int i = 0;  i < hdr->e_phnum; prgm_hdr++, i++) {
             if (prgm_hdr->p_type == PT_LOAD) {
+                //if (prgm_hdr->p_filesz > PAGE_SIZE) panic("I AM TOO BIG!!!!\n");
+                struct vm_area_struct *vma = (struct vm_area_struct*)PHYS_TO_VIRT(kmalloc_pg());
+                kmalloc_vma(proc_pml4, prgm_hdr->p_vaddr, prgm_hdr->p_filesz, USER_SETTINGS);
                 set_cr3(proc_pml4);
 
-                //     uint64_t insert_page(pml4_t *cr3, uint64_t virtual_address, uint64_t permissions) {
-                struct vm_area_struct *vma = (struct vm_area_struct*)insert_page(proc_pml4, prgm_hdr->p_vaddr, prgm_hdr->p_flags);
-                //void *memcpy(void *dest, const void *src, size_t n) {
-                memcpy(vma, data + prgm_hdr->p_offset, prgm_hdr->p_filesz);
+                memcpy((void*)prgm_hdr->p_vaddr, data + prgm_hdr->p_offset, prgm_hdr->p_filesz);
 
                 set_cr3(kern_pml4);
+                vma->vm_start = prgm_hdr->p_vaddr;
+                vma->vm_end = (uint64_t)(data + prgm_hdr->p_offset + prgm_hdr->p_filesz);
+                vma->vm_prot = prgm_hdr->p_flags;
                 add_vma(mm, vma);
-    panic("YO\n");halt();
-                printk("vma_start: %p\n", prgm_hdr->p_vaddr);
             } 
         }
 
-
-            return mm;
+        return mm;
 
     } else {
 

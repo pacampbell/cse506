@@ -101,7 +101,6 @@ void dump_task(Task *task) {
 }
         
 Task* create_user_elf_task(const char *name, char* elf, uint64_t size) {
-    panic("here in elf task\n");
     // Get the kernel page tables
     pml4_t *kernel_pml4 = (pml4_t *)get_cr3();
     // Copy the kernels page tables
@@ -176,8 +175,10 @@ void setup_new_stack(Task *task) {
         stack[508] = 0x08; // Set the CS
     } else {
         // printk("User task\n");
-        stack[511] = 0x23; // Set the SS
-        stack[508] = 0x1b; // Set the CS
+        //stack[511] = 0x23; // Set the SS
+        //stack[508] = 0x1b; // Set the CS
+        stack[511] = 0x10; // Set the SS
+        stack[508] = 0x08; // Set the CS
     }
     // Set the common stack values
     stack[510] = (uint64_t)&stack[511];  // set the top of the stack
@@ -437,8 +438,6 @@ void switch_tasks(Task *old, Task *new) {
         );
 
         if(current_task->state == NEW) {
-            current_task->state = RUNNING;
-            dump_task(current_task);
             printk("Task Name: %s\n", current_task->name);
             // __asm__ __volatile__("retq;");
             __asm__ __volatile__("iretq;");
@@ -447,8 +446,8 @@ void switch_tasks(Task *old, Task *new) {
             // Check to see if the task being scheduled is user or kernel
             if(current_task->type == USER) {
                 // Need to set the tss rsp0 value
-                tss.rsp0 = (uint64_t)&(((uint64_t*)current_task->stack)[511]);
-                SWITCH_TO_RING3();
+//                tss.rsp0 = (uint64_t)&(((uint64_t*)current_task->stack)[511]);
+//                SWITCH_TO_RING3();
             }
         }
     }

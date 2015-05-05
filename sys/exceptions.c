@@ -77,7 +77,7 @@ static void stack_segmentation_fault(registers_t regs) {
 }
 
 static void general_protection_fault(registers_t regs) {
-	cls();
+	//cls();
 	panic("GENERAL PROTECTION FAULT\n");
 	printk("Interrupt [%d] - Errocode: %d\n", regs.int_no, regs.err_code);
 	printk("rip: %p ss: %p cs: %p ds: %p\n", regs.rip, regs.ss, regs.cs, regs.ds);
