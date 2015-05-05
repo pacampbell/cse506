@@ -57,7 +57,7 @@ void init_services(void) {
     /* If you change the order you should update constants in <sys/task.h> */
     create_kernel_task("idle", idle);           /* Should be pid 1 */
     /* END WARNING */
-    create_user_task("awesome_func", awesomefunc);
+    // create_user_task("awesome_func", awesomefunc);
 }
 
 void start_shell(void) {

@@ -5,12 +5,12 @@
 #include <sys/idt.h>
 #include <sys/tarfs.h>
 #include <sys/keyboard.h>
-#include <sys/pg_fault.h>
 #include <sys/task.h>
 #include <sbunix/kernel.h>
 #include <sys/pgtable.h>
 #include <sbunix/kmain.h>
 #include <sys/syscall_k.h>
+#include <sys/exceptions.h>
 
 void *kern_free;
 void *kern_base;
@@ -34,8 +34,8 @@ void start(uint32_t* modulep, void* physbase, void* physfree) {
         }
     }
     printk("tarfs in [%p:%p]\n", &_binary_tarfs_start, &_binary_tarfs_end);
-    // Setup paging
-    init_pg_fault();
+    // register all fault handlers
+    initialize_fault_handlers();
     initializePaging((uint64_t)physbase, (uint64_t)physfree);
     // Set up the syscall table
     init_syscall();

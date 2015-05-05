@@ -6,7 +6,7 @@ static int cursor_x = 0, cursor_y = 0;
 
 void cls(void) {
     for(int i = 0; i < VIDEO_MEM_END_OFFSET; i++) {
-        *(VIDEO_MEM + i) = 0;
+        *(video_mem_base + i) = 0;
     }
     // Reset cursor positions
     cursor_x = cursor_y = 0;

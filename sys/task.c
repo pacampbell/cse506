@@ -145,13 +145,13 @@ void setup_new_stack(Task *task) {
     uint64_t *stack = (uint64_t*)task->stack;
     // Set the segments for the correct ring
     if(task->type == KERNEL) {
-        printk("Kernel task\n");
-        stack[511] = 0x23; // Set the SS
-        stack[508] = 0x1b; // Set the CS
-    } else {
-        printk("User task\n");
+        // printk("Kernel task\n");
         stack[511] = 0x10; // Set the SS
         stack[508] = 0x08; // Set the CS
+    } else {
+        // printk("User task\n");
+        stack[511] = 0x23; // Set the SS
+        stack[508] = 0x1b; // Set the CS
     }
     // Set the common stack values
     stack[510] = (uint64_t)&stack[511];  // set the top of the stack
@@ -159,7 +159,7 @@ void setup_new_stack(Task *task) {
     stack[507] = task->registers.rip;   // The entry point
     // Set the stack pointer to the amount of items pushed
     task->registers.rsp = (uint64_t)&stack[507];
-
+    // dump_task(task);
 
     // __asm__ __volatile__(
     //     /* Store the initial stack pointer */
@@ -167,14 +167,8 @@ void setup_new_stack(Task *task) {
     //     "movq %1, %%rdi;"
     //     /* Set the stack pointer to the new tasks stack */
     //     "movq %2, %%rsp;"
-    //     /* push the DS onto the stack */
-    //     // "pushq $0x23;"
     //     /* Push the instruction pointer onto the stack */
     //     "pushq %3;"
-    //     //push the desired flags value onto the stack 
-    //     // "pushq $0x246;"
-    //     /* Push the code segnment onto the stack */
-    //     // "pushq $0x1b;"
     //     /* Save the new value of the stack pointer */
     //     "movq %%rsp, 0x40(%%rdi);"
     //     /* Set the stack pointer back to what it was */
@@ -344,14 +338,6 @@ void switch_tasks(Task *old, Task *new) {
         }
         // Now set the new task to run
         current_task = new;
-        // Check to see if the task being scheduled is user or kernel
-        if(current_task->type == USER) {
-            // Need to switch to ring3
-            // SWITCH_TO_RING3();
-            // Need to set the tss rsp0 value
-            // tss.rsp0 = (uint64_t)&current_task->stack[1023];
-
-        }
         __asm__ __volatile__(
             /* Save the argument in the register */
             "movq %0, %%rax;"
@@ -382,11 +368,19 @@ void switch_tasks(Task *old, Task *new) {
             : "r"(current_task)
             : "memory"
         );
+
         if(current_task->state == NEW) {
             current_task->state = RUNNING;
+            // __asm__ __volatile("retq;");
             __asm__ __volatile("iretq;");
         } else {
             current_task->state = RUNNING;
+            // Check to see if the task being scheduled is user or kernel
+            if(current_task->type == USER) {
+                // Need to set the tss rsp0 value
+                tss.rsp0 = (uint64_t)&(((uint64_t*)current_task->stack)[511]);
+                SWITCH_TO_RING3();
+            }
         }
     }
 }
