@@ -2,8 +2,6 @@
 #include <sys/task.h>
 #include <sys/elf.h>
 
-extern struct tss_t tss;
-
 static Task *tasks;
 static Task *current_task;
 static int task_count = 0;
@@ -170,22 +168,41 @@ Task* create_kernel_task(const char *name, void(*code)()) {
 
 
 void setup_new_stack(Task *task) {
-    __asm__ __volatile__(
-        /* Store the initial stack pointer */
-        "movq %%rsp, %%rax;"
-        "movq %1, %%rdi;"
-        /* Set the stack pointer to the new tasks stack */
-        "movq %2, %%rsp;"
-        /* Push the instruction pointer onto the stack */
-        "pushq %3;"
-        /* Save the new value of the stack pointer */
-        "movq %%rsp, 0x40(%%rdi);"
-        /* Set the stack pointer back to what it was */
-        "movq %%rax, %%rsp;"
-        : "=r"(task)
-        : "m"(task), "m"(task->registers.rsp), "m"(task->registers.rip)
-        : "rax", "rdi"
-    );
+    uint64_t *stack = (uint64_t*)task->stack;
+    // Set the segments for the correct ring
+    if(task->type == KERNEL) {
+        // printk("Kernel task\n");
+        stack[511] = 0x10; // Set the SS
+        stack[508] = 0x08; // Set the CS
+    } else {
+        // printk("User task\n");
+        stack[511] = 0x23; // Set the SS
+        stack[508] = 0x1b; // Set the CS
+    }
+    // Set the common stack values
+    stack[510] = (uint64_t)&stack[511];  // set the top of the stack
+    stack[509] = 0x200202;              // Set the flags
+    stack[507] = task->registers.rip;   // The entry point
+    // Set the stack pointer to the amount of items pushed
+    task->registers.rsp = (uint64_t)&stack[507];
+    // dump_task(task);
+
+    // __asm__ __volatile__(
+    //     /* Store the initial stack pointer */
+    //     "movq %%rsp, %%rax;"
+    //     "movq %1, %%rdi;"
+    //     /* Set the stack pointer to the new tasks stack */
+    //     "movq %2, %%rsp;"
+    //     /* Push the instruction pointer onto the stack */
+    //     "pushq %3;"
+    //     /* Save the new value of the stack pointer */
+    //     "movq %%rsp, 0x40(%%rdi);"
+    //     /* Set the stack pointer back to what it was */
+    //     "movq %%rax, %%rsp;"
+    //     : "=r"(task)
+    //     : "m"(task), "m"(task->registers.rsp), "m"(task->registers.rip)
+    //     : "rax", "rdi"
+    // );
 }
 
 Task* create_new_elf_task(Task* task, const char *name, task_type_t type,
@@ -273,18 +290,6 @@ int get_task_count(void) {
     return task_count;
 }
 
-bool is_idle_task(const char * c) {
-    if(c == NULL) return false;
-    if(*(c + 0) == 'i' &&
-            *(c + 1) == 'd' &&
-            *(c + 2) == 'l' &&
-            *(c + 3) == 'e') {
-        return true;
-    } else {
-        return false;
-    }
-}
-
 void preempt(bool discard) {
     Task *old_task = current_task;
     current_task = old_task->next;
@@ -292,21 +297,11 @@ void preempt(bool discard) {
         // Set the current task back to the head of the list
         current_task = tasks;
     }
-    if(false && is_idle_task(current_task->name)) {
-        current_task = current_task->next;
-        if(current_task == NULL) {
-            return;
-        }
-    }
-
     if(discard) {
         // The old process no longer wants to run
         old_task->state = TERMINATED;
-        // printk("old_count: %d\n", task_count);
         task_count--;
-        // printk("new_count: %d\n", task_count);
     }
-    // printk("%d task_name = %s\n", task_count, current_task->name);
     // Attempt to switch tasks; Assembly magic voodo
     switch_tasks(old_task, current_task);
 }
@@ -314,6 +309,8 @@ void preempt(bool discard) {
 void set_task(Task *task) {
     current_task = task;
     current_task->state = RUNNING;
+    /* Typicall this is used only one time for setting the first task */
+    tss.rsp0 = task->registers.rip;
     /* Set the rest of the registers */
     __asm__ __volatile__(
         /* Save the argument in the register */
@@ -438,14 +435,21 @@ void switch_tasks(Task *old, Task *new) {
             : "r"(current_task)
             : "memory"
         );
+
         if(current_task->state == NEW) {
             current_task->state = RUNNING;
             dump_task(current_task);
             printk("Task Name: %s\n", current_task->name);
-            __asm__ __volatile("ret;");
-    panic("debuging\n");halt();
+            // __asm__ __volatile__("retq;");
+            __asm__ __volatile__("iretq;");
         } else {
             current_task->state = RUNNING;
+            // Check to see if the task being scheduled is user or kernel
+            if(current_task->type == USER) {
+                // Need to set the tss rsp0 value
+                tss.rsp0 = (uint64_t)&(((uint64_t*)current_task->stack)[511]);
+                SWITCH_TO_RING3();
+            }
         }
     }
 }
@@ -474,8 +478,19 @@ bool insert_into_list(Task **list, Task *task) {
 }
 
 Task *get_task_by_pid(Task **list, pid_t pid) {
-    panic("get_task_by_pid NOT IMPLEMENTED!\n");
-    return NULL;
+    Task *task = NULL;
+    if(list != NULL && *list != NULL && pid >= 0) {
+        Task *ctask = *list;
+        while(ctask != NULL) {
+            if(ctask->pid == pid) {
+                task = ctask;
+                break;
+            } else {
+                ctask = ctask->next;
+            }
+        }
+    }
+    return task;
 }
 
 Task *remove_task_by_pid(Task **list, pid_t pid) {

@@ -2,11 +2,25 @@
 #include <sbunix/kmain.h>
 
 void awesomefunc(void) {
+    /*
     int a = 1000;
     while(a--) {
-        // printk("I'm awesome!!! woot woot %d\n", a);
+
         preempt(false);
     }
+    */
+    char *str = "I'm awesome!!! woot woot";
+    __asm__ __volatile__(
+        "movq $1, %%rax;"
+        "movq $1, %%rdi;"
+        "movq %0, %%rsi;"
+        "movq $24, %%rdx;"
+        "syscall;"
+        :
+        : "r"(str)
+        : "rax", "rdi", "rsi"
+        );
+    // yield
     preempt(true);
 }
 
@@ -31,33 +45,19 @@ void kmain(void) {
     init_services();
     /* start the shell */
     start_shell();
-    /*
-    char *str = "Test?";
-    __asm__ __volatile__(
-        "movq $1, %%rax;"
-        "movq $1, %%rdi;"
-        "movq %0, %%rsi;"
-        "movq $5, %%rdx;"
-        "syscall;" 
-        : 
-        : "r"(str)
-        : "rax"
-    );
-    */
     /* Everything is started now spin */
     while(1) {
-        //TODO: fix this
-        if(false && get_task_count() <= 2) {
-            create_kernel_task("idle", idle);           /* Create the kernel idle loop */
-        }
         /* Done doing our work, now just wait */
         preempt(false);
     }
 }
 
 void init_services(void) {
-    create_kernel_task("idle", idle);           /* Create the kernel idle loop */
-    create_user_task("awesome_user", awesomefunc); /* Create the test user task*/
+    /* WARNING */
+    /* If you change the order you should update constants in <sys/task.h> */
+    create_kernel_task("idle", idle);           /* Should be pid 1 */
+    /* END WARNING */
+    // create_user_task("awesome_func", awesomefunc);
 }
 
 void start_shell(void) {

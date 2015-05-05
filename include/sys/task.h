@@ -9,11 +9,15 @@
         #include <sbunix/string.h>
         #include <sys/pgtable.h>
         #include <sys/mm/vma.h>
+        #include <sys/gdt.h> 
         /* Process/Task constants and typedefs */
         #define PID_MAP_LENGTH 65535
         #define MAX_PRIORITY 0xFFFFFFFF
         #define NEUTRAL_PRIORITY 0x7FFFFFFF
         #define MIN_PRIORITY 0x00000000
+        /* Known ktask ids */
+        #define KMAIN_PID 0
+        #define IDLE_PID 1
         /* Enum for keeping state of the process */
         typedef enum {
             NEW,         /* The process is in the stage of being created */
@@ -55,6 +59,20 @@
             struct mm_struct *mm, *active_mm;   /* The mm_struct of this task */
         };
         typedef struct Task Task;
+
+        /* privilege macros */
+        #define SWITCH_TO_RING3() do {  \
+            __asm__ __volatile__(       \
+                "movq $0x23, %%rax;"    \
+                "movq %%rax, %%ds;"     \
+                "movq %%rax, %%es;"     \
+                "movq %%rax, %%fs;"     \
+                "movq %%rax, %%gs;"     \
+                :                       \
+                :                       \
+                : "rax"                 \
+            );                          \
+        } while(0)
 
         /* Kernel threads tasks */
 
