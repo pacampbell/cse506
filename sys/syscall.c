@@ -13,8 +13,6 @@ void sys_exit(int ret) {
 void sys_write(int fd, char *buff, size_t count) {
     // Always write the stdout and stderr to the same place
     if(fd == 1 || fd == 2) {
-        printk("write count: %d\n", count);
-
         for(int i = 0; i < count; i++) {
             putk(buff[i]);
         }
@@ -74,6 +72,10 @@ http://www.vupen.com/blog/20120806.Advanced_Exploitation_of_Windows_Kernel_x64_S
 void syscall_common_handler(void) {
     uint64_t num, arg1, arg2, arg3, arg4, arg5, arg6, ret, flags;
     __asm__ __volatile__(
+            /* Save the return address and flags */
+            "movq %%rcx, %7;"
+            "movq %%r11, %8;"
+            /* Get syscall params */
             "movq %%rax, %0;"
             "movq %%rdi, %1;"
             "movq %%rsi, %2;"
@@ -81,9 +83,6 @@ void syscall_common_handler(void) {
             "movq %%r10, %4;"
             "movq %%r8,  %5;"
             "movq %%r9,  %6;"
-            /* Save the return address and flags */
-            "movq %%rcx, %7;"
-            "movq %%r11, %8;"
             : "=r"(num), "=r"(arg1), "=r"(arg2), "=r"(arg3), "=r"(arg4),
             "=r"(arg5), "=r"(arg6), "=r"(ret), "=r"(flags)
             :
@@ -92,6 +91,8 @@ void syscall_common_handler(void) {
 
     switch(num) {
         case SYS_exit:
+            printk("EXIT CALLED\n");
+            __asm__ __volatile__("hlt;");
             sys_exit(arg1);
             break;
         case SYS_brk:
@@ -161,8 +162,10 @@ void syscall_common_handler(void) {
             printk("Unimplemented syscall %d\n", num);
             break;
     }
+
+    printk("rflags: %p return_address: %p\n", flags, ret);
+
     __asm__ __volatile__(
-            "hlt;"
             "movq %0, %%rcx;"
             "movq %1, %%r11;"
             "sysret;"

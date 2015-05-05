@@ -1,29 +1,6 @@
 #define __KERNEL__
 #include <sbunix/kmain.h>
 
-void awesomefunc(void) {
-    /*
-    int a = 1000;
-    while(a--) {
-
-        preempt(false);
-    }
-    */
-    char *str = "I'm awesome!!! woot woot";
-    __asm__ __volatile__(
-        "movq $1, %%rax;"
-        "movq $1, %%rdi;"
-        "movq %0, %%rsi;"
-        "movq $24, %%rdx;"
-        "syscall;"
-        :
-        : "r"(str)
-        : "rax", "rdi", "rsi"
-        );
-    // yield
-    preempt(true);
-}
-
 void idle(void) {
     // TODO: fix this
     while(1) {
@@ -57,7 +34,6 @@ void init_services(void) {
     /* If you change the order you should update constants in <sys/task.h> */
     create_kernel_task("idle", idle);           /* Should be pid 1 */
     /* END WARNING */
-    // create_user_task("awesome_func", awesomefunc);
 }
 
 void start_shell(void) {

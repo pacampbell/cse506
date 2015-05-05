@@ -48,7 +48,8 @@
 
         struct Task {
             Registers registers;                /* Struct containing all the IA-64 registers */
-            uint64_t stack;                     /* Address of your stack */
+            uint64_t *kstack;                   /* Address of the kernel stack */
+            uint64_t *ustack;                   /* Address of the user stack */
             task_state_t state;                 /* State of the process */
             pid_t pid;                          /* Unique identifier of the process */
             const char *name;                   /* Convenience name; Optional */
@@ -79,8 +80,8 @@
         /**
          * Generic function which creates a specified task.
          */
-        Task* create_new_task(Task* task, const char *name, task_type_t type, priority_t priority, uint64_t flags, pml4_t *pml4, uint64_t stack, void(*main)());
-        Task* create_new_elf_task(Task* task, const char *name, task_type_t type, priority_t priority, uint64_t flags, pml4_t *pml4, uint64_t stack, uint64_t rip); 
+        Task* create_new_task(Task* task, const char *name, task_type_t type, priority_t priority, uint64_t flags, pml4_t *pml4, void(*main)());
+        // Task* create_new_elf_task(Task* task, const char *name, task_type_t type, priority_t priority, uint64_t flags, pml4_t *pml4, uint64_t stack, uint64_t rip); 
 
         /**
          * Create a kernel task.
@@ -94,7 +95,6 @@
          * @param name Short name identifying the name of the task.
          * @param code Function pointer which should start at the code to be executed.
          */
-        Task* create_user_task(const char *name, void(*code)());
         Task* create_user_elf_task(const char *name, char* elf, uint64_t size);
 
         /**

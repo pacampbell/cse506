@@ -91,7 +91,8 @@ static void page_fault(registers_t regs) {
     __asm__ __volatile__("mov %%cr2, %0" : "=r" (faulting_address));
 
     panic("!!!!!!!PAGE FAULT!!!!!!!\n");
-    printk("address: %p\n", faulting_address);
+    printk("virt address: %p\n", faulting_address);
+    printk("phys address: %p\n", VIRT_TO_PHYS(faulting_address));
     printk("bits   : ");
 
     int p = extract_bits(regs.err_code, 0, 0);
@@ -141,6 +142,9 @@ static void page_fault(registers_t regs) {
     } else {
         printk("]\n");
     }
+    // Dump info about the task
+    // Task *ctask = get_current_task();
+    // dump_task(ctask);
 
     __asm__ __volatile__("cli;hlt;");
 }

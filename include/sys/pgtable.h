@@ -100,6 +100,11 @@
         #define VIRT_TO_PHYS(virtual) (((uint64_t) virtual - VIRTUAL_OFFSET))
 
         /**
+         * Walks a page table and prints out all the contents.
+         */
+        void dump_tables(pml4_t *cr3);
+
+        /**
          * Gets the page table using the virtual address
          * @param pml4 The top level paging structure in IA-32e and IA-64.
          * @param virtual_address The virtual address to translate.
