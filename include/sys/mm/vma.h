@@ -37,17 +37,19 @@ struct mm_struct {
     uint64_t start_code;
     uint64_t pgd; /* the page table pointer  */
 };
+
+void add_vma(struct mm_struct *mm, struct vm_area_struct *vma);
 void create_mm(struct mm_struct *mm,
-               uint64_t start_stack,
-               uint64_t mmap_base,
-               uint64_t brk,
-               uint64_t start_brk,
-               uint64_t end_data,
-               uint64_t start_data,
-               uint64_t end_code,
-               uint64_t start_code,
-               uint64_t pgd
-              );
+        uint64_t start_stack,
+        uint64_t mmap_base,
+        uint64_t brk,
+        uint64_t start_brk,
+        uint64_t end_data,
+        uint64_t start_data,
+        uint64_t end_code,
+        uint64_t start_code,
+        uint64_t pgd
+        );
 
 
 

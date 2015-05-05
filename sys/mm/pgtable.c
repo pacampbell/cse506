@@ -258,17 +258,17 @@ uint64_t insert_page(pml4_t *cr3, uint64_t virtual_address, uint64_t permissions
     cr3 = (pml4_t *)PHYS_TO_VIRT(cr3);
     // Get the page table using this pml4 and virtual address
     pt_t* page_table = (pt_t*) get_pt_virt(cr3, virtual_address);
-    printk("page_table: %p\n", page_table);
+    printk("page_table: %p cr3: %p\n", page_table, cr3->entries[0]);
+    pdpt_t *pml4e = (pdpt_t*)(PHYS_TO_VIRT(cr3->entries[0] & PG_ALIGN));
+    printk("pml4e: %p\n", pml4e->entries[0]);
     // Get a new page to insert into the table
     uint64_t page = (uint64_t)kmalloc_pg() | permissions;
     // Get the page table offset from the virtual address 
     uint64_t pt_index = extract_table(virtual_address);
-    printk("pt_index: %p\n", pt_index);
     page_table->entries[pt_index] = page;
-    pdpt_t *pdpt = (pdpt_t*)PHYS_TO_VIRT(cr3->entries[0]);
-    printk("ent0: %p %p\n", pdpt->entries[0], pdpt);
-    printk("page: %p\n", page);
-    return PHYS_TO_VIRT(extract_offset(virtual_address) | (page & PG_ALIGN));
+    pd_t *pdpte = (pd_t*)PHYS_TO_VIRT(pml4e->entries[0] & PG_ALIGN);
+    printk("ent0: %p\n", pdpte->entries[2]);
+    return PHYS_TO_VIRT(page & PG_ALIGN);
 }
 
 pml4_t* copy_page_tables(pml4_t *src) {

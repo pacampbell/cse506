@@ -79,3 +79,12 @@ void create_mm(struct mm_struct *mm,
     vm_ptr->vm_prot = VM_READ | VM_WRITE | VM_GROWSDOWN;
 
 }
+
+void add_vma(struct mm_struct *mm, struct vm_area_struct *vma) {
+    struct vm_area_struct *p_vma = mm->mmap;
+
+    for (; p_vma->next != NULL; p_vma = p_vma->next);
+    p_vma->next = vma;
+    vma->prev = p_vma;
+
+}

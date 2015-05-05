@@ -2,6 +2,8 @@
 #include <stdlib.h>
 
 int main(int argc, char *argv[]) {
-	printf("Hello, World!\n");
-	return EXIT_SUCCESS;
+    char *a = "lksjdflkjslkfjlkjsdflkjsdlfkjsdflkjsdflkjsdflkjsdflkjsdflkjsdflkjsdflkjsdflkjsdflkjsdflkj";
+    printf("Hello, World!\n");
+    printf("%s\n", a);
+    return EXIT_SUCCESS;
 }

@@ -30,7 +30,7 @@ void kmain(void) {
     /* do some basic setup */
     init_services();
     /* start the shell */
-    // start_shell();
+    start_shell();
     /*
     char *str = "Test?";
     __asm__ __volatile__(

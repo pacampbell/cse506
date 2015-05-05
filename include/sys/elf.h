@@ -5,6 +5,7 @@
 	#define __ELF_H
 	#include <sys/defs.h>
 	#include <sys/sbunix.h>
+        #include <sys/task.h>
 	/* TODO: Does not include dynamic linking tables */
 
 	/* Elf-64 typedefs defined from ELF-64 Object File Format, Version 1.5 
@@ -193,6 +194,7 @@
 	/* Helper functions */
         struct mm_struct* load_elf(char *data, uint64_t length, struct pml4_t *new_pml4);
 	bool validate_header(char *data);
+        struct mm_struct* new_load_elf(char *data, int len, Task *task, pml4_t *proc_pml4);
 	
 
 	/* Debug macros */
