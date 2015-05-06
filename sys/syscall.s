@@ -51,5 +51,5 @@ syscall_entry:
 	# put back the rbx value
 	popq %rbx
 	# Jump back to userspace
-	# sysret
-	retq
+	sysretq
+	# retq

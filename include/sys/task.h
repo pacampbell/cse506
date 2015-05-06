@@ -55,6 +55,8 @@
             const char *name;                   /* Convenience name; Optional */
             priority_t priority;                /* priority value from [0, 2^64 - 1] */
             task_type_t type;                   /* Type of task kernel or user */
+            struct Task *parent;                /* Pointer to the parent of this task */
+            struct Task *children;              /* Head pointer to list of children */
             struct Task *next;                  /* Next task in the list */
             struct Task *prev;                  /* Previous Task in the list */
             struct mm_struct *mm, *active_mm;   /* The mm_struct of this task */

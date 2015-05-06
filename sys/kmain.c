@@ -24,8 +24,7 @@ void kmain(void) {
     /* Create a stack for handling system calls */
     kstack = (uint64_t*)PHYS_TO_VIRT(kmalloc_pg());
     kstack_top = &kstack[511];
-
-    printk("kstack: %p kstack_top: %p\n", kstack, kstack_top);
+    // printk("kstack: %p kstack_top: %p\n", kstack, kstack_top);
     /* do some basic setup */
     init_services();
     /* start the shell */

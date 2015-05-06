@@ -51,6 +51,17 @@ uint64_t sys_getpid() {
     return ctask->pid;
 }
 
+uint64_t sys_getppid() {
+    Task *ctask = get_current_task();
+    uint64_t ppid = -1; 
+    if(ctask->parent == NULL) {
+        ppid = KMAIN_PID;
+    } else {
+        ppid = ctask->parent->pid;
+    }
+    return ppid;
+}
+
 /**
  * Upon entry to this function, all interrupts are disabeled, and we still are
  * using the stack of the userspace process.
@@ -99,7 +110,7 @@ uint64_t syscall_common_handler(uint64_t num, uint64_t arg1, uint64_t arg2, uint
             return_value = sys_getpid();
             break;
         case SYS_getppid:
-            panic("sys_getppid not implemented.\n");
+            return_value = sys_getppid();
             break;
         case SYS_execve:
             panic("sys_execve not implemented.\n");
@@ -200,7 +211,8 @@ void init_syscall() {
     // Set the system call handler
     SET_LSTAR((uint64_t)syscall_entry);
     // Set STAR
-    uint64_t star_value = 0x1b23081000000000;
+    // uint64_t star_value = 0x1b23081000000000;
+    uint64_t star_value = 0x1b00080000000000;
     write_msr(IA32_MSR_STAR, star_value & 0xffffffff, (star_value >> 32) & 0xffffffff);
     // Set the flags to clear
     uint64_t flag_mask = IA32_FLAGS_INTERRUPT | IA32_FLAGS_DIRECTION; 

@@ -207,6 +207,9 @@ Task* create_new_task(Task* task, const char *name, task_type_t type,
     /* This task is the end of the list */
     task->next = NULL;
     task->prev = NULL;
+    /* Set parent and children to nothing */
+    task->parent = NULL;
+    task->children = NULL;
     // Initialize the stack
     setup_new_stack(task);
     return task;

@@ -32,12 +32,14 @@ struct sys_segment_descriptor {
 	uint64_t sd_xx3:19;    /* reserved */
 }__attribute__((packed));
 
+
 uint64_t gdt[MAX_GDT] = {
-	0,                      /*** NULL descriptor ***/
-	GDT_CS | P | DPL0 | L,  /*** kernel code segment descriptor ***/
-	GDT_DS | P | W | DPL0,  /*** kernel data segment descriptor ***/
-	GDT_CS | P | DPL3 | L,  /*** user code segment descriptor ***/
-	GDT_DS | P | W | DPL3,  /*** user data segment descriptor ***/
+	0,                      /*** NULL descriptor 0x00 ***/
+	GDT_CS | P | DPL0 | L,  /*** kernel code segment descriptor 0x08 ***/
+	GDT_DS | P | W | DPL0,  /** kernel data segment descriptor 0x10 **/
+	GDT_CS | P | DPL3 | L,  /*** user code segment descriptor 0x18 ***/
+	GDT_DS | P | W | DPL3,  /*** user data segment descriptor 0x20 ***/
+	GDT_CS | P | DPL3 | L,  /*** 64-bit code segment descriptor 0x28 ***/
 	0, 0,                   /*** TSS ***/
 };
 
