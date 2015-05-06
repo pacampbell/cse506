@@ -13,11 +13,15 @@ void idle(void) {
     preempt(true);
 }
 
+uint64_t *kstack;
+
 /**
  * Similar to initd, this is process 0. This starts up all kernel level 
  * services and threads. 
  */
 void kmain(void) {
+    /* Create a stack for handling system calls */
+    kstack = (uint64_t*)kmalloc_pg();
     /* do some basic setup */
     init_services();
     /* start the shell */

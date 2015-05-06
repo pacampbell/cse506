@@ -50,6 +50,11 @@
 		    ((value) >> 32) & 0xffffffff); \
 		} while(0)
 
+		#define SET_STAR(value) do { \
+			write_msr(IA32_MSR_STAR, (value) & 0xffffffff, \
+		    ((value) >> 32) & 0xffffffff); \
+		} while(0)
+
 		#define SET_FMASK(value) do { \
 			write_msr(IA32_MSR_FMASK, (value) & 0xffffffff, \
 		    ((value) >> 32) & 0xffffffff); \

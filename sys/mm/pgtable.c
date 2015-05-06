@@ -281,7 +281,7 @@ void *kmalloc_vma(pml4_t *cr3, uint64_t virt_base, size_t size, uint64_t permiss
         int num_pages = size / PAGE_SIZE;
         num_pages += size % PAGE_SIZE > 0 ? 1 : 0;
         num_pages += leaks_pg(virt_base, size) ? 1 : 0;
-        printk("num_pgs: %d\n", num_pages);
+        // printk("num_pgs: %d\n", num_pages);
         // Allocate pages and map to virtual address
         for(int i = 0; i < num_pages; i++) {
             uint64_t virt_addr = virt_base + (i * PAGE_SIZE);
@@ -293,7 +293,7 @@ void *kmalloc_vma(pml4_t *cr3, uint64_t virt_base, size_t size, uint64_t permiss
         set_cr3(old_cr3);
     }
     set_cr3(old_pml4);
-    printk("new_alloc: %p\n", new_allocation);
+    // printk("new_alloc: %p\n", new_allocation);
     return new_allocation;
 }
 
@@ -322,7 +322,7 @@ uint64_t insert_page(pml4_t *cr3, uint64_t virtual_address, uint64_t permissions
 pml4_t* copy_page_tables(pml4_t *src) {
     pml4_t *copy = NULL;
     if(src != NULL) {
-        printk("kernmem: %p\n", &kernmem);
+        // printk("kernmem: %p\n", &kernmem);
         // Make src virtual
         src = (pml4_t*)PHYS_TO_VIRT(src);
         // Create a new pml4_t

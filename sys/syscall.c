@@ -69,9 +69,12 @@ void sys_waitpid() {
 http://www.vupen.com/blog/20120806.Advanced_Exploitation_of_Windows_Kernel_x64_Sysret_EoP_MS12-042_CVE-2012-0217.php
  *
  */
+extern uint64_t *kstack;
 void syscall_common_handler(void) {
-    uint64_t num, arg1, arg2, arg3, arg4, arg5, arg6, ret, flags;
+    uint64_t num, arg1, arg2, arg3, arg4, arg5, arg6, ret, flags, ursp;
     __asm__ __volatile__(
+            /* save the user rsp */
+            "movq %%rsp, %9;"
             /* Save the return address and flags */
             "movq %%rcx, %7;"
             "movq %%r11, %8;"
@@ -83,16 +86,18 @@ void syscall_common_handler(void) {
             "movq %%r10, %4;"
             "movq %%r8,  %5;"
             "movq %%r9,  %6;"
+            /* set the new rsp */
+            // "movq %10, %%rsp"
             : "=r"(num), "=r"(arg1), "=r"(arg2), "=r"(arg3), "=r"(arg4),
-            "=r"(arg5), "=r"(arg6), "=r"(ret), "=r"(flags)
-            :
-            :
+              "=r"(arg5), "=r"(arg6), "=r"(ret), "=r"(flags), "=r"(ursp)
+            : // "r"(&kstack[511])
+            : "memory"
             );
 
     switch(num) {
         case SYS_exit:
             printk("EXIT CALLED\n");
-            __asm__ __volatile__("hlt;");
+            // __asm__ __volatile__("hlt;");
             sys_exit(arg1);
             break;
         case SYS_brk:
@@ -163,15 +168,21 @@ void syscall_common_handler(void) {
             break;
     }
 
-    printk("rflags: %p return_address: %p\n", flags, ret);
+    // printk("rflags: %p return_address: %p\n", flags, ret);
 
     __asm__ __volatile__(
+            // "hlt;"
             "movq %0, %%rcx;"
             "movq %1, %%r11;"
-            "sysret;"
+            "cli;"
+            // "movq %2, %%rsp;"
+            // "popq %%rbx;"
+            // "popq %%rbp;"
+            // "popq %%r12;"
+            // "sysret;"
             :
-            : "r"(ret), "r"(flags)
-            :
+            : "r"(ret), "r"(flags), "r"(ursp)
+            : "memory"
             );
 }
 
@@ -204,7 +215,7 @@ uint64_t read_msr(uint64_t msr) {
             "movq %%rdx, %1;"  // hi
             : "=r"(lo), "=r"(hi)
             : "r"(msr) 
-            : "rcx"
+            : "rcx", "memory"
             );
     return (hi << 32) | lo;
 }
@@ -218,9 +229,11 @@ void init_syscall() {
     write_msr(IA32_EFER, effer_val & 0xffffffff, (effer_val >> 32) & 0xffffffff);
     // Set the system call handler
     SET_LSTAR((uint64_t)syscall_common_handler);
+    // Set STAR
+    uint64_t star_value = (uint64_t)(0x23ul << 48) | (0x10ul << 32);
+    write_msr(IA32_MSR_STAR, star_value & 0xffffffff, (star_value >> 32) & 0xffffffff);
+    star_value = read_msr(IA32_MSR_STAR);
     // Set the flags to clear
     uint64_t flag_mask = IA32_FLAGS_INTERRUPT | IA32_FLAGS_DIRECTION; 
     SET_FMASK(flag_mask);
-    // Set STAR
-    // FIXME: Need to set the CS and DS in star.. when i figure out what it is
 }

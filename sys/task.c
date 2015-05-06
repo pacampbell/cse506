@@ -227,6 +227,7 @@ void preempt(bool discard) {
         // The old process no longer wants to run
         old_task->state = TERMINATED;
         task_count--;
+
     }
     // Attempt to switch tasks; Assembly magic voodo
     switch_tasks(old_task, current_task);
@@ -368,16 +369,19 @@ void switch_tasks(Task *old, Task *new) {
             // dump_task(current_task);
             // dump_tables((pml4_t*)current_task->registers.cr3);
 
-
-            tss.rsp0 = current_task->registers.rbp;
-            __asm__ __volatile__(
-                "movq $0x28, %%rax;" 
-                "ltr %%ax;"
-                "iretq;"
-                :
-                :
-                :
-                );
+            if(current_task->type == USER) {
+                tss.rsp0 = current_task->registers.rbp;
+                __asm__ __volatile__(
+                    "movq $0x28, %%rax;" 
+                    "ltr %%ax;"
+                    "iretq;"
+                    :
+                    :
+                    :
+                    );
+            } else {
+                __asm__ __volatile__("iretq;");
+            }
         } else {
             current_task->state = RUNNING;
             // Check to see if the task being scheduled is user or kernel

@@ -143,8 +143,8 @@ static void page_fault(registers_t regs) {
         printk("]\n");
     }
     // Dump info about the task
-    // Task *ctask = get_current_task();
-    // dump_task(ctask);
+    Task *ctask = get_current_task();
+    dump_task(ctask);
 
     __asm__ __volatile__("cli;hlt;");
 }

@@ -6,7 +6,7 @@ int q_or_something;
 
 int main(int argc, char *argv[]) {
     q_or_something = 9;
-    //printf("Hello, World!\n");
+    printf("Hello, World!\n");
     printf("%d\n", q_or_something);
     return EXIT_SUCCESS;
 }
