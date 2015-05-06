@@ -74,6 +74,7 @@ void scroll(void);
  */
 volatile char *video_seek(int offset);
 void setxy(int x, int y);
+volatile char* get_cursor();
 
 /**
  * Used for remapping the address of video memory to a virtual memory address.

@@ -12,6 +12,10 @@ void cls(void) {
     cursor_x = cursor_y = 0;
 }
 
+volatile char* get_cursor() {
+    return (video_mem_base + (cursor_y * (TERMINAL_COLUMNS * 2)) + cursor_x);
+}
+
 void putk(char c) {
     putck(0, c);
 }

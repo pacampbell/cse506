@@ -7,11 +7,13 @@
 #define CTRL_UP 0x9D
 #define SHFT_DN 0x2A
 #define SHFT_UP 0xAA
+#define ENTER   0x9C
 
 void printk(const char *format, ...);
 
 int is_shft_dn = 0;
 int is_cntrl_dn = 0;
+bool pressed_enter= false;
 
 char* map[] = {
     "??", "??","1","2","3","4","5","6","7","8","9","0","-","=","<-","tab","Q","W","E","R","T",
@@ -22,9 +24,33 @@ char* map[] = {
     "KP.","F11","F12"
 };
 
+int gets(uint64_t addr) {
+    int count = 0;
+    volatile char* curs = get_cursor();
+    pressed_enter = 0;
+    
+    while (pressed_enter == 0) {
+        //printk("loop: %d\n", count++);
+        __asm__ __volatile__("hlt;");
+    }
+
+    while (*curs != '\n' && *curs != '\0') {
+        *((volatile char*)(addr++)) = *curs;
+        count++;
+    }
+
+    addr = '\0';
+
+    return count;
+}
+
 static void keyboard_callback(registers_t regs) {
-    //printk("Keyboard: %x\n", b & 0xFF);
     uint8_t b = inb(0x60);
+    //printk("Keyboard: %x\n", b & 0xFF);
+    
+    if  ((b & 0xFF) == ENTER) {
+        pressed_enter = true;
+    }
 
     if(b == CTRL_UP) {
         is_cntrl_dn = 0;

@@ -3,6 +3,7 @@
 #include <sys/syscall_k.h>
 #include <sys/task.h>
 #include <sys/screen.h>
+#include <sys/keyboard.h>
 
 void sys_exit(int ret) {
     // Unschedule the current task.
@@ -23,6 +24,12 @@ void sys_write(int fd, char *buff, size_t count) {
 
 void sys_read(int fd, void *buff, size_t count) {
 
+    if(fd != 0) {
+        panic("sys_write called for an unimplemented FD.");
+        return;
+    }
+    
+    gets((uint64_t)buff);
 }
 
 void sys_fork() {
@@ -86,6 +93,7 @@ void syscall_common_handler(void) {
             "movq %%r10, %4;"
             "movq %%r8,  %5;"
             "movq %%r9,  %6;"
+            "sti;"
             /* set the new rsp */
             // "movq %10, %%rsp"
             : "=r"(num), "=r"(arg1), "=r"(arg2), "=r"(arg3), "=r"(arg4),
@@ -134,7 +142,8 @@ void syscall_common_handler(void) {
             panic("sys_open not implemented.\n");
             break;
         case SYS_read:
-            panic("sys_red not implemented.\n");
+            //panic("sys_red not implemented.\n");
+            sys_read(arg1, (void*)arg2, arg3);
             break;
         case SYS_write:
             sys_write(arg1, (char*)arg2, arg3);

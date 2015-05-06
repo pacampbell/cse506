@@ -28,7 +28,7 @@ struct mm_struct* load_elf(char *data, int len, Task *task, pml4_t *proc_pml4) {
 
         printk("prgm sections: %d\n", hdr->e_phnum);
         for(int i = 0;  i < hdr->e_phnum; prgm_hdr++, i++) {
-            // printk("--------------LOAD-ELF-----------------\n");
+            //printk("--------------LOAD-ELF-----------------\n");
             if (prgm_hdr->p_type == PT_LOAD) {
                 //if (prgm_hdr->p_filesz > PAGE_SIZE) panic("I AM TOO BIG!!!!\n");
                 struct vm_area_struct *vma = (struct vm_area_struct*)PHYS_TO_VIRT(kmalloc_pg());
@@ -36,21 +36,17 @@ struct mm_struct* load_elf(char *data, int len, Task *task, pml4_t *proc_pml4) {
                 set_cr3(proc_pml4);
 
         if(same_pg(last_write, prgm_hdr->p_vaddr)) {panic("going to break\n");}
-                // printk("memcpy dest: %p src: %p size: %p\n", prgm_hdr->p_vaddr, data + prgm_hdr->p_offset, prgm_hdr->p_filesz);
+                //printk("memcpy dest: %p src: %p size: %p\n", prgm_hdr->p_vaddr, data + prgm_hdr->p_offset, prgm_hdr->p_filesz);
                 memcpy((void*)prgm_hdr->p_vaddr, data + prgm_hdr->p_offset, prgm_hdr->p_filesz);
                 last_write = prgm_hdr->p_vaddr + prgm_hdr->p_filesz;
                 //memcpy((void*)prgm_hdr->p_vaddr, data + prgm_hdr->p_offset, prgm_hdr->p_memsz);
-        //if(i == 1){panic("LOAD ELF ENDED\n");halt();}
 
                 set_cr3(kern_pml4);
                 vma->vm_start = prgm_hdr->p_vaddr;
                 vma->vm_end = (uint64_t)(data + prgm_hdr->p_offset + prgm_hdr->p_filesz);
                 vma->vm_prot = prgm_hdr->p_flags;
                 add_vma(mm, vma);
-            } else {
-                // panic("NOT LOADING!!");
-                // printk("type: %d\n", prgm_hdr->p_type);
-            }
+            } 
         }
 
         return mm;
