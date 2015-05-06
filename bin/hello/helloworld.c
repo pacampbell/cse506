@@ -6,8 +6,11 @@ int q_or_something;
 
 int main(int argc, char *argv[]) {
 	uint64_t pid = getpid();
+    char buf[10];
     q_or_something = 9;
     printf("Hello, World!\n");
+    read(0, buf, 9);
+    printf("buf: %s\n", buf);
     printf("%d\n", q_or_something);
     printf("pid: %d\n", pid);
     return EXIT_SUCCESS;

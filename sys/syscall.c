@@ -3,6 +3,7 @@
 #include <sys/syscall_k.h>
 #include <sys/task.h>
 #include <sys/screen.h>
+#include <sys/keyboard.h>
 
 void sys_exit(int ret) {
     // Unschedule the current task.
@@ -25,6 +26,12 @@ int sys_write(int fd, char *buff, size_t count) {
 
 void sys_read(int fd, void *buff, size_t count) {
 
+    if(fd != 0) {
+        panic("sys_write called for an unimplemented FD.");
+        return;
+    }
+    
+    gets((uint64_t)buff, count);
 }
 
 void sys_fork() {
@@ -76,7 +83,6 @@ uint64_t sys_getpid() {
 http://www.vupen.com/blog/20120806.Advanced_Exploitation_of_Windows_Kernel_x64_Sysret_EoP_MS12-042_CVE-2012-0217.php
  *
  */
-// extern uint64_t *kstack;
 uint64_t syscall_common_handler(uint64_t num, uint64_t arg1, uint64_t arg2, uint64_t arg3, uint64_t arg4, uint64_t arg5) {
     uint64_t return_value = 0;
     switch(num) {
@@ -117,7 +123,8 @@ uint64_t syscall_common_handler(uint64_t num, uint64_t arg1, uint64_t arg2, uint
             panic("sys_open not implemented.\n");
             break;
         case SYS_read:
-            panic("sys_red not implemented.\n");
+            //panic("sys_red not implemented.\n");
+            sys_read(arg1, (void*)arg2, arg3);
             break;
         case SYS_write:
             return_value = sys_write(arg1, (char*)arg2, arg3);
