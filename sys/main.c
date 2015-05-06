@@ -48,11 +48,6 @@ void start(uint32_t* modulep, void* physbase, void* physfree) {
     __asm("sti");
     // Start kmain
     set_task(kmain_task);
-
-    // test pg fault
-    // uint64_t *ptr = (uint64_t*)0xA000000000000000;
-    // uint64_t do_page_fault = *ptr;
-    // printk("PAGEFAULT: %c!!!!!!!!\n", (char) do_page_fault);
 }
 
 #define INITIAL_STACK_SIZE 4096

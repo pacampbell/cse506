@@ -6,7 +6,7 @@
 		#include <sys/defs.h>
 		// x86_64 MSRs.
 		#define IA32_EFER						0xC0000080
-		#define IA32_MSR_STAR					0xc0000081
+		#define IA32_MSR_STAR					0xC0000081
 		#define IA32_MSR_LSTAR					0xc0000082
 		#define IA32_MSR_CSTAR                  0xc0000083
 		#define IA32_MSR_FMASK					0xc0000084
@@ -21,7 +21,8 @@
 		#define IA32_FLAGS_DIRECTION			0x00000400
 
 		/* System call initialzation and handler */
-		void syscall_common_handler(void);
+		uint64_t syscall_common_handler(uint64_t num, uint64_t arg1, uint64_t arg2, 
+								    uint64_t arg3, uint64_t arg4, uint64_t arg5);
 		void init_syscall(void);
 
 		/* Functions for reading and writing to msfr*/

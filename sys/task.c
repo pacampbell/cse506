@@ -178,6 +178,7 @@ Task* create_new_task(Task* task, const char *name, task_type_t type,
     if(type == USER) {
         // panic("Allocate user stack\n");
         task->ustack = (uint64_t*)kmalloc_vma(pml4, VIRTUAL_OFFSET, PAGE_SIZE, USER_SETTINGS);
+        printk("ustack: %p\n", task->ustack);
         // printk("kmalloc vma: %p\n", task->ustack);
     } else {
         task->ustack = 0;

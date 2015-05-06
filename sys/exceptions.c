@@ -92,7 +92,7 @@ static void page_fault(registers_t regs) {
 
     panic("!!!!!!!PAGE FAULT!!!!!!!\n");
     printk("virt address: %p\n", faulting_address);
-    printk("phys address: %p\n", VIRT_TO_PHYS(faulting_address));
+    printk("phys address: %p\n", faulting_address);
     printk("bits   : ");
 
     int p = extract_bits(regs.err_code, 0, 0);

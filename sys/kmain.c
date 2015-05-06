@@ -14,6 +14,7 @@ void idle(void) {
 }
 
 uint64_t *kstack;
+uint64_t *kstack_top;
 
 /**
  * Similar to initd, this is process 0. This starts up all kernel level 
@@ -21,7 +22,10 @@ uint64_t *kstack;
  */
 void kmain(void) {
     /* Create a stack for handling system calls */
-    kstack = (uint64_t*)kmalloc_pg();
+    kstack = (uint64_t*)PHYS_TO_VIRT(kmalloc_pg());
+    kstack_top = &kstack[511];
+
+    printk("kstack: %p kstack_top: %p\n", kstack, kstack_top);
     /* do some basic setup */
     init_services();
     /* start the shell */
