@@ -162,7 +162,6 @@ void setup_new_stack(Task *task) {
     task->kstack[507] = task->registers.rip;  // The entry point
     // Set the stack pointer to the amount of items pushed
     task->registers.rsp = (uint64_t)&(task->kstack[507]);
-    panic("SET NEW STACK\n");
 }
 
 Task* create_new_task(Task* task, const char *name, task_type_t type,
@@ -177,9 +176,9 @@ Task* create_new_task(Task* task, const char *name, task_type_t type,
     /* Set the address of the stack */
     task->kstack = (uint64_t*) PHYS_TO_VIRT(kmalloc_pg());
     if(type == USER) {
-        panic("Allocate user stack\n");
+        // panic("Allocate user stack\n");
         task->ustack = (uint64_t*)kmalloc_vma(pml4, VIRTUAL_OFFSET, PAGE_SIZE, USER_SETTINGS);
-        printk("kmalloc vma: %p\n", task->ustack);
+        // printk("kmalloc vma: %p\n", task->ustack);
     } else {
         task->ustack = 0;
     }
@@ -322,7 +321,7 @@ void switch_tasks(Task *old, Task *new) {
                 panic("Tried to free a NULL task.\n");
                 __asm__ __volatile__("cli; hlt;");
             }
-            printk("Removed: %s\n", old->name);
+            // printk("Removed: %s\n", old->name);
             // Mark pid as free
             free_pid(old->pid);
             // Free the stack
@@ -365,7 +364,7 @@ void switch_tasks(Task *old, Task *new) {
         );
 
         if(current_task->state == NEW) {
-            printk("Task Name: %s\n", current_task->name);
+            // printk("Task Name: %s\n", current_task->name);
             // dump_task(current_task);
             // dump_tables((pml4_t*)current_task->registers.cr3);
 

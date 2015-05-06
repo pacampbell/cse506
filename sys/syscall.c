@@ -96,7 +96,7 @@ void syscall_common_handler(void) {
 
     switch(num) {
         case SYS_exit:
-            printk("EXIT CALLED\n");
+            // printk("EXIT CALLED\n");
             // __asm__ __volatile__("hlt;");
             sys_exit(arg1);
             break;

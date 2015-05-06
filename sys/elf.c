@@ -48,8 +48,8 @@ struct mm_struct* load_elf(char *data, int len, Task *task, pml4_t *proc_pml4) {
                 vma->vm_prot = prgm_hdr->p_flags;
                 add_vma(mm, vma);
             } else {
-                panic("NOT LOADING!!");
-                printk("type: %d\n", prgm_hdr->p_type);
+                // panic("NOT LOADING!!");
+                // printk("type: %d\n", prgm_hdr->p_type);
             }
         }
 
