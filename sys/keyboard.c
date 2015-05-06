@@ -24,7 +24,7 @@ char* map[] = {
     "KP.","F11","F12"
 };
 
-int gets(uint64_t addr) {
+int gets(uint64_t addr, size_t len) {
     int count = 0;
     volatile char* curs = get_cursor();
     pressed_enter = 0;
@@ -34,7 +34,7 @@ int gets(uint64_t addr) {
         __asm__ __volatile__("hlt;");
     }
 
-    while (*curs != '\n' && *curs != '\0') {
+    while ( *curs != '\n' && *curs != '\0' && count < (len - 1 ) ) {
         *((volatile char*)(addr++)) = *curs;
         count++;
     }

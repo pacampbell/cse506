@@ -29,7 +29,7 @@ void sys_read(int fd, void *buff, size_t count) {
         return;
     }
     
-    gets((uint64_t)buff);
+    gets((uint64_t)buff, count);
 }
 
 void sys_fork() {
