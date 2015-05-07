@@ -1,16 +1,19 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-#define NUM 1
-
+//#define NUM 1000000000000000000
+#define NUM 20000
 
 int main(int argc, char *argv[]) {
-//    char str[NUM];
-//
-//    for(int i = 0; i < NUM; i++) {
-//        str[i] = '7';
-//    }
-//
+    printf("made big array\n");
+    char str[NUM];
+
+    for(unsigned long i = 0; i < NUM; i++) {
+        /*if(!(i%100))*/printf("looking at index: %d\n", i);
+        str[i] = '7';
+    }
+
+    printf("large string: %c\n", str[NUM-1]);
     printf("Hello World!!! \n");
 }
 

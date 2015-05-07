@@ -375,9 +375,11 @@ void switch_tasks(Task *old, Task *new) {
         );
 
         if(current_task->state == NEW) {
-            // printk("Task Name: %s\n", current_task->name);
+            printk("Task Name: %s\n", current_task->name);
             // dump_task(current_task);
             // dump_tables((pml4_t*)current_task->registers.cr3);
+
+            current_task->state = RUNNING;
 
             if(current_task->type == USER) {
                 tss.rsp0 = current_task->registers.rbp;

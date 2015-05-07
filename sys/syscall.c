@@ -7,6 +7,8 @@
 
 void sys_exit(int ret) {
     // Unschedule the current task.
+    printk("Halting in exir\n");
+    halt();
     preempt(true);
 }
 

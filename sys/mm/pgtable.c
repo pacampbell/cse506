@@ -275,8 +275,6 @@ void *kmalloc_vma(pml4_t *cr3, uint64_t virt_base, size_t size, uint64_t permiss
     pml4_t *old_pml4 = get_cr3();
     set_cr3(cr3);
     if(size > 0) {
-        pml4_t *old_cr3 = get_cr3();
-        set_cr3(cr3);
         // Figure out how many pages we need
         int num_pages = size / PAGE_SIZE;
         num_pages += size % PAGE_SIZE > 0 ? 1 : 0;
@@ -290,10 +288,8 @@ void *kmalloc_vma(pml4_t *cr3, uint64_t virt_base, size_t size, uint64_t permiss
                 new_allocation = (void*)virt_addr;
             }
         }
-        set_cr3(old_cr3);
     }
     set_cr3(old_pml4);
-    printk("new_alloc: %p\n", new_allocation);
     return new_allocation;
 }
 
