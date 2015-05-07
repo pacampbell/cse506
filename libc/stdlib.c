@@ -234,6 +234,10 @@ struct dirent *readdir(struct DIR *dir) {
 
 }
 
+void ps() {
+    syscall_0(SYS_ps);
+}
+
 //int closedir(struct DIR *dir) {
 int closedir(struct DIR *dir) {
     free(dir);

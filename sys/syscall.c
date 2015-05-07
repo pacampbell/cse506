@@ -1,9 +1,6 @@
 #define __KERNEL__
-#include <sys/syscall.h>
 #include <sys/syscall_k.h>
-#include <sys/task.h>
-#include <sys/screen.h>
-#include <sys/keyboard.h>
+
 
 void sys_exit(int ret) {
     // Unschedule the current task.
@@ -26,18 +23,29 @@ int sys_write(int fd, char *buff, size_t count) {
     }
 }
 
-void sys_read(int fd, void *buff, size_t count) {
-
+uint64_t sys_read(int fd, void *buff, size_t count) {
+    uint64_t read = 0;
     if(fd != 0) {
-        panic("sys_write called for an unimplemented FD.");
-        return;
+        panic("sys_read called for an unimplemented FD.");
+        return 0;
     }
     
     gets((uint64_t)buff, count);
+    return read;
 }
 
-void sys_fork() {
-
+uint64_t sys_fork() {
+    // #1 Get current Task
+    Task *current = get_current_task();
+    // #2 clone task
+    Task *child = clone_task(current);
+    // #3 schedule the task
+    Task *tasks = get_task_list();
+    insert_into_list(&tasks, child);
+    // #4 yield so child runs now
+    preempt(false);
+    // #5 return new task pid
+    return child->pid;
 }
 
 void sys_exec() {
@@ -62,6 +70,31 @@ uint64_t sys_getppid() {
         ppid = ctask->parent->pid;
     }
     return ppid;
+}
+
+void sys_ps() {
+    Task *task = get_task_list();
+    printk("PID          TYPE            STATE            CMD\n");
+    while(task != NULL) {
+        if(task->state != TERMINATED) {
+            printk("%d            %s          %s            %s\n",
+                task->pid,
+                task->type == KERNEL ? "KERNEL" : "USER  ",
+                task->state == NEW ? "NEW" : task->state == READY ? "READY" : task->state == RUNNING ? "RUNNING" : task->state == WAITING ? "WAITING" : task->state == TERMINATED ? "TERMINATED" : "UNKNOWN",
+                task->name);
+        }
+        task = task->next;
+    }
+}
+
+void sys_nanosleep(struct timespec *req, struct timespec *rem) {
+    time_t counter = 0;
+    panic("sys_nanosleep not implemented.\n");
+    while(counter < 5) {
+         // __asm__ __volatile__("sti; hlt;");
+         counter++;
+    }
+
 }
 
 /**
@@ -106,7 +139,7 @@ uint64_t syscall_common_handler(uint64_t num, uint64_t arg1, uint64_t arg2, uint
             panic("sys_brk not implemented.\n");
             break;
         case SYS_fork:
-            panic("sys_fork not implemented.\n");
+            return_value = sys_fork();
             break;
         case SYS_getpid:
             return_value = sys_getpid();
@@ -121,7 +154,7 @@ uint64_t syscall_common_handler(uint64_t num, uint64_t arg1, uint64_t arg2, uint
             panic("sys_wait4 not implemented.\n");
             break;
         case SYS_nanosleep:
-            panic("sys_nanosleep not implemented.\n");
+            sys_nanosleep((struct timespec*)arg1, (struct timespec*)arg2);
             break;
         case SYS_alarm:
             panic("sys_alarm not implemented.\n");
@@ -136,8 +169,7 @@ uint64_t syscall_common_handler(uint64_t num, uint64_t arg1, uint64_t arg2, uint
             panic("sys_open not implemented.\n");
             break;
         case SYS_read:
-            //panic("sys_red not implemented.\n");
-            sys_read(arg1, (void*)arg2, arg3);
+            return_value = sys_read(arg1, (void*)arg2, arg3);
             break;
         case SYS_write:
             return_value = sys_write(arg1, (char*)arg2, arg3);
@@ -165,6 +197,9 @@ uint64_t syscall_common_handler(uint64_t num, uint64_t arg1, uint64_t arg2, uint
             break;
         case SYS_munmap:
             panic("sys_munmap not implemented.\n");
+            break;
+        case SYS_ps:
+            sys_ps();
             break;
         default:
             printk("Unimplemented syscall %d\n", num);

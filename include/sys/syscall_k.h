@@ -4,6 +4,11 @@
 	#ifndef __SYSCALL_K_H
 	#define __SYSCALL_K_H
 		#include <sys/defs.h>
+		#include <sys/syscall.h>
+		#include <sys/time.h>
+		#include <sys/task.h>
+		#include <sys/screen.h>
+		#include <sys/keyboard.h>
 		// x86_64 MSRs.
 		#define IA32_EFER						0xC0000080
 		#define IA32_MSR_STAR					0xC0000081

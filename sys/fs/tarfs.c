@@ -61,3 +61,13 @@ tarfs_entry* traverse_tars(const char *path, tarfs_entry *t_entry) {
 	}
 	return found;
 }
+
+void exec_tarfs_elf(const char *path) {
+	tarfs_entry e;
+    if(traverse_tars(path, &e) != NULL) {
+        /* Try to load file as elf */
+        create_user_elf_task(path, e.data_base, e.size);
+    } else {
+        printk("Unable to find: %s in tarfs\n", path);
+    }
+}

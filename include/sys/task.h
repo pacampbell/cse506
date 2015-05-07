@@ -55,6 +55,7 @@
             const char *name;                   /* Convenience name; Optional */
             priority_t priority;                /* priority value from [0, 2^64 - 1] */
             task_type_t type;                   /* Type of task kernel or user */
+            bool in_use;                        /* Flag determing if the struct is in use or not */
             struct Task *parent;                /* Pointer to the parent of this task */
             struct Task *children;              /* Head pointer to list of children */
             struct Task *next;                  /* Next task in the list */
@@ -66,14 +67,19 @@
         /* privilege macros */
         #define SWITCH_TO_RING3() do {  \
             __asm__ __volatile__(       \
-                "movq $0x23, %%rax;"    \
-                "movq %%rax, %%ds;"     \
-                "movq %%rax, %%es;"     \
-                "movq %%rax, %%fs;"     \
-                "movq %%rax, %%gs;"     \
+                "cli;"                  \
+                                        \
+                "movq %%rsp, %%rax;"    \
+                "pushq $0x23;"          \
+                "pushq %%rax;"          \
+                "pushq $0x200;"         \
+                "pushq $0x1b;"          \
+                "pushq $1f;"            \
+                "iretq;"                \
+                "1:;"                   \
                 :                       \
                 :                       \
-                : "rax"                 \
+                :                       \
             );                          \
         } while(0)
 
@@ -98,6 +104,20 @@
          * @param code Function pointer which should start at the code to be executed.
          */
         Task* create_user_elf_task(const char *name, char* elf, uint64_t size);
+
+        /**
+         * Searchs the current task list for any unused task structs.
+         * if none exist then create a new one otherwise we return the address
+         * of an existing unused task struct.
+         */
+        Task* create_task_struct(Task **list);
+
+        /**
+         * Search the task list for a free task if it exists.
+         * @return Returns NULL if there are no free tasks otherwise 
+         * it returns the address of a free task.
+         */
+        Task* get_free_task_struct(Task **list);
 
         /**
          * Pushes values into the stack for the newly created task.
@@ -129,6 +149,14 @@
         Task *get_task_by_pid(Task **list, pid_t pid);
         Task *remove_task_by_pid(Task **list, pid_t pid);
         Task *get_current_task(void);
+        Task *clone_task(Task *src);
+        Task *get_task_list(void);
+
+        /**
+         * Get the next valid task that is in use in the task list.
+         * If no valid tasks exist return NULL.
+         */
+        Task *get_next_task(void);
         /* TODO: Future work - Forking functions should go in here too? */
     #endif
 #endif

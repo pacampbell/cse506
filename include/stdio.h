@@ -9,5 +9,6 @@ int printf(const char *format, ...);
 int scanf(const char *format, ...);
 int fprintf(int fd, const char *format, ...);
 char *fgets(char *s, int size, int fd);
+int convert(const char *str, int base);
 
 #endif

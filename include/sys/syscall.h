@@ -24,4 +24,7 @@
 #define SYS_mmap        9
 #define SYS_munmap     11
 
+/* Fake syscall since no proc system */
+#define SYS_ps        300
+
 #endif

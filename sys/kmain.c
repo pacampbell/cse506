@@ -45,13 +45,8 @@ void init_services(void) {
 
 void start_shell(void) {
     /* Do some testing for now */
-    tarfs_entry e;
-    if(traverse_tars("bin/hello", &e) != NULL) {
-        printk("name: %s\nLocation: %p\nSize: %d\n", e.path, e.data_base, e.size);
-        /* Try to load file as elf */
-        create_user_elf_task("bin/hello", e.data_base, e.size);
-        //load_elf(e.data_base, e.size, copy_page_tables(get_cr3()));
-    } else {
-        printk("Unable to find: %s in tarfs\n", "bin/hello");
-    }
+    // exec_tarfs_elf("bin/hello");
+    // exec_tarfs_elf("bin/ps");
+    // exec_tarfs_elf("bin/ps");
+    // exec_tarfs_elf("bin/sh");
 }
