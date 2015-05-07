@@ -24,7 +24,7 @@ int sys_write(int fd, char *buff, size_t count) {
 uint64_t sys_read(int fd, void *buff, size_t count) {
     uint64_t read = 0;
     if(fd != 0) {
-        panic("sys_write called for an unimplemented FD.");
+        panic("sys_read called for an unimplemented FD.");
         return 0;
     }
     
@@ -74,11 +74,13 @@ void sys_ps() {
     Task *task = get_task_list();
     printk("PID          TYPE            STATE            CMD\n");
     while(task != NULL) {
-        printk("%d            %s          %s            %s\n",
-            task->pid,
-            task->type == KERNEL ? "KERNEL" : "USER  ",
-            task->state == NEW ? "NEW" : task->state == READY ? "READY" : task->state == RUNNING ? "RUNNING" : task->state == WAITING ? "WAITING" : task->state == TERMINATED ? "TERMINATED" : "UNKNOWN",
-            task->name);
+        if(task->state != TERMINATED) {
+            printk("%d            %s          %s            %s\n",
+                task->pid,
+                task->type == KERNEL ? "KERNEL" : "USER  ",
+                task->state == NEW ? "NEW" : task->state == READY ? "READY" : task->state == RUNNING ? "RUNNING" : task->state == WAITING ? "WAITING" : task->state == TERMINATED ? "TERMINATED" : "UNKNOWN",
+                task->name);
+        }
         task = task->next;
     }
 }

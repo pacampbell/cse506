@@ -4,6 +4,7 @@
 #include <sys/sbunix.h>
 #include <sbunix/string.h>
 #include <sys/defs.h>
+#include <sys/task.h>
 
 extern char _binary_tarfs_start;
 extern char _binary_tarfs_end;
@@ -49,5 +50,6 @@ struct tarfs_entry {
 typedef struct tarfs_entry tarfs_entry;
 
 tarfs_entry* traverse_tars(const char *path, tarfs_entry *t_entry);
+void exec_tarfs_elf(const char *path);
 
 #endif
