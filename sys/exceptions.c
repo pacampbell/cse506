@@ -1,6 +1,7 @@
 #define __KERNEL__
 #include <sys/exceptions.h>
 #include <sys/task.h>
+#include <sys/pgtable.h>
 
 
 /* Private handler prototypes */
@@ -16,6 +17,7 @@ static void segment_not_present_fault(registers_t regs);
 static void stack_segmentation_fault(registers_t regs);
 static void general_protection_fault(registers_t regs);
 static void page_fault(registers_t regs);
+static void bad_page_fault(registers_t regs);
 static void alignment_check_fault(registers_t regs);
 static void machine_check_abort(registers_t regs);
 
@@ -83,16 +85,36 @@ static void general_protection_fault(registers_t regs) {
 	panic("DUMP\n");
 	Task *ctask = get_current_task();
 	dump_task(ctask);
-	__asm__ __volatile__("cli; hlt;");
+        halt();
 }
 
 static void page_fault(registers_t regs) {
-	uint64_t faulting_address;
+    uint64_t faulting_address;
+    __asm__ __volatile__("mov %%cr2, %0" : "=r" (faulting_address));
+    Task *tsk = get_current_task();
+
+    printk("address: %p\n", faulting_address);
+    printk("brk: %p\n", tsk->mm->brk);
+    printk("stack_start: %p\n", tsk->mm->start_stack);
+
+    if(tsk->mm == NULL ||
+            (faulting_address < tsk->mm->brk || tsk->mm->start_stack < faulting_address)) {
+        bad_page_fault(regs);
+    }
+
+    kmalloc_vma((pml4_t*)tsk->registers.cr3, faulting_address & PG_ALIGN, 1, USER_SETTINGS);
+    panic("here\n");
+
+
+}
+
+static void bad_page_fault(registers_t regs) {
+    uint64_t faulting_address;
     __asm__ __volatile__("mov %%cr2, %0" : "=r" (faulting_address));
 
+
     panic("!!!!!!!PAGE FAULT!!!!!!!\n");
-    printk("virt address: %p\n", faulting_address);
-    printk("phys address: %p\n", faulting_address);
+    printk("address: %p\n", faulting_address);
     printk("bits   : ");
 
     int p = extract_bits(regs.err_code, 0, 0);
@@ -146,7 +168,7 @@ static void page_fault(registers_t regs) {
     Task *ctask = get_current_task();
     dump_task(ctask);
 
-    __asm__ __volatile__("cli;hlt;");
+    halt();
 }
 
 static void alignment_check_fault(registers_t regs) {

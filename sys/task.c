@@ -177,7 +177,8 @@ Task* create_new_task(Task* task, const char *name, task_type_t type,
     task->kstack = (uint64_t*) PHYS_TO_VIRT(kmalloc_pg());
     if(type == USER) {
         // panic("Allocate user stack\n");
-        task->ustack = (uint64_t*)kmalloc_vma(pml4, VIRTUAL_OFFSET, PAGE_SIZE, USER_SETTINGS);
+        //task->ustack = (uint64_t*)kmalloc_vma(pml4, VIRTUAL_OFFSET, PAGE_SIZE, USER_SETTINGS);
+        task->ustack = (uint64_t*)kmalloc_vma(pml4, task->mm->brk + (50 * PAGE_SIZE), PAGE_SIZE, USER_SETTINGS);
         printk("ustack: %p\n", task->ustack);
         // printk("kmalloc vma: %p\n", task->ustack);
     } else {
@@ -190,8 +191,8 @@ Task* create_new_task(Task* task, const char *name, task_type_t type,
     task->registers.rdx = 0;
     task->registers.rsi = 0;
     task->registers.rdi = 0;
-    task->registers.r8 = 0;
-    task->registers.r9 = 0;
+    task->registers.r8 =  0;
+    task->registers.r9 =  0;
     task->registers.r10 = 0;
     task->registers.r11 = 0;
     task->registers.r12 = 0;
@@ -204,6 +205,11 @@ Task* create_new_task(Task* task, const char *name, task_type_t type,
     task->registers.cr3 = (uint64_t)pml4;
     task->registers.rsp = type == KERNEL ? (uint64_t)task->kstack + PAGE_SIZE - 8 : (uint64_t)task->ustack + PAGE_SIZE - 8; // Start the stack pointer at the other side
     task->registers.rbp = task->registers.rsp;
+
+    if(task->mm != NULL) {
+        task->mm->start_stack = task->registers.rsp;
+    }
+
     /* This task is the end of the list */
     task->next = NULL;
     task->prev = NULL;

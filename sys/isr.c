@@ -1,6 +1,7 @@
 #define __KERNEL__
 #include <sys/isr.h>
 #include <sys/common.h>
+#include <sys/screen.h>
 
 void printk(const char *fmt, ...);
 
@@ -99,5 +100,4 @@ void isr_handler(registers_t regs) {
         isr_t handler = interrupt_handlers[regs.int_no];
         handler(regs);
     }
-    __asm__ __volatile__("cli;hlt;");
 }

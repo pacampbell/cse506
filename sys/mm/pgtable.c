@@ -293,7 +293,7 @@ void *kmalloc_vma(pml4_t *cr3, uint64_t virt_base, size_t size, uint64_t permiss
         set_cr3(old_cr3);
     }
     set_cr3(old_pml4);
-    // printk("new_alloc: %p\n", new_allocation);
+    printk("new_alloc: %p\n", new_allocation);
     return new_allocation;
 }
 

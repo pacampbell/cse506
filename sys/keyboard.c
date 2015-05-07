@@ -13,7 +13,7 @@ void printk(const char *format, ...);
 
 int is_shft_dn = 0;
 int is_cntrl_dn = 0;
-bool pressed_enter= false;
+static volatile bool pressed_enter= false;
 
 char* map[] = {
     "??", "??","1","2","3","4","5","6","7","8","9","0","-","=","<-","tab","Q","W","E","R","T",
@@ -25,12 +25,13 @@ char* map[] = {
 };
 
 int gets(uint64_t addr, size_t len) {
+    __asm__ __volatile__("sti;");
     int count = 0;
     volatile char* curs = get_cursor();
     pressed_enter = 0;
     
-    while (pressed_enter == 0) {
-        //printk("loop: %d\n", count++);
+    while (pressed_enter == false) {
+        printk("loop: %d\n", count++);
         __asm__ __volatile__("hlt;");
     }
 
