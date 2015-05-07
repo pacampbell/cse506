@@ -24,18 +24,29 @@ int sys_write(int fd, char *buff, size_t count) {
     }
 }
 
-void sys_read(int fd, void *buff, size_t count) {
-
+uint64_t sys_read(int fd, void *buff, size_t count) {
+    uint64_t read = 0;
     if(fd != 0) {
         panic("sys_write called for an unimplemented FD.");
-        return;
+        return 0;
     }
     
     gets((uint64_t)buff, count);
+    return read;
 }
 
-void sys_fork() {
-
+uint64_t sys_fork() {
+    // #1 Get current Task
+    Task *current = get_current_task();
+    // #2 clone task
+    Task *child = clone_task(current);
+    // #3 schedule the task
+    Task *tasks = get_task_list();
+    insert_into_list(&tasks, child);
+    // #4 yield so child runs now
+    preempt(false);
+    // #5 return new task pid
+    return child->pid;
 }
 
 void sys_exec() {
@@ -60,6 +71,18 @@ uint64_t sys_getppid() {
         ppid = ctask->parent->pid;
     }
     return ppid;
+}
+
+void sys_ps() {
+    Task *task = get_task_list();
+    printk("PID          TYPE         CMD\n");
+    while(task != NULL) {
+        printk("%d          %s          %s\n",
+            task->pid,
+            task->type == KERNEL ? "KERNEL" : "USER  ", 
+            task->name);
+        task = task->next;
+    }
 }
 
 /**
@@ -104,7 +127,7 @@ uint64_t syscall_common_handler(uint64_t num, uint64_t arg1, uint64_t arg2, uint
             panic("sys_brk not implemented.\n");
             break;
         case SYS_fork:
-            panic("sys_fork not implemented.\n");
+            return_value = sys_fork();
             break;
         case SYS_getpid:
             return_value = sys_getpid();
@@ -134,8 +157,7 @@ uint64_t syscall_common_handler(uint64_t num, uint64_t arg1, uint64_t arg2, uint
             panic("sys_open not implemented.\n");
             break;
         case SYS_read:
-            //panic("sys_red not implemented.\n");
-            sys_read(arg1, (void*)arg2, arg3);
+            return_value = sys_read(arg1, (void*)arg2, arg3);
             break;
         case SYS_write:
             return_value = sys_write(arg1, (char*)arg2, arg3);
@@ -163,6 +185,9 @@ uint64_t syscall_common_handler(uint64_t num, uint64_t arg1, uint64_t arg2, uint
             break;
         case SYS_munmap:
             panic("sys_munmap not implemented.\n");
+            break;
+        case SYS_ps:
+            sys_ps();
             break;
         default:
             printk("Unimplemented syscall %d\n", num);

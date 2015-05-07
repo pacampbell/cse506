@@ -58,6 +58,9 @@ int pipe(int filedes[2]);
 int dup(int oldfd);
 int dup2(int oldfd, int newfd);
 
+/* SBUNIX syscall */
+void ps(void);
+
 // directories
 #define NAME_MAX 255
 struct dirent {

@@ -66,14 +66,19 @@
         /* privilege macros */
         #define SWITCH_TO_RING3() do {  \
             __asm__ __volatile__(       \
-                "movq $0x23, %%rax;"    \
-                "movq %%rax, %%ds;"     \
-                "movq %%rax, %%es;"     \
-                "movq %%rax, %%fs;"     \
-                "movq %%rax, %%gs;"     \
+                "cli;"                  \
+                                        \
+                "movq %%rsp, %%rax;"    \
+                "pushq $0x23;"          \
+                "pushq %%rax;"          \
+                "pushq $0x200;"         \
+                "pushq $0x1b;"          \
+                "pushq $1f;"            \
+                "iretq;"                \
+                "1:;"                   \
                 :                       \
                 :                       \
-                : "rax"                 \
+                :                       \
             );                          \
         } while(0)
 
@@ -129,6 +134,8 @@
         Task *get_task_by_pid(Task **list, pid_t pid);
         Task *remove_task_by_pid(Task **list, pid_t pid);
         Task *get_current_task(void);
+        Task *clone_task(Task *src);
+        Task *get_task_list(void);
         /* TODO: Future work - Forking functions should go in here too? */
     #endif
 #endif

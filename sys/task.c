@@ -215,6 +215,25 @@ Task* create_new_task(Task* task, const char *name, task_type_t type,
     return task;
 }
 
+Task *clone_task(Task *src) {
+    Task *new_task = NULL;
+    if(src != NULL) {
+        // Get a page for a new task struct
+        new_task = (Task*)PHYS_TO_VIRT(kmalloc_pg());
+        // zero out the struct
+        memset(new_task, 0, sizeof(Task));
+        // Copy the struct (no deep copies)
+        memcpy(new_task, src, sizeof(Task));
+        // Assign a new pid
+        new_task->pid = allocate_pid();
+        // Assign the parent task
+        new_task->parent = src;
+        // Assign the child task return value to zero
+        new_task->registers.rax = 0;
+    }
+    return new_task;
+}
+
 int get_task_count(void) {   
     return task_count;
 }
@@ -368,10 +387,6 @@ void switch_tasks(Task *old, Task *new) {
         );
 
         if(current_task->state == NEW) {
-            // printk("Task Name: %s\n", current_task->name);
-            // dump_task(current_task);
-            // dump_tables((pml4_t*)current_task->registers.cr3);
-
             if(current_task->type == USER) {
                 tss.rsp0 = current_task->registers.rbp;
                 __asm__ __volatile__(
@@ -390,7 +405,7 @@ void switch_tasks(Task *old, Task *new) {
             // Check to see if the task being scheduled is user or kernel
             if(current_task->type == USER) {
                 // Need to set the tss rsp0 value
-                tss.rsp0 = (uint64_t)&(((uint64_t*)current_task->kstack)[511]);
+                tss.rsp0 = (uint64_t)&((current_task->kstack)[511]);
                 SWITCH_TO_RING3();
             }
         }
@@ -465,4 +480,8 @@ Task *remove_task_by_pid(Task **list, pid_t pid) {
 
 Task* get_current_task(void) {
     return current_task;
+}
+
+Task *get_task_list(void) {
+    return tasks;
 }
