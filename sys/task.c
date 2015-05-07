@@ -385,10 +385,11 @@ void switch_tasks(Task *old, Task *new) {
             : "r"(current_task)
             : "memory"
         );
-
+        static bool first = true;
         if(current_task->state == NEW) {
-            if(current_task->type == USER) {
-                tss.rsp0 = current_task->registers.rbp;
+            if(current_task->type == USER && first) {
+                first = false;
+                tss.rsp0 = (uint64_t)&((current_task->kstack)[511]);
                 __asm__ __volatile__(
                     "movq $0x28, %%rax;" 
                     "ltr %%ax;"
@@ -400,12 +401,22 @@ void switch_tasks(Task *old, Task *new) {
             } else {
                 __asm__ __volatile__("iretq;");
             }
+            // __asm__ __volatile__("iretq;");
         } else {
             current_task->state = RUNNING;
             // Check to see if the task being scheduled is user or kernel
             if(current_task->type == USER) {
                 // Need to set the tss rsp0 value
-                // tss.rsp0 = (uint64_t)&((current_task->kstack)[511]);
+                tss.rsp0 = (uint64_t)&((current_task->kstack)[511]);
+                // __asm__ __volatile__(
+                //     "movq $0x28, %%rax;" 
+                //     "ltr %%ax;"
+                //     "iretq;"
+                //     :
+                //     :
+                //     : "rax"
+                //     );
+                // printk("rsp0: %p\n", tss.rsp0);
                 // SWITCH_TO_RING3();
             }
         }

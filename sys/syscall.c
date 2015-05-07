@@ -72,11 +72,12 @@ uint64_t sys_getppid() {
 
 void sys_ps() {
     Task *task = get_task_list();
-    printk("PID          TYPE            CMD\n");
+    printk("PID          TYPE            STATE            CMD\n");
     while(task != NULL) {
-        printk("%d            %s          %s\n",
+        printk("%d            %s          %s            %s\n",
             task->pid,
-            task->type == KERNEL ? "KERNEL" : "USER  ", 
+            task->type == KERNEL ? "KERNEL" : "USER  ",
+            task->state == NEW ? "NEW" : task->state == READY ? "READY" : task->state == RUNNING ? "RUNNING" : task->state == WAITING ? "WAITING" : task->state == TERMINATED ? "TERMINATED" : "UNKNOWN",
             task->name);
         task = task->next;
     }
