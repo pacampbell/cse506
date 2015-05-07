@@ -89,6 +89,8 @@ static void general_protection_fault(registers_t regs) {
 }
 
 static void page_fault(registers_t regs) {
+    panic("kjdhgfkjtfdg\n");
+    halt();
     uint64_t faulting_address;
     __asm__ __volatile__("mov %%cr2, %0" : "=r" (faulting_address));
     Task *tsk = get_current_task();
