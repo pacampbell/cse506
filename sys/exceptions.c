@@ -94,8 +94,12 @@ static void page_fault(registers_t regs) {
     Task *tsk = get_current_task();
 
     printk("address: %p\n", faulting_address);
-    printk("brk: %p\n", tsk->mm->brk);
-    printk("stack_start: %p\n", tsk->mm->start_stack);
+    if(tsk->mm != NULL) {
+        printk("brk: %p\n", tsk->mm->brk);
+        printk("stack_start: %p\n", tsk->mm->start_stack);
+    } else {
+        printk("KERNEL TASK\n");
+    }
 
     if(tsk->mm == NULL ||
             (faulting_address < tsk->mm->brk || tsk->mm->start_stack < faulting_address)) {

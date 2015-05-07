@@ -1,6 +1,7 @@
 #define __KERNEL__
 #include <sys/task.h>
 #include <sys/elf.h>
+#include <sys/screen.h>
 
 static Task *tasks;
 static Task *current_task;
