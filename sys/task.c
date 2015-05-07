@@ -405,8 +405,8 @@ void switch_tasks(Task *old, Task *new) {
             // Check to see if the task being scheduled is user or kernel
             if(current_task->type == USER) {
                 // Need to set the tss rsp0 value
-                tss.rsp0 = (uint64_t)&((current_task->kstack)[511]);
-                SWITCH_TO_RING3();
+                // tss.rsp0 = (uint64_t)&((current_task->kstack)[511]);
+                // SWITCH_TO_RING3();
             }
         }
     }

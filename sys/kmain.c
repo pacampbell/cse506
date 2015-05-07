@@ -46,12 +46,10 @@ void init_services(void) {
 void start_shell(void) {
     /* Do some testing for now */
     tarfs_entry e;
-    if(traverse_tars("bin/ps", &e) != NULL) {
-        printk("name: %s\nLocation: %p\nSize: %d\n", e.path, e.data_base, e.size);
+    if(traverse_tars("bin/sleep", &e) != NULL) {
+        // printk("name: %s\nLocation: %p\nSize: %d\n", e.path, e.data_base, e.size);
         /* Try to load file as elf */
         create_user_elf_task("bin/ps", e.data_base, e.size);
-        // create_user_elf_task("test-user3", e.data_base, e.size);
-        //load_elf(e.data_base, e.size, copy_page_tables(get_cr3()));
     } else {
         printk("Unable to find: %s in tarfs\n", "bin/hello");
     }

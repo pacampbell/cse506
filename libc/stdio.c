@@ -6,7 +6,7 @@
 #define BASE_10 10
 #define BASE_16 16
 
-static int convert(const char *str, int base) {
+/* static */ int convert(const char *str, int base) {
 // TODO: Check negative sign
     int val = 0;
     if(str != NULL && base > 1) {

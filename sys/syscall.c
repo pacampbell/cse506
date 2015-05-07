@@ -1,9 +1,6 @@
 #define __KERNEL__
-#include <sys/syscall.h>
 #include <sys/syscall_k.h>
-#include <sys/task.h>
-#include <sys/screen.h>
-#include <sys/keyboard.h>
+
 
 void sys_exit(int ret) {
     // Unschedule the current task.
@@ -75,14 +72,24 @@ uint64_t sys_getppid() {
 
 void sys_ps() {
     Task *task = get_task_list();
-    printk("PID          TYPE         CMD\n");
+    printk("PID          TYPE            CMD\n");
     while(task != NULL) {
-        printk("%d          %s          %s\n",
+        printk("%d            %s          %s\n",
             task->pid,
             task->type == KERNEL ? "KERNEL" : "USER  ", 
             task->name);
         task = task->next;
     }
+}
+
+void sys_nanosleep(struct timespec *req, struct timespec *rem) {
+    time_t counter = 0;
+    panic("sys_nanosleep not implemented.\n");
+    while(counter < 5) {
+         // __asm__ __volatile__("sti; hlt;");
+         counter++;
+    }
+
 }
 
 /**
@@ -142,7 +149,7 @@ uint64_t syscall_common_handler(uint64_t num, uint64_t arg1, uint64_t arg2, uint
             panic("sys_wait4 not implemented.\n");
             break;
         case SYS_nanosleep:
-            panic("sys_nanosleep not implemented.\n");
+            sys_nanosleep((struct timespec*)arg1, (struct timespec*)arg2);
             break;
         case SYS_alarm:
             panic("sys_alarm not implemented.\n");
