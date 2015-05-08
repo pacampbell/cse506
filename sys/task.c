@@ -11,6 +11,8 @@ static int task_count = 0;
 /* Used for assigning a pid to a task */
 static uint64_t pid_map[PID_MAP_LENGTH];
 
+uint64_t amazing_bug_fixer = 0;
+
 /**
  * Finds the first unused pid in the pid_map.
  * @return Returns an unused PID if one exists, else -1.
@@ -341,10 +343,9 @@ void set_task(Task *task) {
 }
 
 void switch_tasks(Task *old, Task *new) {
+    //if(amazing_bug_fixer++ == 1) halt ();
     // Make sure both are not null
     // and both are not the same (no need to swap if same)
-                printk("prev name: %s\n", old->name);
-                printk("this name: %s\n", new->name);
     if(old != NULL && new != NULL && old != new) {
         if(old->state != TERMINATED) {
             old->state = READY;
@@ -442,6 +443,8 @@ void switch_tasks(Task *old, Task *new) {
                 printk("prev name: %s\n", prev_task->name);
                 printk("this name: %s\n", current_task->name);
         //    halt();
+            printk("is kern: %d\n", current_task->type == KERNEL);
+    if(strcmp(current_task->name, "bin/hello")) {panic("yo\n");halt();}
                 __asm__ __volatile__("iretq;");
             }
         } else {
