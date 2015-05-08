@@ -45,7 +45,7 @@ void init_services(void) {
 void start_shell(void) {
     /* Do some testing for now */
     exec_tarfs_elf("bin/hello");
-    exec_tarfs_elf("bin/ps");
+    //exec_tarfs_elf("bin/ps");
     // exec_tarfs_elf("bin/mike");
     // exec_tarfs_elf("bin/sh");
 }

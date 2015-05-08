@@ -442,8 +442,6 @@ void switch_tasks(Task *old, Task *new) {
             } else {
                 printk("prev name: %s\n", prev_task->name);
                 printk("this name: %s\n", current_task->name);
-        //    halt();
-            printk("is kern: %d\n", current_task->type == KERNEL);
     if(strcmp(current_task->name, "bin/hello")) {panic("yo\n");halt();}
                 __asm__ __volatile__("iretq;");
             }
