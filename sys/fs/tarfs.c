@@ -37,27 +37,29 @@ static uint64_t covert_base_8(char *str) {
 	return value;
 }
 
+
+
 tarfs_entry* traverse_tars(const char *path, tarfs_entry *t_entry) {
-	tarfs_entry *found = NULL;
-	struct posix_header_ustar *entry = (struct posix_header_ustar *)(&_binary_tarfs_start);
-	while((uint64_t)entry < (uint64_t)(&_binary_tarfs_end)) {
+	tarfs_entry *found = NULL;	
+	Header *entry = (Header*)(&_binary_tarfs_start);
+	
+	while(entry < (Header*)(&_binary_tarfs_end)) {
 		uint64_t e_size = covert_base_8(entry->size);
-		printk("name: %s size: %d\n", entry->name, e_size);
+		printk("entry: %p name: %s size: %d\n", entry, entry->name, e_size);
 		// See if we found the entry we are searching for.
 		if(strcmp(path, entry->name)) {
 			t_entry->path = path;
 			t_entry->size = e_size;
-			t_entry->data_base = (char*)((char*)entry + sizeof(struct posix_header_ustar));
+			t_entry->data_base = (char*)((uint64_t)entry + BLOCK_SIZE);
 			found = t_entry;
 			break;
 		}
-		// If not get the next tars entry
-		entry = (struct posix_header_ustar *)((char*)entry + sizeof(struct posix_header_ustar) + e_size);
+
 		if(e_size > 0) {
-			// Compute the padding size
-			int padding = BLOCK_SIZE - (e_size % BLOCK_SIZE);
 			// Add the padding to the entry size
-			entry = (struct posix_header_ustar *)((char*)entry + padding);
+			entry = entry + 1 + (e_size / 513 + 1);
+		} else {
+			entry = entry + 1;
 		}
 	}
 	return found;
