@@ -343,6 +343,8 @@ void set_task(Task *task) {
 void switch_tasks(Task *old, Task *new) {
     // Make sure both are not null
     // and both are not the same (no need to swap if same)
+                printk("prev name: %s\n", old->name);
+                printk("this name: %s\n", new->name);
     if(old != NULL && new != NULL && old != new) {
         if(old->state != TERMINATED) {
             old->state = READY;
@@ -427,7 +429,7 @@ void switch_tasks(Task *old, Task *new) {
             current_task->state = RUNNING;
             if(current_task->type == USER && prev_task->type == KERNEL) {
                 tss.rsp0 = (uint64_t)&((current_task->kstack)[511]);
-            current_task->state = RUNNING;
+                current_task->state = RUNNING;
                 __asm__ __volatile__(
                     "movq $0x28, %%rax;" 
                     "ltr %%ax;"
@@ -437,6 +439,9 @@ void switch_tasks(Task *old, Task *new) {
                     :
                     );
             } else {
+                printk("prev name: %s\n", prev_task->name);
+                printk("this name: %s\n", current_task->name);
+        //    halt();
                 __asm__ __volatile__("iretq;");
             }
         } else {

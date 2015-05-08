@@ -63,6 +63,7 @@
         void* kmalloc_pg(void);
         void kfree_pg(void *address);
         void* kmalloc_vma(pml4_t *cr3, uint64_t virt_base, size_t size, uint64_t permissions);
+        bool leaks_pg(uint64_t virt_base, size_t size);
 
         /**
          * Makes a copy of a src page table.

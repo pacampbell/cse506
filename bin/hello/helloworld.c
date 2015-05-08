@@ -6,14 +6,17 @@
 
 int main(int argc, char *argv[]) {
     printf("made big array\n");
-    char str[NUM];
+    char *c = (char*)malloc(1);
+    *c = 'j';
+    printf("char: %c\n", *c);
+   // char str[NUM];
 
-    for(unsigned long i = 0; i < NUM; i++) {
-        /*if(!(i%100))*/printf("looking at index: %d\n", i);
-        str[i] = '7';
-    }
+   // for(unsigned long i = 0; i < NUM; i++) {
+   //     /*if(!(i%100))*/printf("looking at index: %d\n", i);
+   //     str[i] = '7';
+   // }
 
-    printf("large string: %c\n", str[NUM-1]);
+   // printf("large string: %c\n", str[NUM-1]);
     printf("Hello World!!! \n");
 }
 

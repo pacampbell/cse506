@@ -1,11 +1,11 @@
 #define __KERNEL__
 #include <sys/syscall_k.h>
+#include <sys/task.h>
+#include <sys/pgtable.h>
 
 
 void sys_exit(int ret) {
     // Unschedule the current task.
-    printk("Halting in exir\n");
-    halt();
     preempt(true);
 }
 
@@ -32,6 +32,21 @@ uint64_t sys_read(int fd, void *buff, size_t count) {
     
     // gets((uint64_t)buff, count);
     return read;
+}
+
+void* sys_brk(size_t size) {
+    Task *tsk = get_current_task();
+
+    void* brk = kmalloc_vma((pml4_t*)tsk->registers.cr3, tsk->mm->brk, size, USER_SETTINGS);
+    
+    int num_pages = size / PAGE_SIZE;
+    num_pages += size % PAGE_SIZE > 0 ? 1 : 0;
+    num_pages += leaks_pg((uint64_t)brk, size) ? 1 : 0;
+
+    tsk->mm->brk += (num_pages * PAGE_SIZE);
+
+    return brk;
+    
 }
 
 uint64_t sys_fork() {
@@ -136,7 +151,8 @@ uint64_t syscall_common_handler(uint64_t num, uint64_t arg1, uint64_t arg2, uint
             sys_exit(arg1);
             break;
         case SYS_brk:
-            panic("sys_brk not implemented.\n");
+            sys_brk(arg1);
+            //panic("sys_brk not implemented.\n");
             break;
         case SYS_fork:
             return_value = sys_fork();
