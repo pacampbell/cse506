@@ -264,8 +264,13 @@ Task *clone_task(Task *src) {
         new_task->pid = allocate_pid();
         // Assign the parent task
         new_task->parent = src;
+        // Make sure this task is still valid
+        new_task->in_use = true;
         // Assign the child task return value to zero
         new_task->registers.rax = 0;
+    } else {
+        panic("UNABLE TO CLONE NULL TASK");
+        halt();
     }
     return new_task;
 }
@@ -283,10 +288,13 @@ void preempt(bool discard) {
         halt();
     }
 
+    printk("\n==== NEXT - %s ====\n", current_task->name);
+
     if(discard) {
         // The old process no longer wants to run
         old_task->state = TERMINATED;
         task_count--;
+        printk("Removing: pid: %d name: %s\n", old_task->pid, old_task->name);
 
     }
     // Attempt to switch tasks; Assembly magic voodo
@@ -294,6 +302,7 @@ void preempt(bool discard) {
 }
 
 void set_task(Task *task) {
+    // printk("==== ENTRY POINT - %s ====\n", task->name);
     current_task = task;
     current_task->state = RUNNING;
     /* Typically this is used only one time for setting the first kernel task */
@@ -375,7 +384,7 @@ void switch_tasks(Task *old, Task *new) {
             free_pid(old->pid);
             // Mark the task struct as not in use
             old->in_use = false;
-            // printk("old has been released. %p\n", old);
+            printk("old has been released. %p\n", old);
         }
         // Save the previosu task so we can check a few fields
         prev_task = current_task;
@@ -433,11 +442,19 @@ void switch_tasks(Task *old, Task *new) {
         } else {
             current_task->state = RUNNING;
             // Check to see if the task being scheduled is user or kernel
-            if(current_task->type == USER) {
+            if(current_task->type == USER && prev_task->type == KERNEL) {
                 // Need to set the tss rsp0 value
                 tss.rsp0 = (uint64_t)&((current_task->kstack)[511]);
                 SWITCH_TO_RING3();
             }
+
+            // printk("rbp: %p\n", current_task->registers.rbp);
+            // for(uint64_t rbp = current_task->registers.rbp; rbp > current_task->registers.rsp; rbp -= 8) {
+            //     printk("rbp: %p\n", rbp);
+            // }
+            
+            // dump_task(current_task);
+            // halt();
         }
     }
 }

@@ -5,9 +5,7 @@ void idle(void) {
     // TODO: fix this
     while(1) {
         __asm__ __volatile__("hlt;");
-        if(get_task_count() > 3) {
-            //break;
-        } 
+        // printk("\n ==== idle ==== \n");
         preempt(false);
     } 
     preempt(true);
@@ -31,6 +29,7 @@ void kmain(void) {
     start_shell();
     /* Everything is started now spin */
     while(1) {
+        // printk("\n ==== kmain ====\n");
         /* Done doing our work, now just wait */
         preempt(false);
     }
@@ -46,7 +45,7 @@ void init_services(void) {
 void start_shell(void) {
     /* Do some testing for now */
     exec_tarfs_elf("bin/hello");
-    // exec_tarfs_elf("bin/ps");
+    exec_tarfs_elf("bin/mike");
     // exec_tarfs_elf("bin/ps");
     // exec_tarfs_elf("bin/sh");
 }

@@ -30,7 +30,7 @@ uint64_t sys_read(int fd, void *buff, size_t count) {
         return 0;
     }
     
-    gets((uint64_t)buff, count);
+    // gets((uint64_t)buff, count);
     return read;
 }
 
@@ -88,12 +88,12 @@ void sys_ps() {
 }
 
 void sys_nanosleep(struct timespec *req, struct timespec *rem) {
-    time_t counter = 0;
+    // time_t counter = 0;
     panic("sys_nanosleep not implemented.\n");
-    while(counter < 5) {
-         // __asm__ __volatile__("sti; hlt;");
-         counter++;
-    }
+    // while(counter < 5) {
+    //      // __asm__ __volatile__("sti; hlt;");
+    //      counter++;
+    // }
 
 }
 
