@@ -72,12 +72,46 @@ static uint64_t get_rflags(void) {
     return rflags;
 }
 
+void dump_mm(struct mm_struct *mm) {
+    if (mm != NULL) {
+        printk(" me: %p\n", mm);
+        printk(" mm->start_stack: %p\n", mm->start_stack);
+        printk(" mm->mmap_base  : %p\n", mm->mmap_base);
+        printk(" mm->brk        : %p\n", mm->brk);
+        printk(" mm->start_brk  : %p\n", mm->start_brk);
+        printk(" mm->end_data   : %p\n", mm->end_data);
+        printk(" mm->start_data : %p\n", mm->start_data);
+        printk(" mm->end_code   : %p\n", mm->end_code);
+        printk(" mm->start_code : %p\n", mm->start_code);
+
+    } else {
+        printk("MM WAS NULL\n");
+    }
+}
+
+void dump_vma(struct vm_area_struct *vma) {
+    if (vma != NULL) {
+        printk("==================================\n");
+        printk("vma->prev     : %p\n", vma->prev);
+        printk("vma->vm_start : %p\n", vma->vm_start);
+        printk("vma->vm_prot  : %p\n", vma->vm_prot);
+        printk("vma->vm_mm    : %p\n", vma->vm_mm);
+        printk("vma->vm_end   : %p\n", vma->vm_end);
+        printk("vma->next     : %p\n", vma->next);
+        printk("==================================\n");
+
+        dump_vma(vma->next);
+
+    }
+}
+
 /**
  * Prints out the values of a task
  * @param task Task to display values of.
  */
 void dump_task(Task *task) {
     #ifdef DEBUG
+//#if 1
         if(task != NULL) {
             static char *state_map[5] = {"NEW", "READY", "RUNNING", "WAITING", "TERMINATED"};
             /* Dump kernel meta data */
@@ -460,6 +494,8 @@ void switch_tasks(Task *old, Task *new) {
             : "memory"
         );
         if(current_task->state == NEW) {
+                printk("prev name: %s\n", prev_task->name);
+                printk("this name: %s\n", current_task->name);
             // Set the current task to a running state
             current_task->state = RUNNING;
             if(current_task->type == USER && prev_task->type == KERNEL) {
@@ -474,9 +510,7 @@ void switch_tasks(Task *old, Task *new) {
                     :
                     );
             } else {
-                printk("prev name: %s\n", prev_task->name);
-                printk("this name: %s\n", current_task->name);
-    if(strcmp(current_task->name, "bin/hello")) {panic("yo\n");halt();}
+if(strcmp(current_task->name, "bin/hello")) {panic("yo\n");dump_task(current_task);dump_mm(current_task->mm);dump_vma((struct vm_area_struct*)current_task->mm->start_code);halt();}
                 __asm__ __volatile__("iretq;");
             }
         } else {

@@ -44,10 +44,18 @@ struct mm_struct* load_elf(char *data, int len, Task *task, pml4_t *proc_pml4) {
                 add_vma(mm, vma);
 
                 if(vma->vm_end > high_addr) high_addr = vma->vm_end;
+                printk("%p == %p\n", prgm_hdr->p_vaddr, mm->start_code);
+
+                if (prgm_hdr->p_vaddr == mm->start_code) {
+                   // its the txt section
+                   mm->end_code = (uint64_t)(prgm_hdr->p_vaddr + prgm_hdr->p_filesz);
+                   mm->start_data = mm->end_code +1;
+                }
             } 
         }
 
         mm->brk = high_addr + 1;
+        mm->start_brk = mm->brk;
 
         return mm;
 
