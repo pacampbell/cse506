@@ -3,9 +3,9 @@
 #include <sys/elf.h>
 
 static Task *tasks;
-static Task *current_task;
+static Task *current_task = NULL;
 static Task *prev_task = NULL;
-static int task_count = 0;
+static uint64_t task_count = 0;
 
 /* Used for assigning a pid to a task */
 static uint64_t pid_map[PID_MAP_LENGTH];
@@ -120,7 +120,7 @@ Task* create_user_elf_task(const char *name, char* elf, uint64_t size) {
     create_new_task(user_task, name, USER, NEUTRAL_PRIORITY, 0, user_pml4, 
                    (code)user_task->mm->start_code);
     // Add the task to the scheduler list
-    insert_into_list(&tasks, user_task);
+    insert_into_list(user_task);
     return user_task;
 
 }
@@ -138,7 +138,7 @@ Task* create_kernel_task(const char *name, void(*code)()) {
     create_new_task(kernel_task, name, KERNEL, MAX_PRIORITY, kernel_rflags,
                     kernel_pml4, code);
     // Add the task to the scheduler list
-    insert_into_list(&tasks, kernel_task);
+    insert_into_list(kernel_task);
     // Print out contents of the task
     // dump_task(kernel_task);
     return kernel_task;
@@ -173,7 +173,7 @@ Task *get_next_task(void) {
 }
 
 void setup_new_stack(Task *task) {
-    uint64_t *stack = task->type == USER ? task->ustack : task->kstack;
+    // uint64_t *stack = task->type == USER ? task->ustack : task->kstack;
     // Set the segments for the correct ring
     if(task->type == KERNEL) {
         // printk("Kernel task\n");
@@ -185,8 +185,8 @@ void setup_new_stack(Task *task) {
         task->kstack[508] = 0x1b; // Set the CS
     }
     // set the top of the user/kernel stack
-    task->kstack[510] = (uint64_t)&(stack[511]);
-    task->kstack[509] = 0x200;             // Set the flags
+    task->kstack[510] = task->registers.rsp;  // (uint64_t)&(stack[511]);
+    task->kstack[509] = 0x200;                // Set the flags
     task->kstack[507] = task->registers.rip;  // The entry point
     // Set the stack pointer to the amount of items pushed
     task->registers.rsp = (uint64_t)&(task->kstack[507]);
@@ -207,7 +207,7 @@ Task* create_new_task(Task* task, const char *name, task_type_t type,
     if(type == USER) {
         // panic("Allocate user stack\n");
         task->ustack = (uint64_t*)kmalloc_vma(pml4, VIRTUAL_OFFSET, PAGE_SIZE, USER_SETTINGS);
-        printk("ustack: %p\n", task->ustack);
+        // printk("ustack: %p\n", task->ustack);
         // printk("kmalloc vma: %p\n", task->ustack);
     } else {
         task->ustack = 0;
@@ -244,7 +244,8 @@ Task* create_new_task(Task* task, const char *name, task_type_t type,
     return task;
 }
 
-Task *clone_task(Task *src) {
+extern pml4_t *g_kernel_pgtable;
+Task *clone_task(Task *src, uint64_t global_sp, uint64_t global_rip) {
     Task *new_task = NULL;
     if(src != NULL) {
         // Get a page for a new task struct
@@ -253,6 +254,12 @@ Task *clone_task(Task *src) {
         memset(new_task, 0, sizeof(Task));
         // Copy the struct (no deep copies)
         memcpy(new_task, src, sizeof(Task));
+        // Copy the page tables of the source process
+        pml4_t *current_pml4 = get_cr3();
+        set_cr3(g_kernel_pgtable);
+        pml4_t *cloned_pml4 = copy_page_tables((pml4_t*)(src->registers.cr3));
+        // Set copied cr3
+        new_task->registers.cr3 = (uint64_t)cloned_pml4;
         // Assign a new pid
         new_task->pid = allocate_pid();
         // Assign the parent task
@@ -261,6 +268,36 @@ Task *clone_task(Task *src) {
         new_task->in_use = true;
         // Assign the child task return value to zero
         new_task->registers.rax = 0;
+        // Assign the stack pointer and instruction pointer
+        // new_task->registers.rsp = global_sp;
+        new_task->registers.rip = global_rip;
+        // pretend it is new?
+        new_task->state = RUNNING; // NEW;
+        // Set some pointers to be NULL
+        new_task->next = NULL;
+        new_task->prev = NULL;
+        new_task->children = NULL;
+        // Create new kstack and ustack
+        new_task->kstack = (uint64_t*) PHYS_TO_VIRT(kmalloc_pg());
+        memset(new_task->kstack, 0, PAGE_SIZE);
+        // Create new user stack
+        if(new_task->type == USER) {
+            new_task->ustack = (uint64_t*)kmalloc_vma((pml4_t*)(new_task->registers.cr3), 
+                                                      VIRTUAL_OFFSET, PAGE_SIZE, USER_SETTINGS);
+            // copy the parents user stack
+            memcpy(new_task->ustack, src->ustack, PAGE_SIZE);
+        }
+        // Setup the stack again
+        setup_new_stack(new_task);
+        set_cr3(current_pml4);
+        // halt();
+        printk("kstack address: %p global_sp: %p new_rip: %p\n", &(new_task->kstack[507]), global_sp, src->registers.rsp);
+        printk("511 src: %p new: %p\n", src->kstack[511], new_task->kstack[511]);
+        printk("510 src: %p new: %p\n", src->kstack[510], new_task->kstack[510]);
+        printk("509 src: %p new: %p\n", src->kstack[509], new_task->kstack[509]);
+        printk("508 src: %p new: %p\n", src->kstack[508], new_task->kstack[508]);
+        printk("507 src: %p new: %p\n", src->kstack[507], new_task->kstack[507]);
+        halt();
     } else {
         panic("UNABLE TO CLONE NULL TASK");
         halt();
@@ -281,14 +318,13 @@ void preempt(bool discard) {
         halt();
     }
 
-    printk("\n==== NEXT - %s ====\n", current_task->name);
+    // printk("\n==== NEXT - %s ====\n", current_task->name);
 
     if(discard) {
         // The old process no longer wants to run
         old_task->state = TERMINATED;
         task_count--;
         printk("Removing: pid: %d name: %s\n", old_task->pid, old_task->name);
-
     }
     // Attempt to switch tasks; Assembly magic voodo
     switch_tasks(old_task, current_task);
@@ -414,7 +450,6 @@ void switch_tasks(Task *old, Task *new) {
             : "r"(current_task)
             : "memory"
         );
-
         if(current_task->state == NEW) {
             // Set the current task to a running state
             current_task->state = RUNNING;
@@ -434,41 +469,51 @@ void switch_tasks(Task *old, Task *new) {
         } else {
             current_task->state = RUNNING;
             // Check to see if the task being scheduled is user or kernel
-            if(current_task->type == USER && prev_task->type == KERNEL) {
-                // Need to set the tss rsp0 value
-                tss.rsp0 = (uint64_t)&((current_task->kstack)[511]);
-                SWITCH_TO_RING3();
-            }
-
-            // printk("rbp: %p\n", current_task->registers.rbp);
-            // for(uint64_t rbp = current_task->registers.rbp; rbp > current_task->registers.rsp; rbp -= 8) {
-            //     printk("rbp: %p\n", rbp);
+            // if(current_task->type == USER && prev_task->type == KERNEL) {
+            //     printk("Switching rings on user task\n");
+            //     halt();
+            //     __asm__ __volatile__("iretq;");
             // }
-            
-            // dump_task(current_task);
-            // halt();
+            if(current_task->type == USER) {
+                extern uint64_t global_sp;
+                extern uint64_t global_rip;
+                printk("here: %s %d\n", current_task->name, current_task->pid);
+                __asm__ __volatile__(
+                    "pushq 0x23;"
+                    "pushq %0;"
+                    "pushq 0x200;"
+                    "pushq 0x1b;"
+                    "pushq %1;"
+                    "iretq;"
+                    :
+                    : "r"(global_sp), "r"(global_rip)
+                    :
+                );
+            }
         }
     }
 }
 
-bool insert_into_list(Task **list, Task *task) {
+bool insert_into_list(Task *task) {
     bool success = false;
-    if(list != NULL && task != NULL) {
-        if(*list == NULL) {
+    if(task != NULL) {
+        if(tasks == NULL) {
             // First task to be added to the list
-            *list = task;
+            tasks = task;
             task->prev = NULL;
             task->next = NULL;
         } else {
             // Just set the old head to the next field of the new list
-            task->next = *list;
+            task->next = tasks;
             task->prev = NULL;      // This new task is now the head so its previous is NULL.
-            (*list)->prev = task;     // Set the old heads previous to the new head
+            tasks->prev = task;     // Set the old heads previous to the new head
             // Set the head of the list to the new task
-            *list = task;
+            tasks = task;
             // Mark the operation as a success
         }
         success = true;
+    } else {
+        panic("FAILED TO INSERT TASK INTO LIST\n");
     }
     if(success) task_count++;
     return success;

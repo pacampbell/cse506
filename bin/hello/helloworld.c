@@ -17,18 +17,19 @@ int main(int argc, char *argv[]) {
     printf("pid: %d\n", pid);
     printf("ppid: %d\n", getppid());
     test();
-    pid_t cpid;
-    switch((cpid = fork())) {
-        case 0:
-            printf("In child process\n");
-            break;
-        case -1:
-            printf("failed to fork\n");
-            break;
-        default:
-            printf("In parent process. Child pid: %d\n", cpid);
-            break;
-    }
+    // pid_t cpid;
+    // switch((cpid = fork())) {
+    //     case 0:
+    //         printf("In child process\n");
+    //         break;
+    //     case -1:
+    //         printf("failed to fork\n");
+    //         break;
+    //     default:
+    //         printf("In parent process. Child pid: %d\n", cpid);
+    //         ps();
+    //         break;
+    // }
     printf("Good bye world!\n");
     return EXIT_SUCCESS;
 }

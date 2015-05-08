@@ -5,7 +5,6 @@ void idle(void) {
     // TODO: fix this
     while(1) {
         __asm__ __volatile__("hlt;");
-        // printk("\n ==== idle ==== \n");
         preempt(false);
     } 
     preempt(true);
@@ -44,8 +43,11 @@ void init_services(void) {
 
 void start_shell(void) {
     /* Do some testing for now */
+    // exec_tarfs_elf("bin/ps");
     exec_tarfs_elf("bin/hello");
+    exec_tarfs_elf("bin/ps");
     // exec_tarfs_elf("bin/mike");
     // exec_tarfs_elf("bin/ps");
     // exec_tarfs_elf("bin/sh");
+    // exec_tarfs_elf("bin/ps");
 }
