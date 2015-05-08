@@ -20,13 +20,13 @@ int main(int argc, char *argv[]) {
     pid_t cpid;
     switch((cpid = fork())) {
         case 0:
-            printf("child process\n");
+            printf("In child process\n");
             break;
         case -1:
             printf("failed to fork\n");
             break;
         default:
-            printf("Child pid: %d\n", cpid);
+            printf("In parent process. Child pid: %d\n", cpid);
             break;
     }
     printf("Good bye world!\n");
