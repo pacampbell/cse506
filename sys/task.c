@@ -91,14 +91,14 @@ void dump_mm(struct mm_struct *mm) {
 
 void dump_vma(struct vm_area_struct *vma) {
     if (vma != NULL) {
-        printk("==================================\n");
+        printk("==============VMA=================\n");
         printk("vma->prev     : %p\n", vma->prev);
         printk("vma->vm_start : %p\n", vma->vm_start);
         printk("vma->vm_prot  : %p\n", vma->vm_prot);
         printk("vma->vm_mm    : %p\n", vma->vm_mm);
         printk("vma->vm_end   : %p\n", vma->vm_end);
         printk("vma->next     : %p\n", vma->next);
-        printk("==================================\n");
+        printk("me            : %p\n", vma);
 
         dump_vma(vma->next);
 
@@ -244,7 +244,8 @@ Task* create_new_task(Task* task, const char *name, task_type_t type,
     if(type == USER) {
         // panic("Allocate user stack\n");
         //task->ustack = (uint64_t*)kmalloc_vma(pml4, VIRTUAL_OFFSET, PAGE_SIZE, USER_SETTINGS);
-        task->ustack = (uint64_t*)kmalloc_vma(pml4, task->mm->brk + (50 * PAGE_SIZE), PAGE_SIZE, USER_SETTINGS);
+        task->ustack = (uint64_t*)kmalloc_vma(pml4, task->mm->brk + (50 * PAGE_SIZE) - 8, PAGE_SIZE, USER_SETTINGS);
+        //task->ustack = (uint64_t*)kmalloc_vma(pml4, VIRTUAL_BASE, PAGE_SIZE, USER_SETTINGS);
         // printk("kmalloc vma: %p\n", task->ustack);
     } else {
         task->ustack = 0;
@@ -332,7 +333,6 @@ Task *clone_task(Task *src, uint64_t global_sp, uint64_t global_rip) {
         // Setup the stack again
         setup_new_stack(new_task);
         set_cr3(current_pml4);
-        // halt();
         printk("kstack address: %p global_sp: %p new_rip: %p\n", &(new_task->kstack[507]), global_sp, src->registers.rsp);
         printk("511 src: %p new: %p\n", src->kstack[511], new_task->kstack[511]);
         printk("510 src: %p new: %p\n", src->kstack[510], new_task->kstack[510]);
@@ -510,7 +510,36 @@ void switch_tasks(Task *old, Task *new) {
                     :
                     );
             } else {
-if(strcmp(current_task->name, "bin/hello")) {panic("yo\n");dump_task(current_task);dump_mm(current_task->mm);dump_vma((struct vm_area_struct*)current_task->mm->start_code);halt();}
+if(strcmp(current_task->name, "bin/ps")) {
+    panic("yo\n");
+    dump_task(current_task);
+    dump_mm(current_task->mm);
+    //dump_vma(current_task->mm->mmap);
+    printk("kstack: %p\n", current_task->kstack);
+
+   // current_task->kstack[511] = 0x23; // Set the SS
+   // current_task->kstack[508] = 0x1b; // Set the CS
+   // current_task->kstack[510] = current_task->registers.rsp;
+   // current_task->kstack[509] = 0x200;
+   // current_task->kstack[507] = current_task->registers.rip;
+
+
+//printk("%p\n", current_task->kstack[511]);//== 0x23); // Set the SS
+//printk("%p\n", current_task->kstack[508]);//== 0x1b); // Set the CS
+printk("%p\n", current_task->kstack[510]);//== current_task->registers.rsp);
+//printk("%p\n", current_task->kstack[509]);//== 0x200);
+//printk("%p\n", current_task->kstack[507]);//== current_task->registers.rip);
+uint64_t addy = 0;
+__asm__ __volatile__(
+        "movq %%rsp, %0;"
+        : "=r"(addy)
+        :
+        :
+        );
+printk("instr addy: %p\n", addy);
+printk("rsp: %p\n", current_task->registers.rsp);
+    halt();
+}
                 __asm__ __volatile__("iretq;");
             }
         } else {
