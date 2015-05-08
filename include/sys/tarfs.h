@@ -41,6 +41,7 @@ struct posix_header_ustar {
 	char prefix[155];
 	char pad[12];
 };
+typedef struct posix_header_ustar Header;
 
 struct tarfs_entry {
 	const char *path;		/* Path of the file in tarfs */
