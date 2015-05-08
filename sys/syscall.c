@@ -4,6 +4,11 @@
 #include <sys/pgtable.h>
 
 
+uint64_t global_rip = 0;
+uint64_t global_sp = 0;
+
+void sys_ps();
+
 void sys_exit(int ret) {
     // Unschedule the current task.
     preempt(true);
@@ -53,12 +58,11 @@ uint64_t sys_fork() {
     // #1 Get current Task
     Task *current = get_current_task();
     // #2 clone task
-    Task *child = clone_task(current);
-    // #3 schedule the task
-    Task *tasks = get_task_list();
-    insert_into_list(&tasks, child);
-    // #4 yield so child runs now
-    preempt(false);
+    Task *child = clone_task(current, global_sp, global_rip);
+    // #4 schedule the task
+    if(!insert_into_list(child)) {
+        panic("FAILED TO INSERT CHILD PROCESS\n");
+    }
     // #5 return new task pid
     return child->pid;
 }
@@ -78,7 +82,7 @@ uint64_t sys_getpid() {
 
 uint64_t sys_getppid() {
     Task *ctask = get_current_task();
-    uint64_t ppid = -1; 
+    uint64_t ppid = -1;
     if(ctask->parent == NULL) {
         ppid = KMAIN_PID;
     } else {
@@ -91,7 +95,7 @@ void sys_ps() {
     Task *task = get_task_list();
     printk("PID          TYPE            STATE            CMD\n");
     while(task != NULL) {
-        if(task->state != TERMINATED) {
+        if(1 /* task->state != TERMINATED*/) {
             printk("%d            %s          %s            %s\n",
                 task->pid,
                 task->type == KERNEL ? "KERNEL" : "USER  ",
@@ -109,7 +113,6 @@ void sys_nanosleep(struct timespec *req, struct timespec *rem) {
     //      // __asm__ __volatile__("sti; hlt;");
     //      counter++;
     // }
-
 }
 
 /**

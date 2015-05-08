@@ -5,6 +5,9 @@ extern char kernmem;
 extern void *kern_free;
 extern void *kern_base;
 
+
+
+pml4_t *g_kernel_pgtable = NULL;
 uint32_t *free_pg_list;
 void* free_pg_list_end;
 
@@ -115,6 +118,8 @@ void initializePaging(uint64_t physbase, uint64_t physfree) {
     set_cr3(pml4);
     // tell the print driver to use new address
     map_video_mem(video_vma);
+    // Store the kernels global page table value
+    g_kernel_pgtable = pml4;
     // reset freelist and videomemory pointers
     free_pg_list = (uint32_t*) PHYS_TO_VIRT(free_pg_list);
     printk("Remapped kernel mem [%p:%p]\n", kernel_virtual_address, kern_vma);

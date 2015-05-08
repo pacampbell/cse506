@@ -45,7 +45,7 @@ tarfs_entry* traverse_tars(const char *path, tarfs_entry *t_entry) {
 	
 	while(entry < (Header*)(&_binary_tarfs_end)) {
 		uint64_t e_size = covert_base_8(entry->size);
-		printk("entry: %p name: %s size: %d\n", entry, entry->name, e_size);
+		// printk("entry: %p name: %s size: %d\n", entry, entry->name, e_size);
 		// See if we found the entry we are searching for.
 		if(strcmp(path, entry->name)) {
 			t_entry->path = path;

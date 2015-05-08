@@ -2,10 +2,16 @@
 
 .extern syscall_common_handler
 .extern kstack_top
+.extern global_rip
+.extern global_sp
 
 .text
 .globl syscall_entry
 syscall_entry:
+	# save %rsp into global_sp
+	movq %rsp, global_sp
+	# save %rcx into global_rip
+	movq %rcx, global_rip
 	# Push rbx onto the user stack
 	pushq %rbx
 	# Save the user stack pointer into rbx
@@ -27,6 +33,7 @@ syscall_entry:
 	# %%r9      ARG6 
 	# Push syscall arguments onto the stack
 	# pushq %r9
+	# push the arguments into the correct order
 	pushq %r8
 	pushq %r10
 	pushq %rdx

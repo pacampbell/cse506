@@ -67,8 +67,6 @@
         /* privilege macros */
         #define SWITCH_TO_RING3() do {  \
             __asm__ __volatile__(       \
-                "cli;"                  \
-                                        \
                 "movq %%rsp, %%rax;"    \
                 "pushq $0x23;"          \
                 "pushq %%rax;"          \
@@ -145,11 +143,11 @@
         // preempt
         void preempt(bool discard);
         // Methods for getting tasks
-        bool insert_into_list(Task **list, Task *task);
+        bool insert_into_list(Task *task);
         Task *get_task_by_pid(Task **list, pid_t pid);
         Task *remove_task_by_pid(Task **list, pid_t pid);
         Task *get_current_task(void);
-        Task *clone_task(Task *src);
+        Task *clone_task(Task *src, uint64_t global_sp, uint64_t global_rip);
         Task *get_task_list(void);
 
         /**
