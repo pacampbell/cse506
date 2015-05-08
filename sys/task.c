@@ -494,11 +494,14 @@ void switch_tasks(Task *old, Task *new) {
             : "memory"
         );
         if(current_task->state == NEW) {
-                printk("prev name: %s\n", prev_task->name);
-                printk("this name: %s\n", current_task->name);
+            printk("prev name: %s\n", prev_task->name);
+            printk("this name: %s\n", current_task->name);
             // Set the current task to a running state
             current_task->state = RUNNING;
-            if(current_task->type == USER && prev_task->type == KERNEL) {
+            static bool first = true; 
+            if((current_task->type == USER && first) || (current_task->type == USER && prev_task->type == KERNEL)) {
+                panic("YOYOYOYOYOYOYOOYO\n");
+                first = false;
                 tss.rsp0 = (uint64_t)&((current_task->kstack)[511]);
                 current_task->state = RUNNING;
                 __asm__ __volatile__(
@@ -508,38 +511,13 @@ void switch_tasks(Task *old, Task *new) {
                     :
                     :
                     :
-                    );
+                );
             } else {
-if(strcmp(current_task->name, "bin/ps")) {
-    panic("yo\n");
-    dump_task(current_task);
-    dump_mm(current_task->mm);
-    //dump_vma(current_task->mm->mmap);
-    printk("kstack: %p\n", current_task->kstack);
-
-   // current_task->kstack[511] = 0x23; // Set the SS
-   // current_task->kstack[508] = 0x1b; // Set the CS
-   // current_task->kstack[510] = current_task->registers.rsp;
-   // current_task->kstack[509] = 0x200;
-   // current_task->kstack[507] = current_task->registers.rip;
-
-
-//printk("%p\n", current_task->kstack[511]);//== 0x23); // Set the SS
-//printk("%p\n", current_task->kstack[508]);//== 0x1b); // Set the CS
-printk("%p\n", current_task->kstack[510]);//== current_task->registers.rsp);
-//printk("%p\n", current_task->kstack[509]);//== 0x200);
-//printk("%p\n", current_task->kstack[507]);//== current_task->registers.rip);
-uint64_t addy = 0;
-__asm__ __volatile__(
-        "movq %%rsp, %0;"
-        : "=r"(addy)
-        :
-        :
-        );
-printk("instr addy: %p\n", addy);
-printk("rsp: %p\n", current_task->registers.rsp);
-    halt();
-}
+                panic("yo\n");
+                dump_task(current_task);
+                dump_mm(current_task->mm);
+                printk("name: %s\n", current_task->name);
+                // Just iretq
                 __asm__ __volatile__("iretq;");
             }
         } else {

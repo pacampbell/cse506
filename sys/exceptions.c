@@ -107,7 +107,7 @@ static void page_fault(registers_t regs) {
     }
 
     kmalloc_vma((pml4_t*)tsk->registers.cr3, faulting_address & PG_ALIGN, 1, USER_SETTINGS);
-    panic("here\n");
+    panic("Good page fault\n");
 
 
 }
