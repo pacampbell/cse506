@@ -500,7 +500,6 @@ void switch_tasks(Task *old, Task *new) {
             current_task->state = RUNNING;
             static bool first = true; 
             if((current_task->type == USER && first) || (current_task->type == USER && prev_task->type == KERNEL)) {
-                panic("YOYOYOYOYOYOYOOYO\n");
                 first = false;
                 tss.rsp0 = (uint64_t)&((current_task->kstack)[511]);
                 current_task->state = RUNNING;
@@ -513,7 +512,6 @@ void switch_tasks(Task *old, Task *new) {
                     :
                 );
             } else {
-                panic("yo\n");
                 dump_task(current_task);
                 dump_mm(current_task->mm);
                 printk("name: %s\n", current_task->name);
