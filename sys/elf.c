@@ -58,6 +58,9 @@ struct mm_struct* load_elf(char *data, int len, Task *task, pml4_t *proc_pml4) {
             } 
         }
 
+        high_addr += PAGE_SIZE;
+        high_addr &= PG_ALIGN;
+
         mm->brk = high_addr;
         mm->start_brk = mm->brk;
 

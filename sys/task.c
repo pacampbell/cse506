@@ -244,9 +244,10 @@ Task* create_new_task(Task* task, const char *name, task_type_t type,
     if(type == USER) {
         // panic("Allocate user stack\n");
         //task->ustack = (uint64_t*)kmalloc_vma(pml4, VIRTUAL_OFFSET, PAGE_SIZE, USER_SETTINGS);
-        task->ustack = (uint64_t*)kmalloc_vma(pml4, task->mm->brk + (50 * PAGE_SIZE) - 8, PAGE_SIZE, USER_SETTINGS);
-        //task->ustack = (uint64_t*)kmalloc_vma(pml4, VIRTUAL_BASE, PAGE_SIZE, USER_SETTINGS);
-        // printk("kmalloc vma: %p\n", task->ustack);
+        uint64_t new_stack = task->mm->brk + (50 * PAGE_SIZE);
+        new_stack &= PG_ALIGN;
+        kmalloc_vma(pml4, new_stack, 1, USER_SETTINGS);
+        task->ustack = (uint64_t*)(new_stack);
     } else {
         task->ustack = 0;
     }
@@ -271,6 +272,7 @@ Task* create_new_task(Task* task, const char *name, task_type_t type,
     task->registers.cr3 = (uint64_t)pml4;
     task->registers.rsp = type == KERNEL ? (uint64_t)task->kstack + PAGE_SIZE - 8 : (uint64_t)task->ustack + PAGE_SIZE - 8; // Start the stack pointer at the other side
     task->registers.rbp = task->registers.rsp;
+    printk("stack base: %p\n", task->registers.rbp);
 
     if(task->mm != NULL) {
         task->mm->start_stack = task->registers.rsp;
