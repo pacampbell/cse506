@@ -425,6 +425,85 @@ void dump_tables(pml4_t *cr3) {
     }
 }
 
+pdpt_t* get_pml4e(pml4_t *cr3, uint64_t virtual_address) {
+    pdpt_t *pml4e = NULL;
+    if(cr3 != NULL) {
+        uint64_t pml4e_index = extract_pml4(virtual_address);
+        // Save current cr3
+        pml4_t *current_cr3 = get_cr3();
+        // set new cr3
+        set_cr3(cr3);
+        // Get the pml4_e
+        cr3 = (pml4_t*)PHYS_TO_VIRT(cr3);
+        pml4e = (pdpt_t*)(cr3->entries[pml4e_index]);
+        // restore old cr3
+        set_cr3(current_cr3);
+    }
+    return pml4e;
+}
+
+pd_t* get_pdpte(pml4_t *cr3, uint64_t virtual_address) {
+    pd_t *pdpte = NULL;
+    if(cr3 != NULL) {
+        uint64_t pdpte_index = extract_directory_ptr(virtual_address);
+        // Save current cr3
+        pml4_t *current_cr3 = get_cr3();
+        // set new cr3
+        set_cr3(cr3);
+        // Get the pdpt
+        pdpt_t *pdpt = (pdpt_t*)get_pml4e(cr3, virtual_address);
+        if(pdpt != 0x0) {
+            pdpt = (pdpt_t*)PHYS_TO_VIRT(pdpt);
+            // Get the pdpte
+            pdpte = (pd_t*)(pdpt->entries[pdpte_index]);
+        }
+        // restore old cr3
+        set_cr3(current_cr3);
+    }
+    return pdpte;
+}
+
+pt_t* get_pde(pml4_t *cr3, uint64_t virtual_address) {
+    pt_t *pde = NULL;
+    if(cr3 != NULL) {
+        uint64_t pde_index = extract_table(virtual_address);
+        // Save current cr3
+        pml4_t *current_cr3 = get_cr3();
+        // set new cr3
+        set_cr3(cr3);
+        // get the page directory
+        pd_t *pd = (pd_t*)get_pdpte(cr3, virtual_address);
+        if(pd != 0x0) {
+            pd = (pd_t*)PHYS_TO_VIRT(pd);
+            // get the pde
+            pde = (pt_t*)pd->entries[pde_index];
+        }
+        // restore old cr3
+        set_cr3(current_cr3); 
+    }
+    return pde;
+}
+
+uint64_t get_pte(pml4_t *cr3, uint64_t virtual_address) {
+    uint64_t pg = 0;
+    if(cr3 != NULL) {
+        uint64_t pte_index = extract_offset(virtual_address);
+        // Save current cr3
+        pml4_t *current_cr3 = get_cr3();
+        // set new cr3
+        set_cr3(cr3);
+        pt_t *pt = (pt_t*)get_pde(cr3, virtual_address);
+        if(pt != 0x0) {
+            pt = (pt_t*)PHYS_TO_VIRT(pt);
+            // Get the actual page entry address
+            pg = pt->entries[pte_index];
+        }
+        // restore old cr3
+        set_cr3(current_cr3); 
+    }
+    return pg;
+}
+
 inline uint64_t extract_bits(uint64_t virtual_address, unsigned short start, unsigned short end) {
     uint64_t mask = (1 << (end + 1 - start)) - 1;
     return (virtual_address >> start) & mask;

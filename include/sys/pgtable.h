@@ -105,6 +105,11 @@
          */
         void dump_tables(pml4_t *cr3);
 
+        pdpt_t* get_pml4e(pml4_t *cr3, uint64_t virtual_address);
+        pd_t* get_pdpte(pml4_t *cr3, uint64_t virtual_address);
+        pt_t* get_pde(pml4_t *cr3, uint64_t virtual_address);
+        uint64_t get_pte(pml4_t *cr3, uint64_t virtual_address);
+
         /**
          * Gets the page table using the virtual address
          * @param pml4 The top level paging structure in IA-32e and IA-64.
