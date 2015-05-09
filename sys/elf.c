@@ -28,7 +28,13 @@ struct mm_struct* load_elf(char *data, int len, Task *task, pml4_t *proc_pml4) {
 
         for(int i = 0;  i < hdr->e_phnum; prgm_hdr++, i++) {
             //printk("--------------LOAD-ELF-----------------\n");
-            if (prgm_hdr->p_type == PT_LOAD) {
+            if (prgm_hdr->p_type == PT_LOAD && prgm_hdr->p_filesz > 0) {
+
+                if (prgm_hdr->p_filesz > prgm_hdr->p_memsz) {
+                    panic("Bad Elf!!!\n");
+                    halt();
+                }
+
                 struct vm_area_struct *vma = (struct vm_area_struct*)PHYS_TO_VIRT(kmalloc_pg());
                 kmalloc_vma(proc_pml4, prgm_hdr->p_vaddr, prgm_hdr->p_filesz, USER_SETTINGS);
                 set_cr3(proc_pml4);
