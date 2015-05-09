@@ -1,17 +1,18 @@
 #include <stdlib.h>
 #include <stdio.h>
-#define NUM 4096
+// #define NUM 8192
 // #define NUM 4
-// #define NUM 4000
+#define NUM 4096
 
 void test_f(void * addr);
 
 int main(int argc, char *argv[]) {
-    // ps();
-    // printf("DID I EVEN GET HERE?\n");
+    ps();
+    printf("DID I EVEN GET HERE?\n");
     char test[NUM];
     for(int i = 0; i < NUM; i++) {
-        test[i] = 'A' + (i % 26);
+       test[i] = 'A' + (i % 26);
+        printf("Test: %d - %c\n", i, test[i]);
     }
     printf("Test: %d - %c\n", NUM - 1, test[NUM - 1]);
 
