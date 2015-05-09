@@ -550,9 +550,18 @@ void switch_tasks(Task *old, Task *new) {
                 first = false;
                 tss.rsp0 = (uint64_t)&((current_task->kstack)[511]);
                 current_task->state = RUNNING;
+               
+
                 __asm__ __volatile__(
-                    "movq $0x28, %%rax;" 
+                    // "movq $0x23, %%rax;"
+                    // "movq %%rax, %%ds;"
+                    // "movq %%rax, %%es;"
+                    // "movq %%rax, %%fs;"
+                    // "movq %%rax, %%gs;"
+                    
+                    "movq $0x30, %%rax;" // Since we added 64-bit gdt entry, tss moved by 1 spot 
                     "ltr %%ax;"
+                    // "pop %%rax;"
                     "iretq;"
                     :
                     :
