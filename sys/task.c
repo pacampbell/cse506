@@ -2,6 +2,7 @@
 #include <sys/task.h>
 #include <sys/elf.h>
 #include <sys/screen.h>
+#include <sbunix/debug.h>
 
 static Task *tasks;
 static Task *current_task = NULL;
@@ -546,6 +547,7 @@ void switch_tasks(Task *old, Task *new) {
             // Set the current task to a running state
             current_task->state = RUNNING;
             static bool first = true; 
+            BOCHS_MAGIC();
             if((current_task->type == USER && first) || (current_task->type == USER && prev_task->type == KERNEL)) {
                 first = false;
                 tss.rsp0 = (uint64_t)&((current_task->kstack)[511]);

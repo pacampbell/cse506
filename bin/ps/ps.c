@@ -8,13 +8,13 @@ void test_f(void * addr);
 
 int main(int argc, char *argv[]) {
     ps();
-    // printf("DID I EVEN GET HERE?\n");
+    printf("DID I EVEN GET HERE?\n");
     char test[NUM];
     for(int i = 0; i < NUM; i++) {
        test[i] = 'A' + (i % 26);
         printf("Test: %d - %c\n", i, test[i]);
     }
-    // printf("Test: %d - %c\n", NUM - 1, test[NUM - 1]);
+    printf("Test: %d - %c\n", NUM - 1, test[NUM - 1]);
 
     // printf("BEFORE CALL TO TEST\n");
     // test_f(test);

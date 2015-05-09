@@ -17,7 +17,7 @@ volatile char* get_cursor() {
 }
 
 void putk(char c) {
-    putck(0, c);
+    putck(0x07, c);
 }
 
 void setxy(int x, int y) {
