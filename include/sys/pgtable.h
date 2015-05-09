@@ -94,11 +94,11 @@
         pml4_t* get_cr3(void);
 
         /* Macros for translating addresses; similar to linux kernel */
-        #define PG_ALIGN 0xFFFFFFFFFFFFF000
-        #define VIRTUAL_BASE 0xFFFFFFFFF0000000
-        #define VIRTUAL_OFFSET 0xFFFFFFFF80000000               // kernmem in linker script
+        #define PG_ALIGN (0xFFFFFFFFFFFFF000)
+        #define VIRTUAL_BASE (0xFFFFFFFFF0000000)
+        #define VIRTUAL_OFFSET (0xFFFFFFFF80000000)               // kernmem in linker script
         #define PHYS_TO_VIRT(physical) (((uint64_t) (physical) + VIRTUAL_OFFSET))
-        #define VIRT_TO_PHYS(virtual) (((uint64_t) virtual - VIRTUAL_OFFSET))
+        #define VIRT_TO_PHYS(virtual) (((uint64_t) (virtual) - VIRTUAL_OFFSET))
 
         /**
          * Walks a page table and prints out all the contents.

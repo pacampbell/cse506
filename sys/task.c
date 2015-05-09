@@ -246,8 +246,48 @@ Task* create_new_task(Task* task, const char *name, task_type_t type,
         //task->ustack = (uint64_t*)kmalloc_vma(pml4, VIRTUAL_OFFSET, PAGE_SIZE, USER_SETTINGS);
         uint64_t new_stack = task->mm->brk + (50 * PAGE_SIZE);
         new_stack &= PG_ALIGN;
+
+        // pdpt_t *pml4e = get_pml4e(pml4, new_stack); 
+        // if(pml4e == NULL) {
+        //     printk("pml4e is null (good)\n");
+        // } else {
+        //     printk("pml4e is not null: Mistake?\n");
+        // }
+        uint64_t page = get_pte(pml4, new_stack);
+        if(page != 0x0) {
+            printk("page already exists @ %p. Mistake? page: %p\n", new_stack, page);
+        } else {
+            printk("A page does not exist @ %p\n", new_stack);
+        }
         kmalloc_vma(pml4, new_stack, 1, USER_SETTINGS);
         task->ustack = (uint64_t*)(new_stack);
+
+        page = get_pte(pml4, new_stack);
+        if(page != 0x0) {
+            printk("page exists @ %p. page: %p\n", new_stack, page);
+        } else {
+            printk("A page does not exist @ %p Mistake?\n", new_stack);
+            pt_t *pt = get_pde(pml4, new_stack);
+            if(pt == NULL) {
+                printk("The page table does not exist for %p\n", new_stack);
+                pd_t *pd = get_pdpte(pml4, new_stack);
+                if(pd == NULL) {
+                    printk("Page directory does not exist for %p\n", new_stack);
+                    pdpt_t *pdpt = get_pml4e(pml4, new_stack);
+                    if(pdpt == NULL) {
+                        printk("Page directory pointer table does not exist for %p\n", new_stack);
+                    } else {
+                        printk("Page directory pointer table exists! %p\n", pdpt);
+                    }
+                } else {
+                    printk("Page directory exists! %p\n", pd);
+                }
+            } else {
+                printk("Page table exists! %p\n", pt);
+            }
+        }
+
+        halt();
     } else {
         task->ustack = 0;
     }

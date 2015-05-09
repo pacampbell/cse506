@@ -434,7 +434,7 @@ pdpt_t* get_pml4e(pml4_t *cr3, uint64_t virtual_address) {
         // set new cr3
         set_cr3(cr3);
         // Get the pml4_e
-        cr3 = (pml4_t*)PHYS_TO_VIRT(cr3);
+        cr3 = (pml4_t*)PHYS_TO_VIRT((uint64_t)cr3 & PG_ALIGN);
         pml4e = (pdpt_t*)(cr3->entries[pml4e_index]);
         // restore old cr3
         set_cr3(current_cr3);
@@ -453,7 +453,7 @@ pd_t* get_pdpte(pml4_t *cr3, uint64_t virtual_address) {
         // Get the pdpt
         pdpt_t *pdpt = (pdpt_t*)get_pml4e(cr3, virtual_address);
         if(pdpt != 0x0) {
-            pdpt = (pdpt_t*)PHYS_TO_VIRT(pdpt);
+            pdpt = (pdpt_t*)PHYS_TO_VIRT((uint64_t)pdpt & PG_ALIGN);
             // Get the pdpte
             pdpte = (pd_t*)(pdpt->entries[pdpte_index]);
         }
@@ -466,7 +466,7 @@ pd_t* get_pdpte(pml4_t *cr3, uint64_t virtual_address) {
 pt_t* get_pde(pml4_t *cr3, uint64_t virtual_address) {
     pt_t *pde = NULL;
     if(cr3 != NULL) {
-        uint64_t pde_index = extract_table(virtual_address);
+        uint64_t pde_index = extract_directory(virtual_address);
         // Save current cr3
         pml4_t *current_cr3 = get_cr3();
         // set new cr3
@@ -474,7 +474,7 @@ pt_t* get_pde(pml4_t *cr3, uint64_t virtual_address) {
         // get the page directory
         pd_t *pd = (pd_t*)get_pdpte(cr3, virtual_address);
         if(pd != 0x0) {
-            pd = (pd_t*)PHYS_TO_VIRT(pd);
+            pd = (pd_t*)PHYS_TO_VIRT((uint64_t)pd & PG_ALIGN);
             // get the pde
             pde = (pt_t*)pd->entries[pde_index];
         }
@@ -487,14 +487,14 @@ pt_t* get_pde(pml4_t *cr3, uint64_t virtual_address) {
 uint64_t get_pte(pml4_t *cr3, uint64_t virtual_address) {
     uint64_t pg = 0;
     if(cr3 != NULL) {
-        uint64_t pte_index = extract_offset(virtual_address);
+        uint64_t pte_index = extract_table(virtual_address);
         // Save current cr3
         pml4_t *current_cr3 = get_cr3();
         // set new cr3
         set_cr3(cr3);
         pt_t *pt = (pt_t*)get_pde(cr3, virtual_address);
         if(pt != 0x0) {
-            pt = (pt_t*)PHYS_TO_VIRT(pt);
+            pt = (pt_t*)PHYS_TO_VIRT((uint64_t)pt & PG_ALIGN);
             // Get the actual page entry address
             pg = pt->entries[pte_index];
         }
