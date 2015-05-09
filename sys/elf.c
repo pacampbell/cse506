@@ -36,11 +36,13 @@ struct mm_struct* load_elf(char *data, int len, Task *task, pml4_t *proc_pml4) {
                 }
 
                 struct vm_area_struct *vma = (struct vm_area_struct*)PHYS_TO_VIRT(kmalloc_pg());
-                if(kmalloc_vma(proc_pml4, prgm_hdr->p_vaddr, prgm_hdr->p_filesz, USER_SETTINGS) == NULL) {
+                if(kmalloc_vma(proc_pml4, prgm_hdr->p_vaddr, prgm_hdr->p_memsz, USER_SETTINGS) == NULL) {
                     panic("KMALLOC FAILED - elf.c:load_elf:34\n");
                     printk("SIZE: %d\n", prgm_hdr->p_filesz);
                 }
+
                 set_cr3(proc_pml4);
+                memset((void*)prgm_hdr->p_vaddr, 0, prgm_hdr->p_memsz);
 
                 //printk("memcpy dest: %p src: %p size: %p\n", prgm_hdr->p_vaddr, data + prgm_hdr->p_offset, prgm_hdr->p_filesz);
                 memcpy((void*)prgm_hdr->p_vaddr, data + prgm_hdr->p_offset, prgm_hdr->p_filesz);
@@ -48,7 +50,7 @@ struct mm_struct* load_elf(char *data, int len, Task *task, pml4_t *proc_pml4) {
 
                 set_cr3(kern_pml4);
                 vma->vm_start = prgm_hdr->p_vaddr;
-                vma->vm_end = (uint64_t)(prgm_hdr->p_vaddr + prgm_hdr->p_filesz);
+                vma->vm_end = (uint64_t)(prgm_hdr->p_vaddr + prgm_hdr->p_memsz);
                 vma->vm_prot = prgm_hdr->p_flags;
                 add_vma(mm, vma);
                 if(vma->next != NULL) {
