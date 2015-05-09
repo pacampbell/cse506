@@ -131,13 +131,13 @@ pt_t* get_pt_virt(pml4_t *pml4, uint64_t virtual_address, uint64_t permissions) 
     uint64_t pdpt_index = extract_directory_ptr(virtual_address);
     uint64_t pd_index = extract_directory(virtual_address);
     // Store the current cr3 and set the new one
-    // pml4_t *old_cr3 = get_cr3();
-    // halt();
-    // set_cr3(pml4);
+    pml4_t *old_cr3 = get_cr3();
+    set_cr3(pml4);
     // printk("virtual_address: %p\n", virtual_address);
     // Now begin finding the base address for each step of the walk
     // also zero out lower 12 bits for permissions and copy the rest
     // printk("pml4 index: %d\n", pml4_index);
+    pml4 = (pml4_t*)PHYS_TO_VIRT((uint64_t)pml4 & PG_ALIGN);
     uint64_t pdpt_base_addr = pml4->entries[pml4_index] & PG_ALIGN;
     // printk("pdpt_base_addr: %p\n", pdpt_base_addr);
     // Check to see if we have empty entry
@@ -196,7 +196,7 @@ pt_t* get_pt_virt(pml4_t *pml4, uint64_t virtual_address, uint64_t permissions) 
     }else {
         pt_base_addr = PHYS_TO_VIRT(pt_base_addr);
     }
-    // set_cr3(old_cr3);
+    set_cr3(old_cr3);
     // printk("pte_final_virt: %p\n", pt_base_addr);
     return (pt_t*)pt_base_addr;
 }
@@ -277,8 +277,8 @@ bool leaks_pg(uint64_t virt_base, size_t size) {
 
 void *kmalloc_vma(pml4_t *cr3, uint64_t virt_base, size_t size, uint64_t permissions) {
     void *new_allocation = NULL;
-    pml4_t *old_pml4 = get_cr3();
-    set_cr3(cr3);
+    // pml4_t *old_pml4 = get_cr3();
+    // set_cr3(cr3);
     if(size > 0) {
         // Figure out how many pages we need
         int num_pages = size / PAGE_SIZE;
@@ -294,26 +294,27 @@ void *kmalloc_vma(pml4_t *cr3, uint64_t virt_base, size_t size, uint64_t permiss
             }
         }
     }
-    set_cr3(old_pml4);
+    // set_cr3(old_pml4);
     return new_allocation;
 }
 
 uint64_t insert_page(pml4_t *cr3, uint64_t virtual_address, uint64_t permissions) {
-    // Save the current cr3
-    pml4_t *old_cr3 = get_cr3();
-    // printk("old: %p new: %p\n", old_cr3, cr3);
-    // Set the new cr3
-    set_cr3(cr3);
-    // Make the pml4 a virtual address
-    cr3 = (pml4_t *)PHYS_TO_VIRT(cr3);
     // Get the page table using this pml4 and virtual address
     pt_t* page_table = (pt_t*) get_pt_virt(cr3, virtual_address, permissions);
     // printk("insert_pg_pt: %p\n", page_table);
+    // printk("new page: %p\n", page);
+    pml4_t *old_cr3 = get_cr3();
+    set_cr3(cr3);
     // Get a new page to insert into the table
     uint64_t page = (uint64_t)kmalloc_pg() | permissions;
-    // printk("new page: %p\n", page);
     // Get the page table offset from the virtual address 
     uint64_t pt_index = extract_table(virtual_address);
+    if(page_table->entries[pt_index] != 0x0) {
+        panic("!!!!!WARNING!!!!!");
+        printk("PG TABLE ENTRY ALREADY EXISTS @ %d: %p\n", pt_index, page_table->entries[pt_index]);
+        panic("!!!!!WARNING!!!!!");
+        // halt();
+    }
     page_table->entries[pt_index] = page;
     // Set back the old cr3
     set_cr3(old_cr3);
@@ -383,6 +384,35 @@ pml4_t* copy_page_tables(pml4_t *src) {
         copy = (pml4_t*) VIRT_TO_PHYS(copy);
     }
     return copy;
+}
+
+void check_vma_permissions(pml4_t *cr3, uint64_t address) {
+    if(cr3 != NULL) {
+        pdpt_t *pdpt = get_pml4e(cr3, address);
+        if(pdpt != 0x0) {
+            printk("pdpt: %p\n", pdpt);
+            pd_t *pd = get_pdpte(cr3, address);
+            if(pd != 0x0) {
+                printk("pd: %p\n", pd);
+                pt_t *pt = get_pde(cr3, address);
+                if(pt != 0x0) {
+                    printk("pt: %p\n", pt);
+                    uint64_t page = get_pte(cr3, address);
+                    if(page != 0x0) {
+                        printk("page: %p\n", page);
+                    } else {
+                        printk("No page entry for vma %p\n", address);
+                    }
+                } else {
+                    printk("No page table exists for vma %p\n", address);
+                }
+            } else {
+                printk("No page directory exists for vma %p\n", address);
+            }
+        } else {
+            printk("No page directory pointer table exists for vma %p\n", address);
+        }
+    }
 }
 
 void kfree_pg(void *address) {

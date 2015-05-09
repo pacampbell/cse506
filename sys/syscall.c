@@ -43,6 +43,9 @@ void* sys_brk(size_t size) {
     Task *tsk = get_current_task();
 
     void* brk = kmalloc_vma((pml4_t*)tsk->registers.cr3, tsk->mm->brk, size, USER_SETTINGS);
+    if(brk == NULL) {
+        panic("KMALLOC VMA FAILED\n");
+    }
     
     int num_pages = size / PAGE_SIZE;
     num_pages += size % PAGE_SIZE > 0 ? 1 : 0;

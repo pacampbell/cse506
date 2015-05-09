@@ -104,6 +104,7 @@
          * Walks a page table and prints out all the contents.
          */
         void dump_tables(pml4_t *cr3);
+        void check_vma_permissions(pml4_t *cr3, uint64_t address);
 
         pdpt_t* get_pml4e(pml4_t *cr3, uint64_t virtual_address);
         pd_t* get_pdpte(pml4_t *cr3, uint64_t virtual_address);

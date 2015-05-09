@@ -80,8 +80,8 @@ static void stack_segmentation_fault(registers_t regs) {
 
 static void general_protection_fault(registers_t regs) {
 	panic("GENERAL PROTECTION FAULT\n");
-	printk("Interrupt [%d] - Errocode: %p\n", regs.int_no, regs.err_code);
-	printk("rip: %p ss: %p cs: %p ds: %p\n", regs.rip, regs.ss, regs.cs, regs.ds);
+	printk("Interrupt [%d] - Errocode: %p\n", regs.int_no, regs.err_no);
+	printk("rip: %p ss: %p cs: %p\n", regs.rip, regs.ss, regs.cs);
 	panic("DUMP\n");
 	Task *ctask = get_current_task();
 	dump_task(ctask);
@@ -92,8 +92,7 @@ static void page_fault(registers_t regs) {
     uint64_t faulting_address;
     __asm__ __volatile__("mov %%cr2, %0" : "=r" (faulting_address));
     Task *tsk = get_current_task();
-    // halt();
-    printk("address: %p\n", faulting_address);
+    printk("rip: %p faulting address: %p\n", regs.rip, faulting_address);
     if(tsk->mm != NULL) {
         printk("brk: %p\n", tsk->mm->brk);
         printk("stack_start: %p\n", tsk->mm->start_stack);
@@ -106,9 +105,17 @@ static void page_fault(registers_t regs) {
         bad_page_fault(regs);
     }
 
-    kmalloc_vma((pml4_t*)tsk->registers.cr3, faulting_address & PG_ALIGN, 1, USER_SETTINGS);
-    panic("Good page fault\n");
+    uint64_t *address;
+    if((address = kmalloc_vma((pml4_t*)tsk->registers.cr3, faulting_address & PG_ALIGN, 1, USER_SETTINGS)) == NULL) {
+        panic("KMALLOC VMA FAILED\n");
+    }
 
+    // uint64_t page = get_pte((pml4_t*)(tsk->registers.cr3), (uint64_t)address);
+    // printk("New Page: %p\n", page);
+    // printk("Address returned: %p\n", address);
+    check_vma_permissions((pml4_t*)(tsk->registers.cr3), (uint64_t)address);
+    // halt();
+    panic("Good page fault\n");
 
 }
 
@@ -121,12 +128,12 @@ static void bad_page_fault(registers_t regs) {
     printk("address: %p\n", faulting_address);
     printk("bits   : ");
 
-    int p = extract_bits(regs.err_code, 0, 0);
-    int w = extract_bits(regs.err_code, 1, 1);
-    int u = extract_bits(regs.err_code, 2, 2);
-    int r = extract_bits(regs.err_code, 3, 3);
-    int f = extract_bits(regs.err_code, 4, 4);
-    int cow = extract_bits(regs.err_code, 63, 63);
+    int p = extract_bits(regs.err_no, 0, 0);
+    int w = extract_bits(regs.err_no, 1, 1);
+    int u = extract_bits(regs.err_no, 2, 2);
+    int r = extract_bits(regs.err_no, 3, 3);
+    int f = extract_bits(regs.err_no, 4, 4);
+    int cow = extract_bits(regs.err_no, 63, 63);
 
     printk("%x", p);
     printk("%x", w);
@@ -168,6 +175,8 @@ static void bad_page_fault(registers_t regs) {
     } else {
         printk("]\n");
     }
+
+    printk("cs: %p ss: %p ursp: %p\n", regs.cs, regs.ss, regs.ursp);
     // Dump info about the task
     Task *ctask = get_current_task();
     dump_task(ctask);

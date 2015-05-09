@@ -30,7 +30,10 @@ struct mm_struct* load_elf(char *data, int len, Task *task, pml4_t *proc_pml4) {
             //printk("--------------LOAD-ELF-----------------\n");
             if (prgm_hdr->p_type == PT_LOAD) {
                 struct vm_area_struct *vma = (struct vm_area_struct*)PHYS_TO_VIRT(kmalloc_pg());
-                kmalloc_vma(proc_pml4, prgm_hdr->p_vaddr, prgm_hdr->p_filesz, USER_SETTINGS);
+                if(kmalloc_vma(proc_pml4, prgm_hdr->p_vaddr, prgm_hdr->p_filesz, USER_SETTINGS) == NULL) {
+                    panic("KMALLOC FAILED - elf.c:load_elf:34\n");
+                    printk("SIZE: %d\n", prgm_hdr->p_filesz);
+                }
                 set_cr3(proc_pml4);
 
                 //printk("memcpy dest: %p src: %p size: %p\n", prgm_hdr->p_vaddr, data + prgm_hdr->p_offset, prgm_hdr->p_filesz);

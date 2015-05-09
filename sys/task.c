@@ -259,7 +259,9 @@ Task* create_new_task(Task* task, const char *name, task_type_t type,
         } else {
             printk("A page does not exist @ %p\n", new_stack);
         }
-        kmalloc_vma(pml4, new_stack, 1, USER_SETTINGS);
+        if(kmalloc_vma(pml4, new_stack, 1, USER_SETTINGS) == NULL) {
+            panic("KMALLOC VMA FAILED\n");
+        }
         task->ustack = (uint64_t*)(new_stack);
 
         page = get_pte(pml4, new_stack);
@@ -287,7 +289,7 @@ Task* create_new_task(Task* task, const char *name, task_type_t type,
             }
         }
 
-        halt();
+        // halt();
     } else {
         task->ustack = 0;
     }
@@ -369,6 +371,9 @@ Task *clone_task(Task *src, uint64_t global_sp, uint64_t global_rip) {
         if(new_task->type == USER) {
             new_task->ustack = (uint64_t*)kmalloc_vma((pml4_t*)(new_task->registers.cr3), 
                                                       VIRTUAL_OFFSET, PAGE_SIZE, USER_SETTINGS);
+            if(new_task->ustack == NULL) {
+                panic("KMALLOC VMA FAILED\n");
+            }
             // copy the parents user stack
             memcpy(new_task->ustack, src->ustack, PAGE_SIZE);
         }
@@ -663,6 +668,8 @@ Task* get_free_task_struct(Task **list) {
         while(ctask != NULL) {
             if(!ctask->in_use) {
                 free_task = ctask;
+                // zero out the free task
+                memset(free_task, 0, sizeof(Task));
                 break;
             } else {
                 ctask = ctask->next;

@@ -25,12 +25,35 @@
 // For IRQs, to ease confusion, use the #defines above as the
 // first parameter.
 
-typedef struct registers {
+
+// struct registers {
+//     uint64_t r15, r14, r13, r12, r11, r10;
+//     uint64_t r9, r8, rdi, rsi, rdx, rcx;
+//     uint64_t rbx, rax, rbp;
+//     uint64_t rip, cs, rflags, rsp, ss;      // Registers pushed by the IRETQ 
+// } __attribute__((packed));
+
+
+
+
+/*
+struct registers {
+    uint64_t r15, r14, r13, r12, r11, r10, r9, r8, rsi, rbp, rdx, rcx, rbx, rax, rdi; // Registers pushed by PUSHA
+    uint64_t int_no, err_no;                            // Interrupt number and error code
+    uint64_t rip, cs, rflags, rsp, ss;                  // Registers pushed by the IRETQ 
+} __attribute__((packed));
+typedef struct registers registers_t;
+*/
+
+
+struct registers {
    uint64_t ds;                  // Data segment selector
-   uint64_t rdi, rsi, rbp, rsp, rbx, rdx, rcx, rax; // Pushed by pusha.
-   uint64_t int_no, err_code;    // Interrupt number and error code (if applicable)
-   uint64_t rip, cs, eflags, useresp, ss; // Pushed by the processor automatically.
-} registers_t;
+   uint64_t r15, r14, r13, r12, r11, r10, r9, r8, rdi, rsi, rbp, rdx, rcx, rbx, rax;
+   // uint64_t rdi, rsi, rbp, rbx, rdx, rcx, rax; // Pushed by pusha.
+   uint64_t int_no, err_no;    // Interrupt number and error code (if applicable)
+   uint64_t rip, cs, rflags, ursp, ss; // Pushed by the processor automatically.
+} __attribute__((packed));
+typedef struct registers registers_t;
 
 typedef void (*isr_t)(registers_t);
 void register_interrupt_handler(uint8_t n, isr_t handler);
