@@ -61,8 +61,8 @@ isr_common_stub:
    pop rax
 
    # re-enable interrupts
-   sti
-   add rsp, 0x10
+   add rsp, 0x18
+   # sti
    # Return from the interrupt
    iretq
 
@@ -122,7 +122,7 @@ irq_common_stub:
   pop rax
 
   # re-enable interrupts
-  sti
   add rsp, 0x10
+  # sti
   # Return from the interrupt
   iretq

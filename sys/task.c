@@ -220,11 +220,11 @@ void setup_new_stack(Task *task) {
     } else {
         // printk("User task\n");
         task->kstack[511] = 0x23; // Set the SS
-        task->kstack[508] = 0x1b; // Set the CS
+        task->kstack[508] = 0x2b; // Set the CS
     }
     // set the top of the user/kernel stack
     task->kstack[510] = task->registers.rsp;  // (uint64_t)&(stack[511]);
-    task->kstack[509] = 0x200;                // Set the flags
+    task->kstack[509] = 0x202;                // Set the flags
     task->kstack[507] = task->registers.rip;  // The entry point
     // Set the stack pointer to the amount of items pushed
     task->registers.rsp = (uint64_t)&(task->kstack[507]);
@@ -547,21 +547,22 @@ void switch_tasks(Task *old, Task *new) {
             // Set the current task to a running state
             current_task->state = RUNNING;
             static bool first = true; 
-            BOCHS_MAGIC();
             if((current_task->type == USER && first) || (current_task->type == USER && prev_task->type == KERNEL)) {
                 first = false;
                 tss.rsp0 = (uint64_t)&((current_task->kstack)[511]);
                 current_task->state = RUNNING;
                
+                printk("Tss size: %d\n", sizeof(tss));
 
+                BOCHS_MAGIC();
                 __asm__ __volatile__(
-                    // "movq $0x23, %%rax;"
-                    // "movq %%rax, %%ds;"
-                    // "movq %%rax, %%es;"
-                    // "movq %%rax, %%fs;"
-                    // "movq %%rax, %%gs;"
+                    "movq $0x23, %%rax;"
+                    "movq %%rax, %%ds;"
+                    "movq %%rax, %%es;"
+                    "movq %%rax, %%fs;"
+                    "movq %%rax, %%gs;"
                     
-                    "movq $0x30, %%rax;" // Since we added 64-bit gdt entry, tss moved by 1 spot 
+                    "movq $0x33, %%rax;" // Since we added 64-bit gdt entry, tss moved by 1 spot 
                     "ltr %%ax;"
                     // "pop %%rax;"
                     "iretq;"
@@ -591,7 +592,7 @@ void switch_tasks(Task *old, Task *new) {
                 __asm__ __volatile__(
                     "pushq 0x23;"
                     "pushq %0;"
-                    "pushq 0x200;"
+                    "pushq 0x202;"
                     "pushq 0x1b;"
                     "pushq %1;"
                     "iretq;"

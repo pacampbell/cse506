@@ -1,5 +1,6 @@
 #define __KERNEL__
 #include <sbunix/kmain.h>
+#include <sbunix/debug.h>
 
 void idle(void) {
     // TODO: fix this

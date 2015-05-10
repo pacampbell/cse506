@@ -271,7 +271,7 @@ void init_syscall() {
     SET_LSTAR((uint64_t)syscall_entry);
     // Set STAR
     // uint64_t star_value = 0x1b23081000000000;
-    uint64_t star_value = 0x1b00080000000000;
+    uint64_t star_value = 0x001b000800000000;
     write_msr(IA32_MSR_STAR, star_value & 0xffffffff, (star_value >> 32) & 0xffffffff);
     // Set the flags to clear
     uint64_t flag_mask = IA32_FLAGS_INTERRUPT | IA32_FLAGS_DIRECTION; 

@@ -76,7 +76,7 @@ void putsck(char color, char* str) {
 }
 
 void putk_xy(char c, int x, int y) {
-    putck_xy(0, c, x, y);
+    putck_xy(0x07, c, x, y);
 }
 
 void putck_xy(char color, char c, int x, int y) {

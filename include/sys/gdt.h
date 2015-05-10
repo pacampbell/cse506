@@ -6,7 +6,7 @@
 struct tss_t {
 	uint32_t reserved;
 	uint64_t rsp0;
-	uint32_t unused[11];
+	uint32_t unused[23];
 }__attribute__((packed));
 extern struct tss_t tss;
 

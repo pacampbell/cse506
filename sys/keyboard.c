@@ -54,7 +54,7 @@ char* s_map[] = {
 // }
 
 int gets(uint64_t addr, size_t len) {
-    __asm__ __volatile__("sti;");
+    // __asm__ __volatile__("sti;");
     int count = 0;
     volatile char* curs = get_cursor();
     pressed_enter = 0;
