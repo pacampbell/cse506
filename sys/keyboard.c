@@ -16,7 +16,7 @@ void printk(const char *format, ...);
 
 static bool is_shft_dn = false;
 static bool is_cntrl_dn = false;
-static bool pressed_enter= false;
+static volatile bool pressed_enter= false;
 
 /* Character table mappings for the scan codes */
 char* map[] = {
@@ -54,19 +54,19 @@ char* s_map[] = {
 // }
 
 int gets(uint64_t addr, size_t len) {
-    // __asm__ __volatile__("sti;");
     int count = 0;
     volatile char* curs = get_cursor();
     pressed_enter = 0;
+    __asm__ __volatile__("sti;");
     
     while (pressed_enter == false) {
-        printk("loop: %d\n", count++);
         __asm__ __volatile__("hlt;");
     }
 
     while ( *curs != '\n' && *curs != '\0' && count < (len - 1 ) ) {
         *((volatile char*)(addr++)) = *curs;
         count++;
+        curs++;
     }
 
     addr = '\0';
@@ -99,6 +99,8 @@ void keyboard_callback(registers_t regs) {
             }
             break;
     }
+
+    if (b == ENTER) pressed_enter = true;
 }
 
 void init_keyboard(void) {

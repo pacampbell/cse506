@@ -43,7 +43,9 @@ uint64_t sys_read(int fd, void *buff, size_t count) {
             tsk->files[fd]->at = tsk->files[fd]->at + 1;
             read++;
         }
-        ((char*)buff)[count] = '\0';
+        ((char*)buff)[read] = '\0';
+    } else if (fd == 0) {
+        gets((uint64_t)buff, count);
     }
     
     // gets((uint64_t)buff, count);
