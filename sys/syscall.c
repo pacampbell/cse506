@@ -31,18 +31,19 @@ int sys_write(int fd, char *buff, size_t count) {
 
 uint64_t sys_read(int fd, void *buff, size_t count) {
     uint64_t read = 0;
-    if(fd == 1 || fd == 2) {
+    if(fd == 1 || fd == 2 || fd < 0) {
         panic("sys_read called for an unimplemented FD.");
         return 0;
     }
 
     if(fd > 2) {
         Task *tsk = get_current_task();
-        for(int i = 0; i < count && tsk->files[i]->at < tsk->files[i]->end; i++) {
-            ((char*)buff)[i] = *((char*)tsk->files[i]->at);
-            tsk->files[i]->at = tsk->files[i]->at + 1;
+        for(int i = 0; i < count && tsk->files[fd]->at < tsk->files[fd]->end; i++) {
+            ((char*)buff)[i] = *((char*)tsk->files[fd]->at);
+            tsk->files[fd]->at = tsk->files[fd]->at + 1;
             read++;
         }
+        ((char*)buff)[count] = '\0';
     }
     
     // gets((uint64_t)buff, count);
@@ -128,7 +129,7 @@ void sys_nanosleep(struct timespec *req, struct timespec *rem) {
     // }
 }
 
-int open(const char *pathname, int flags) {
+int sys_open(const char *pathname, int flags) {
     Task *tsk = get_current_task();
     int rtn = -1;
 
@@ -214,7 +215,7 @@ uint64_t syscall_common_handler(uint64_t num, uint64_t arg1, uint64_t arg2, uint
             break;
         case SYS_open:
             //panic("sys_open not implemented.\n");
-            return_value = open((const char*)arg1, arg2);
+            return_value = sys_open((const char*)arg1, arg2);
             break;
         case SYS_read:
             return_value = sys_read(arg1, (void*)arg2, arg3);

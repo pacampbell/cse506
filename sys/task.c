@@ -187,6 +187,7 @@ Task* create_task_struct(Task **list) {
     if(task == NULL) {
         // There was no more free tasks so create a new one
         task = (Task*) PHYS_TO_VIRT(kmalloc_pg());
+        memset(task, 0, sizeof(Task));
     } else {
         // Remove this task from the insert_into_list
         free_file_list(task->files, MAX_FD);
