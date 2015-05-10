@@ -72,7 +72,7 @@ struct file* tarfs_to_file(const char *path) {
     memset(&e, 0, sizeof(e));
 
     if(traverse_tars(path, &e) != NULL) {
-        f = (struct file*)kmalloc_pg();
+        f = (struct file*)PHYS_TO_VIRT(kmalloc_pg());
         if (f == NULL) {
             panic("Could not make new file\n");
             halt();

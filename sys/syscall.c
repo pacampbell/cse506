@@ -31,9 +31,18 @@ int sys_write(int fd, char *buff, size_t count) {
 
 uint64_t sys_read(int fd, void *buff, size_t count) {
     uint64_t read = 0;
-    if(fd != 0) {
+    if(fd == 1 || fd == 2) {
         panic("sys_read called for an unimplemented FD.");
         return 0;
+    }
+
+    if(fd > 2) {
+        Task *tsk = get_current_task();
+        for(int i = 0; i < count && tsk->files[i]->at < tsk->files[i]->end; i++) {
+            ((char*)buff)[i] = *((char*)tsk->files[i]->at);
+            tsk->files[i]->at = tsk->files[i]->at + 1;
+            read++;
+        }
     }
     
     // gets((uint64_t)buff, count);
