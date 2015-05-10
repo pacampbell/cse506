@@ -10,6 +10,7 @@
         #include <sys/pgtable.h>
         #include <sys/mm/vma.h>
         #include <sys/gdt.h> 
+        #include <sys/fs/file.h>
         /* Process/Task constants and typedefs */
         #define PID_MAP_LENGTH 65535
         #define MAX_PRIORITY 0xFFFFFFFF
@@ -61,6 +62,7 @@
             struct Task *next;                  /* Next task in the list */
             struct Task *prev;                  /* Previous Task in the list */
             struct mm_struct *mm, *active_mm;   /* The mm_struct of this task */
+            struct file *files[MAX_FD];
         };
         typedef struct Task Task;
 

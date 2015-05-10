@@ -187,8 +187,10 @@ Task* create_task_struct(Task **list) {
     if(task == NULL) {
         // There was no more free tasks so create a new one
         task = (Task*) PHYS_TO_VIRT(kmalloc_pg());
+        memset(task, 0, sizeof(Task));
     } else {
         // Remove this task from the insert_into_list
+        free_file_list(task->files, MAX_FD);
         if(remove_task_by_pid(list, task->pid) == NULL) {
             panic("Tried to free a NULL task.\n");
             __asm__ __volatile__("cli; hlt;");

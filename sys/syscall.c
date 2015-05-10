@@ -3,6 +3,7 @@
 #include <sys/task.h>
 #include <sys/pgtable.h>
 #include <sbunix/debug.h>
+#include <sys/tarfs.h>
 
 
 uint64_t global_rip = 0;
@@ -31,9 +32,19 @@ int sys_write(int fd, char *buff, size_t count) {
 
 uint64_t sys_read(int fd, void *buff, size_t count) {
     uint64_t read = 0;
-    if(fd != 0) {
+    if(fd == 1 || fd == 2 || fd < 0) {
         panic("sys_read called for an unimplemented FD.");
         return 0;
+    }
+
+    if(fd > 2) {
+        Task *tsk = get_current_task();
+        for(int i = 0; i < count && tsk->files[fd]->at < tsk->files[fd]->end; i++) {
+            ((char*)buff)[i] = *((char*)tsk->files[fd]->at);
+            tsk->files[fd]->at = tsk->files[fd]->at + 1;
+            read++;
+        }
+        ((char*)buff)[count] = '\0';
     }
     
     // gets((uint64_t)buff, count);
@@ -119,6 +130,21 @@ void sys_nanosleep(struct timespec *req, struct timespec *rem) {
     // }
 }
 
+int sys_open(const char *pathname, int flags) {
+    Task *tsk = get_current_task();
+    int rtn = -1;
+
+    for (rtn = 3; rtn < MAX_FD && tsk->files[rtn] != NULL; rtn++);
+    if (rtn >= MAX_FD) return -1;
+
+    struct file *f = tarfs_to_file(pathname);
+    if (f == NULL) return -1;
+
+    tsk->files[rtn] = f;
+
+    return rtn;
+}
+
 /**
  * Upon entry to this function, all interrupts are disabeled, and we still are
  * using the stack of the userspace process.
@@ -188,7 +214,8 @@ uint64_t syscall_common_handler(uint64_t num, uint64_t arg1, uint64_t arg2, uint
             panic("sys_chdir not implemented.\n");
             break;
         case SYS_open:
-            panic("sys_open not implemented.\n");
+            //panic("sys_open not implemented.\n");
+            return_value = sys_open((const char*)arg1, arg2);
             break;
         case SYS_read:
             return_value = sys_read(arg1, (void*)arg2, arg3);
