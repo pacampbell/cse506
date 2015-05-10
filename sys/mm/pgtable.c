@@ -385,6 +385,7 @@ pml4_t* copy_page_tables(pml4_t *src) {
         // Convert the new cr3 into a physical address
         copy = (pml4_t*) VIRT_TO_PHYS(copy);
     }
+    BOCHS_MAGIC();
     return copy;
 }
 

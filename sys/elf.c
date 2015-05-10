@@ -59,7 +59,7 @@ struct mm_struct* load_elf(char *data, int len, Task *task, pml4_t *proc_pml4) {
                 }
 
                 if(vma->vm_end > high_addr) high_addr = vma->vm_end;
-                printk("%p == %p\n", prgm_hdr->p_vaddr, mm->start_code);
+                // printk("%p == %p\n", prgm_hdr->p_vaddr, mm->start_code);
 
                 if (prgm_hdr->p_vaddr == mm->start_code) {
                    // its the txt section

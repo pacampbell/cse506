@@ -73,10 +73,18 @@ uint64_t sys_fork() {
     // #1 Get current Task
     Task *current = get_current_task();
     // #2 clone task
+    printk("Cloning pid: %d name: %s\n", current->pid, current->name);
     Task *child = clone_task(current, global_sp, global_rip);
-    // #3 schedule the task
-    if(!insert_into_list(child)) {
-        panic("FAILED TO INSERT CHILD PROCESS\n");
+    printk("Cloning of parent complete!\n");
+    if(child != NULL) {
+        // #3 schedule the task
+        if(!insert_into_list(child)) {
+            panic("FAILED TO INSERT CHILD PROCESS\n");
+        }
+        panic("Schedule cloned task?\n");
+    } else {
+        panic("Failed to fork\n");
+        return -1;
     }
     // #4 return new task pid
     return child->pid;

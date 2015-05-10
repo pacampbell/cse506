@@ -227,7 +227,7 @@ void setup_new_stack(Task *task) {
     // set the top of the user/kernel stack
     task->kstack[510] = task->registers.rsp;  // (uint64_t)&(stack[511]);
     task->kstack[509] = 0x202;                // Set the flags
-    task->kstack[507] = task->registers.rip;  // The entry point
+    task->kstack[507] = task->registers.rip;  // The entry point (on a forked task this might not be the start)
     // Set the stack pointer to the amount of items pushed
     task->registers.rsp = (uint64_t)&(task->kstack[507]);
 }
@@ -317,7 +317,7 @@ Task* create_new_task(Task* task, const char *name, task_type_t type,
     task->registers.cr3 = (uint64_t)pml4;
     task->registers.rsp = type == KERNEL ? (uint64_t)task->kstack + PAGE_SIZE - 8 : (uint64_t)task->ustack + PAGE_SIZE - 8; // Start the stack pointer at the other side
     task->registers.rbp = task->registers.rsp;
-    printk("stack base: %p\n", task->registers.rbp);
+    // printk("stack base: %p\n", task->registers.rbp);
 
     if(task->mm != NULL) {
         task->mm->start_stack = task->registers.rsp;
@@ -345,8 +345,9 @@ Task *clone_task(Task *src, uint64_t global_sp, uint64_t global_rip) {
         // Copy the struct (no deep copies)
         memcpy(new_task, src, sizeof(Task));
         // Copy the page tables of the source process
-        pml4_t *current_pml4 = get_cr3();
-        set_cr3(g_kernel_pgtable);
+        // pml4_t *current_pml4 = get_cr3();
+        // set_cr3(g_kernel_pgtable);
+        printk("Start of user code: %p\n", src->mm->start_code);
         pml4_t *cloned_pml4 = copy_page_tables((pml4_t*)(src->registers.cr3));
         // Set copied cr3
         new_task->registers.cr3 = (uint64_t)cloned_pml4;
@@ -358,22 +359,19 @@ Task *clone_task(Task *src, uint64_t global_sp, uint64_t global_rip) {
         new_task->in_use = true;
         // Assign the child task return value to zero
         new_task->registers.rax = 0;
-        // Assign the stack pointer and instruction pointer
-        // new_task->registers.rsp = global_sp;
-        new_task->registers.rip = global_rip;
-        // pretend it is new?
-        new_task->state = RUNNING; // NEW;
+        // Expliciting say this program is ready
+        new_task->state = READY;
         // Set some pointers to be NULL
         new_task->next = NULL;
         new_task->prev = NULL;
         new_task->children = NULL;
         // Create new kstack and ustack
         new_task->kstack = (uint64_t*) PHYS_TO_VIRT(kmalloc_pg());
-        memset(new_task->kstack, 0, PAGE_SIZE);
+        memset(new_task->kstack, 0, PAGE_SIZE);        
         // Create new user stack
         if(new_task->type == USER) {
             new_task->ustack = (uint64_t*)kmalloc_vma((pml4_t*)(new_task->registers.cr3), 
-                                                      VIRTUAL_OFFSET, PAGE_SIZE, USER_SETTINGS);
+                                                      new_task->mm->start_stack, PAGE_SIZE, USER_SETTINGS);
             if(new_task->ustack == NULL) {
                 panic("KMALLOC VMA FAILED\n");
             }
@@ -382,14 +380,7 @@ Task *clone_task(Task *src, uint64_t global_sp, uint64_t global_rip) {
         }
         // Setup the stack again
         setup_new_stack(new_task);
-        set_cr3(current_pml4);
-        printk("kstack address: %p global_sp: %p new_rip: %p\n", &(new_task->kstack[507]), global_sp, src->registers.rsp);
-        printk("511 src: %p new: %p\n", src->kstack[511], new_task->kstack[511]);
-        printk("510 src: %p new: %p\n", src->kstack[510], new_task->kstack[510]);
-        printk("509 src: %p new: %p\n", src->kstack[509], new_task->kstack[509]);
-        printk("508 src: %p new: %p\n", src->kstack[508], new_task->kstack[508]);
-        printk("507 src: %p new: %p\n", src->kstack[507], new_task->kstack[507]);
-        halt();
+        // set_cr3(current_pml4);
     } else {
         panic("UNABLE TO CLONE NULL TASK");
         halt();
@@ -416,7 +407,7 @@ void preempt(bool discard) {
         // The old process no longer wants to run
         old_task->state = TERMINATED;
         task_count--;
-        printk("Removing: pid: %d name: %s\n", old_task->pid, old_task->name);
+        // printk("Removing: pid: %d name: %s\n", old_task->pid, old_task->name);
     }
     // Attempt to switch tasks; Assembly magic voodo
     switch_tasks(old_task, current_task);
@@ -506,7 +497,7 @@ void switch_tasks(Task *old, Task *new) {
             free_pid(old->pid);
             // Mark the task struct as not in use
             old->in_use = false;
-            printk("old has been released. %p\n", old);
+            // printk("old has been released. %p\n", old);
         }
         // Save the previosu task so we can check a few fields
         prev_task = current_task;
@@ -544,8 +535,8 @@ void switch_tasks(Task *old, Task *new) {
             : "memory"
         );
         if(current_task->state == NEW) {
-            printk("prev name: %s\n", prev_task->name);
-            printk("this name: %s\n", current_task->name);
+            // printk("prev name: %s\n", prev_task->name);
+            // printk("this name: %s\n", current_task->name);
             // Set the current task to a running state
             current_task->state = RUNNING;
             static bool first = true; 
@@ -570,9 +561,9 @@ void switch_tasks(Task *old, Task *new) {
                     :
                 );
             } else {
-                dump_task(current_task);
-                dump_mm(current_task->mm);
-                printk("name: %s\n", current_task->name);
+                // dump_task(current_task);
+                // dump_mm(current_task->mm);
+                // printk("name: %s\n", current_task->name);
                 // Just iretq
                 __asm__ __volatile__("iretq;");
             }
@@ -585,19 +576,20 @@ void switch_tasks(Task *old, Task *new) {
             //     __asm__ __volatile__("iretq;");
             // }
             if(current_task->type == USER) {
-                extern uint64_t global_sp;
-                extern uint64_t global_rip;
+                // extern uint64_t global_sp;
+                // extern uint64_t global_rip;
+                printk("Continuing a started task: %s %d %d\n", current_task->name, current_task->pid, current_task->parent->pid);
                 BOCHS_MAGIC();
-                printk("here: %s %d\n", current_task->name, current_task->pid);
                 __asm__ __volatile__(
-                    "pushq 0x23;"
-                    "pushq %0;"
-                    "pushq 0x202;"
-                    "pushq 0x2b;"
-                    "pushq %1;"
+                    // "pushq 0x23;"
+                    // "pushq %0;"
+                    // "pushq 0x202;"
+                    // "pushq 0x2b;"
+                    // "pushq %1;"
+                    "add $0x8, %%rsp;"
                     "iretq;"
                     :
-                    : "r"(global_sp), "r"(global_rip)
+                    : // "r"(global_sp), "r"(global_rip)
                     :
                 );
             }
