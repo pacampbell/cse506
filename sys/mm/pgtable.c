@@ -1,5 +1,6 @@
 #define __KERNEL__
 #include <sys/pgtable.h>
+#include <sbunix/debug.h>
 
 extern char kernmem;
 extern void *kern_free;
@@ -313,6 +314,7 @@ uint64_t insert_page(pml4_t *cr3, uint64_t virtual_address, uint64_t permissions
         panic("!!!!!WARNING!!!!!");
         printk("PG TABLE ENTRY ALREADY EXISTS @ %d: %p\n", pt_index, page_table->entries[pt_index]);
         panic("!!!!!WARNING!!!!!");
+        BOCHS_MAGIC();
         // halt();
     }
     page_table->entries[pt_index] = page;

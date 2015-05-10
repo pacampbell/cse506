@@ -80,7 +80,6 @@ static void stack_segmentation_fault(registers_t regs) {
 }
 
 static void general_protection_fault(registers_t regs) {
-	BOCHS_MAGIC();
     panic("GENERAL PROTECTION FAULT\n");
 	printk("Interrupt [%d] - Errocode: %p\n", regs.int_no, regs.err_no);
 	printk("rip: %p ss: %p cs: %p\n", regs.rip, regs.ss, regs.cs);

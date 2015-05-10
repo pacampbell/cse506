@@ -3,7 +3,6 @@
 
 #include <sys/defs.h>
 #include <sys/syscall.h>
-#include <sbunix/debug.h>
 
 // FIXME: Should find a better place for this, but it will do for now.
 #define ENOSYS          38      				/* Function not implemented */
@@ -32,7 +31,6 @@
 
 static __inline int64_t syscall_0(uint64_t n) {
 	int64_t rv = -ENOSYS;
-	BOCHS_MAGIC();
 	__asm__ __volatile__ (
 		"movq %1, %%rax;"
 		"syscall;"

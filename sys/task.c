@@ -552,9 +552,6 @@ void switch_tasks(Task *old, Task *new) {
                 tss.rsp0 = (uint64_t)&((current_task->kstack)[511]);
                 current_task->state = RUNNING;
                
-                printk("Tss size: %d\n", sizeof(tss));
-
-                BOCHS_MAGIC();
                 __asm__ __volatile__(
                     "movq $0x23, %%rax;"
                     "movq %%rax, %%ds;"
@@ -588,12 +585,13 @@ void switch_tasks(Task *old, Task *new) {
             if(current_task->type == USER) {
                 extern uint64_t global_sp;
                 extern uint64_t global_rip;
+                BOCHS_MAGIC();
                 printk("here: %s %d\n", current_task->name, current_task->pid);
                 __asm__ __volatile__(
                     "pushq 0x23;"
                     "pushq %0;"
                     "pushq 0x202;"
-                    "pushq 0x1b;"
+                    "pushq 0x2b;"
                     "pushq %1;"
                     "iretq;"
                     :
