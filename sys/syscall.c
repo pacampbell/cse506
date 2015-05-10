@@ -45,7 +45,7 @@ uint64_t sys_read(int fd, void *buff, size_t count) {
         }
         ((char*)buff)[read] = '\0';
     } else if (fd == 0) {
-        gets((uint64_t)buff, count);
+        read = gets((uint64_t)buff, count);
     }
     
     // gets((uint64_t)buff, count);
@@ -55,18 +55,23 @@ uint64_t sys_read(int fd, void *buff, size_t count) {
 void* sys_brk(size_t size) {
     Task *tsk = get_current_task();
 
-    void* brk = kmalloc_vma((pml4_t*)tsk->registers.cr3, tsk->mm->brk, size, USER_SETTINGS);
-    if(brk == NULL) {
-        panic("KMALLOC VMA FAILED\n");
-    }
+    if (size <= 0) return (void*)tsk->mm->brk;
+    printk("brk: %d\n", tsk->mm->brk);
+    ///uint64_t new_brk = tsk->mm->brk - size;
+    printk("size: %d\n", size);
+
+   // void* brk = kmalloc_vma((pml4_t*)tsk->registers.cr3, tsk->mm->brk, size, USER_SETTINGS);
+   // if(brk == NULL) {
+   //     panic("KMALLOC VMA FAILED\n");
+   // }
     
-    int num_pages = size / PAGE_SIZE;
-    num_pages += size % PAGE_SIZE > 0 ? 1 : 0;
-    num_pages += leaks_pg((uint64_t)brk, size) ? 1 : 0;
+   // int num_pages = size / PAGE_SIZE;
+   // num_pages += size % PAGE_SIZE > 0 ? 1 : 0;
+   // num_pages += leaks_pg((uint64_t)brk, size) ? 1 : 0;
 
-    tsk->mm->brk += (num_pages * PAGE_SIZE);
+    //tsk->mm->brk += (num_pages * PAGE_SIZE);
 
-    return brk;
+    return (void*)tsk->mm->brk;
     
 }
 

@@ -24,6 +24,7 @@ void *malloc(size_t size) {
         // Check the head pointer
         if(head_ptr == NULL) {
             // Get back the address in memory
+            printf("bytes: %d\n", total_bytes);
             ptr = sbrk(total_bytes); // Get the current brk
             // Linux system call returns the new brk
             if(ptr == (void*) -1) {
@@ -104,8 +105,10 @@ void free(void *ptr) {
 }
 
 void *sbrk(uint64_t bytes) {
+    printf("================================\n");
     char *cur = (char*) syscall_1(SYS_brk, 0);
     char *tmp = cur + bytes;
+    printf("================================\n");
     syscall_1(SYS_brk, (uint64_t)tmp);
     return (void*)cur;
 }

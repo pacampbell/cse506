@@ -103,7 +103,7 @@ static void page_fault(registers_t regs) {
     }
 
     if(tsk->mm == NULL ||
-            (faulting_address < tsk->mm->brk || tsk->mm->start_stack < faulting_address)) {
+            (faulting_address < tsk->mm->start_brk || tsk->mm->start_stack < faulting_address)) {
         bad_page_fault(regs);
     }
 
