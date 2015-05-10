@@ -52,24 +52,19 @@ uint64_t sys_read(int fd, void *buff, size_t count) {
     return read;
 }
 
-void* sys_brk(size_t size) {
+void* sys_brk(uint64_t addr) {
     Task *tsk = get_current_task();
 
-    if (size <= 0) return (void*)tsk->mm->brk;
-    printk("brk: %d\n", tsk->mm->brk);
-    ///uint64_t new_brk = tsk->mm->brk - size;
-    printk("size: %d\n", size);
+    if (addr == 0) {
+        return (void*)tsk->mm->brk;
+    }
 
-   // void* brk = kmalloc_vma((pml4_t*)tsk->registers.cr3, tsk->mm->brk, size, USER_SETTINGS);
-   // if(brk == NULL) {
-   //     panic("KMALLOC VMA FAILED\n");
-   // }
-    
-   // int num_pages = size / PAGE_SIZE;
-   // num_pages += size % PAGE_SIZE > 0 ? 1 : 0;
-   // num_pages += leaks_pg((uint64_t)brk, size) ? 1 : 0;
-
-    //tsk->mm->brk += (num_pages * PAGE_SIZE);
+    if (addr >= tsk->mm->start_stack || tsk->mm->start_brk >= addr) {
+        panic("ERROR: ");
+        printk("adder: %p, brk: %p, stack: %p\n", addr, tsk->mm->brk, tsk->mm->start_stack);
+        return NULL;
+    }
+    tsk->mm->brk = addr;
 
     return (void*)tsk->mm->brk;
     
@@ -190,7 +185,7 @@ uint64_t syscall_common_handler(uint64_t num, uint64_t arg1, uint64_t arg2, uint
             sys_exit(arg1);
             break;
         case SYS_brk:
-            sys_brk(arg1);
+            return_value = (uint64_t)sys_brk(arg1);
             //panic("sys_brk not implemented.\n");
             break;
         case SYS_fork:
