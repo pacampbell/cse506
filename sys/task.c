@@ -317,7 +317,6 @@ Task* create_new_task(Task* task, const char *name, task_type_t type,
     task->registers.cr3 = (uint64_t)pml4;
     task->registers.rsp = type == KERNEL ? (uint64_t)task->kstack + PAGE_SIZE - 8 : (uint64_t)task->ustack + PAGE_SIZE - 8; // Start the stack pointer at the other side
     task->registers.rbp = task->registers.rsp;
-    printk("stack base: %p\n", task->registers.rbp);
 
     if(task->mm != NULL) {
         task->mm->start_stack = task->registers.rsp;

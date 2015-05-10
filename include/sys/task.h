@@ -47,6 +47,12 @@
         };
         typedef struct Registers Registers;
 
+        struct args_struct {
+            uint64_t argc;
+            uint64_t argv;
+            uint64_t envp;
+        };
+
         struct Task {
             Registers registers;                /* Struct containing all the IA-64 registers */
             uint64_t *kstack;                   /* Address of the kernel stack */
@@ -63,6 +69,7 @@
             struct Task *prev;                  /* Previous Task in the list */
             struct mm_struct *mm, *active_mm;   /* The mm_struct of this task */
             struct file *files[MAX_FD];
+            struct args_struct args;
         };
         typedef struct Task Task;
 

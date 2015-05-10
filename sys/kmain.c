@@ -46,7 +46,8 @@ void start_shell(void) {
     /* Do some testing for now */
     // exec_tarfs_elf("bin/ps");
     // exec_tarfs_elf("bin/open");
-    exec_tarfs_elf("bin/malloc");
+    // exec_tarfs_elf("bin/malloc");
+    exec_tarfs_elf("bin/sbush");
     // exec_tarfs_elf("bin/hello");
     // exec_tarfs_elf("bin/ps");
     // exec_tarfs_elf("bin/ps");

@@ -59,7 +59,6 @@ struct mm_struct* load_elf(char *data, int len, Task *task, pml4_t *proc_pml4) {
                 }
 
                 if(vma->vm_end > high_addr) high_addr = vma->vm_end;
-                printk("%p == %p\n", prgm_hdr->p_vaddr, mm->start_code);
 
                 if (prgm_hdr->p_vaddr == mm->start_code) {
                    // its the txt section
@@ -81,6 +80,48 @@ struct mm_struct* load_elf(char *data, int len, Task *task, pml4_t *proc_pml4) {
 
         return NULL;
     }
+
+}
+
+void load_elf_args(Task *tsk, int argc, char *argv[], char *envp[]) {
+    if (tsk->mm->start_stack == 0) panic("Task not set up\n");
+
+    pml4_t *kern_cr3;
+
+    kern_cr3 = get_cr3();
+    set_cr3((pml4_t*)tsk->registers.cr3);
+
+    uint64_t *new_stack = (uint64_t*)tsk->mm->start_stack;
+    *new_stack &= PG_ALIGN;
+    tsk->mm->start_stack = *new_stack - 1;
+
+    *new_stack = argc;
+
+    tsk->args.argv = PHYS_TO_VIRT(kmalloc_pg());
+    char *tsk_argv =  (char*)tsk->args.argv;
+    for (int i = 0; i < argc; i++, new_stack++) {
+        *new_stack = (uint64_t)tsk_argv;
+
+        for (int j = 0; *argv[i] != '\0'; j++, tsk_argv++) {
+            *tsk_argv = *(argv[i] + j);
+        }
+        *tsk_argv = '\0';
+        tsk_argv++;
+    }
+
+    tsk->args.argv = PHYS_TO_VIRT(kmalloc_pg());
+    char *tsk_env =  (char*)tsk->args.envp;
+    for (int i = 0; envp[i] != NULL; i++, new_stack++) {
+        *new_stack = (uint64_t)tsk_env;
+
+        for (int j = 0; *envp[i] != '\0'; j++, tsk_env++) {
+            *tsk_env = *(envp[i] + j);
+        }
+        *tsk_env = '\0';
+        tsk_env++;
+    }
+
+    set_cr3(kern_cr3);
 
 }
 
