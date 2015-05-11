@@ -2,10 +2,11 @@
 #include <stdio.h>
 
 int main(int argc, char *argv[]) {
-    char c[6];
-    read(0, c, 5);
+    char c[20];
+    printf("Enter a file, no more than 19 chars: ");
+    read(0, c, 20);
     printf("GOT: %s\n", c);
-    int i = open("hi", 0);
+    int i = open(c, O_RDONLY);
 
     printf("file no: %d\n", i);
     printf("contents of file\n");

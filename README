@@ -1,11 +1,24 @@
 Michael Salerno  108512298
 Paul    Campbell 108481554
 
-The print outs for the key presses are at the bottem in the middle.
-is follow the format ^SZ there if the ^ shows then ctrl was pressed, if S shows then shift was pressed
-and Z meas the Z was pressed.
+How to test binaries:
+  1) make sure the binary is in the rootfs/bin/ folder
+  2) go into the sys/kmain.c and call the binary by using
+        void exec_tarfs_elf_args(const char *path, int argc, char *argv[], char *envp[])
+        or
+        void exec_tarfs_elf(const char *path)
 
-Our Makefile was modified to allow crt1.s to compile in bin directory. 
+Included binaries:
+  - args [arg1] [arg2] ...
+      This program tests that args are placed on the stack correctly
+  - exec
+      Attempts to test the execvce syscal
+  - malloc
+      Attempts to test the malloc
+  - open
+      It asks for a file name in tarfs and then writes out its contents
+  - ps
+      lists all of the processes running on the os
 
 The provided Makefile:
   1) builds a kernel
@@ -13,7 +26,9 @@ The provided Makefile:
   3) creates an ISO CD image with the rootfs/ contents
 
 To boot the system in QEMU, run:
-  qemu-system-x86_64 -curses -cdrom $USER.iso -drive id=disk,file=$USER.img,if=none -device ahci,id=ahci -device ide-drive,drive=disk,bus=ahci.0 -net nic -net user,hostfwd=tcp::10080-:80 -net user,hostfwd=tcp::10023-:23 --no-reboot -gdb tcp::9998
+  qemu-system-x86_64 -curses -cdrom $USER.iso -drive id=disk,file=$USER.img,if=none -device ahci,id=ahci
+  -device ide-drive,drive=disk,bus=ahci.0 -net nic -net user,hostfwd=tcp::10080-:80 -net user,
+  hostfwd=tcp::10023-:23 --no-reboot -gdb tcp::9998
 
   Explanation of parameters:
   -curses         use a text console (omit this to use default SDL/VNC console)
