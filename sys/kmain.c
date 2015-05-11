@@ -43,11 +43,17 @@ void init_services(void) {
 }
 
 void start_shell(void) {
+    int argc = 1;
+    char *argv[] = {"yo!!"};
+    char *envp[] = {"ro!!", NULL};
+
+
     /* Do some testing for now */
+    exec_tarfs_elf_args("bin/args", argc, argv, envp);
     // exec_tarfs_elf("bin/ps");
     // exec_tarfs_elf("bin/open");
     // exec_tarfs_elf("bin/malloc");
-    exec_tarfs_elf("bin/sbush");
+    // exec_tarfs_elf("bin/sbush");
     // exec_tarfs_elf("bin/hello");
     // exec_tarfs_elf("bin/ps");
     // exec_tarfs_elf("bin/ps");

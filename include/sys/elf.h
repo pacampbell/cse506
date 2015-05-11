@@ -194,6 +194,7 @@
 	/* Helper functions */
 	bool validate_header(char *data);
         struct mm_struct* load_elf(char *data, int len, Task *task, pml4_t *proc_pml4);
+        void load_elf_args(Task *tsk, int argc, char *argv[], char *envp[]);
 	
 
 	/* Debug macros */

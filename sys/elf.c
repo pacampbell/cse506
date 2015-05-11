@@ -91,36 +91,44 @@ void load_elf_args(Task *tsk, int argc, char *argv[], char *envp[]) {
     kern_cr3 = get_cr3();
     set_cr3((pml4_t*)tsk->registers.cr3);
 
-    uint64_t *new_stack = (uint64_t*)tsk->mm->start_stack;
-    *new_stack &= PG_ALIGN;
-    tsk->mm->start_stack = *new_stack - 1;
+    uint64_t *new_stack = (uint64_t*)((tsk->mm->start_stack + PAGE_SIZE) & PG_ALIGN);
+    if (kmalloc_vma((pml4_t*)tsk->registers.cr3, (uint64_t)new_stack, 1, USER_SETTINGS) == NULL) {
+        panic("i broke\n");
+        halt();
+    }
+
+    new_stack = (uint64_t*)tsk->mm->start_stack;
+    printk("task stack: %p\n", tsk->mm->start_stack);
+    printk("new stack: %p\n", (uint64_t)new_stack);
 
     *new_stack = argc;
+    new_stack++;
+    printk("ustack: %p\n", tsk->ustack[512]);
 
     tsk->args.argv = PHYS_TO_VIRT(kmalloc_pg());
     char *tsk_argv =  (char*)tsk->args.argv;
     for (int i = 0; i < argc; i++, new_stack++) {
         *new_stack = (uint64_t)tsk_argv;
 
-        for (int j = 0; *argv[i] != '\0'; j++, tsk_argv++) {
+        for (int j = 0; *(argv[i]+j) != '\0'; j++, tsk_argv++) {
             *tsk_argv = *(argv[i] + j);
         }
         *tsk_argv = '\0';
         tsk_argv++;
     }
 
-    tsk->args.argv = PHYS_TO_VIRT(kmalloc_pg());
+    tsk->args.envp = PHYS_TO_VIRT(kmalloc_pg());
     char *tsk_env =  (char*)tsk->args.envp;
     for (int i = 0; envp[i] != NULL; i++, new_stack++) {
         *new_stack = (uint64_t)tsk_env;
 
-        for (int j = 0; *envp[i] != '\0'; j++, tsk_env++) {
+        for (int j = 0; *(envp[i]+j) != '\0'; j++, tsk_env++) {
             *tsk_env = *(envp[i] + j);
         }
         *tsk_env = '\0';
         tsk_env++;
     }
-
+    
     set_cr3(kern_cr3);
 
 }

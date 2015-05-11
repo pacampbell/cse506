@@ -53,5 +53,6 @@ typedef struct tarfs_entry tarfs_entry;
 tarfs_entry* traverse_tars(const char *path, tarfs_entry *t_entry);
 struct file* tarfs_to_file(const char *path);
 void exec_tarfs_elf(const char *path);
+void exec_tarfs_elf_args(const char *path, int aregc, char *argv[], char *envp[]);
 
 #endif
