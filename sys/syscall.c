@@ -17,10 +17,14 @@ void sys_exit(int ret) {
 }
 
 void sys_yield() {
-    // Task *task = get_current_task();
-    // printk("%s is yielding\n", task->name);
-    BOCHS_MAGIC();
-    preempt(false);
+    Task *task = get_current_task();
+    if(task != NULL) {
+        task->state = WAITING;
+        printk("In handler yields on %s\n", task->name);
+        preempt(false);
+    } else {
+        printk("NULL TASK\n");
+    }
 }
 
 // int fd, const void *buf, size_t count
@@ -127,7 +131,7 @@ void sys_ps() {
     Task *task = get_task_list();
     printk("PID          TYPE            STATE            CMD\n");
     while(task != NULL) {
-        if(1 /* task->state != TERMINATED*/) {
+        if(task->state != TERMINATED) {
             printk("%d            %s          %s            %s\n",
                 task->pid,
                 task->type == KERNEL ? "KERNEL" : "USER  ",
@@ -138,13 +142,24 @@ void sys_ps() {
     }
 }
 
+extern uint32_t tick;
 void sys_nanosleep(struct timespec *req, struct timespec *rem) {
-    // time_t counter = 0;
-    panic("sys_nanosleep not implemented.\n");
-    // while(counter < 5) {
-    //      // __asm__ __volatile__("sti; hlt;");
-    //      counter++;
-    // }
+    extern uint32_t tick;
+    Task *task = get_current_task();
+    if(task->sleep == -1) {
+        task->sleep = tick + 100;
+        task->state = WAITING;
+    } 
+    // yield until its time to wake up
+    while(task->sleep > tick) {
+        // Not ready to wake up just sleep
+        printk("Sleeping until %d - currently: %d\n", task->sleep, tick);
+        BOCHS_MAGIC();
+        preempt(false);
+    }
+    // Task is no longer sleeping. Reset
+    task->sleep = -1;
+    task->state = RUNNING;
 }
 
 int sys_open(const char *pathname, int flags) {

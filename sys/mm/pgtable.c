@@ -314,7 +314,7 @@ uint64_t insert_page(pml4_t *cr3, uint64_t virtual_address, uint64_t permissions
         panic("!!!!!WARNING!!!!!");
         printk("PG TABLE ENTRY ALREADY EXISTS @ %d: %p\n", pt_index, page_table->entries[pt_index]);
         panic("!!!!!WARNING!!!!!");
-        BOCHS_MAGIC();
+        // BOCHS_MAGIC();
         // halt();
     }
     page_table->entries[pt_index] = page;
@@ -385,7 +385,7 @@ pml4_t* copy_page_tables(pml4_t *src) {
         // Convert the new cr3 into a physical address
         copy = (pml4_t*) VIRT_TO_PHYS(copy);
     }
-    BOCHS_MAGIC();
+    // BOCHS_MAGIC();
     return copy;
 }
 
@@ -446,6 +446,7 @@ void dump_tables(pml4_t *cr3) {
                                 for(int l = 0; l < 512; l++) {
                                     if(pde->entries[l] != 0x0) {
                                         printk("index: %d pte: %p\n", l, pde->entries[l]);
+                                        BOCHS_MAGIC();
                                     }
                                 }
                             }

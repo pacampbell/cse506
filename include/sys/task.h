@@ -62,6 +62,7 @@
             const char *name;                   /* Convenience name; Optional */
             priority_t priority;                /* priority value from [0, 2^64 - 1] */
             task_type_t type;                   /* Type of task kernel or user */
+            ssize_t sleep;                      /* -1 if task is not sleeping */
             bool in_use;                        /* Flag determing if the struct is in use or not */
             struct Task *parent;                /* Pointer to the parent of this task */
             struct Task *children;              /* Head pointer to list of children */
@@ -117,14 +118,14 @@
          * if none exist then create a new one otherwise we return the address
          * of an existing unused task struct.
          */
-        Task* create_task_struct(Task **list);
+        Task* create_task_struct(void);
 
         /**
          * Search the task list for a free task if it exists.
          * @return Returns NULL if there are no free tasks otherwise 
          * it returns the address of a free task.
          */
-        Task* get_free_task_struct(Task **list);
+        Task* get_free_task_struct(void);
 
         /**
          * Pushes values into the stack for the newly created task.
@@ -153,8 +154,8 @@
         void preempt(bool discard);
         // Methods for getting tasks
         bool insert_into_list(Task *task);
-        Task *get_task_by_pid(Task **list, pid_t pid);
-        Task *remove_task_by_pid(Task **list, pid_t pid);
+        Task *get_task_by_pid(pid_t pid);
+        Task *remove_task_by_pid(pid_t pid);
         Task *get_current_task(void);
         Task *clone_task(Task *src, uint64_t global_sp, uint64_t global_rip);
         Task *get_task_list(void);

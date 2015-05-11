@@ -4,13 +4,13 @@
 #include <sys/screen.h>
 #include <sbunix/debug.h>
 
-static Task *tasks;
-static Task *current_task = NULL;
-static Task *prev_task = NULL;
-static uint64_t task_count = 0;
+Task *tasks = NULL;
+Task *current_task = NULL;
+Task *prev_task = NULL;
+volatile uint64_t task_count = 0;
 
 /* Used for assigning a pid to a task */
-static uint64_t pid_map[PID_MAP_LENGTH];
+uint64_t pid_map[PID_MAP_LENGTH];
 
 uint64_t amazing_bug_fixer = 0;
 
@@ -151,7 +151,7 @@ Task* create_user_elf_args_task(const char *name, char* elf, uint64_t size, int 
     // Copy the kernels page tables
     pml4_t *user_pml4 = copy_page_tables(kernel_pml4);
     // Allocate space for a new user task
-    Task *user_task = create_task_struct(&tasks);
+    Task *user_task = create_task_struct();
     //user_task->mm = load_elf(elf, size, user_pml4);
     user_task->mm = load_elf(elf, size, user_task, user_pml4);
     // Initialize the task
@@ -168,10 +168,13 @@ Task* create_user_elf_args_task(const char *name, char* elf, uint64_t size, int 
 Task* create_user_elf_task(const char *name, char* elf, uint64_t size) {
     // Get the kernel page tables
     pml4_t *kernel_pml4 = (pml4_t *)get_cr3();
+    dump_tables(kernel_pml4);
+    BOCHS_MAGIC();
     // Copy the kernels page tables
     pml4_t *user_pml4 = copy_page_tables(kernel_pml4);
+    dump_tables(user_pml4);
     // Allocate space for a new user task
-    Task *user_task = create_task_struct(&tasks);
+    Task *user_task = create_task_struct();
     //user_task->mm = load_elf(elf, size, user_pml4);
     user_task->mm = load_elf(elf, size, user_task, user_pml4);
     // Initialize the task
@@ -189,7 +192,7 @@ Task* create_kernel_task(const char *name, void(*code)()) {
     // Get the kernel flags
     uint64_t kernel_rflags = get_rflags();
     // Allocate space for a new kernel task
-    Task *kernel_task = create_task_struct(&tasks);
+    Task *kernel_task = create_task_struct();
     // Kernel tasks have no mm so just make it null
     kernel_task->mm = NULL;
     // Initialize the task
@@ -202,8 +205,8 @@ Task* create_kernel_task(const char *name, void(*code)()) {
     return kernel_task;
 }
 
-Task* create_task_struct(Task **list) {
-    Task *task = get_free_task_struct(list);
+Task* create_task_struct(void) {
+    Task *task = get_free_task_struct();
     if(task == NULL) {
         // There was no more free tasks so create a new one
         task = (Task*) PHYS_TO_VIRT(kmalloc_pg());
@@ -211,7 +214,7 @@ Task* create_task_struct(Task **list) {
     } else {
         // Remove this task from the insert_into_list
         free_file_list(task->files, MAX_FD);
-        if(remove_task_by_pid(list, task->pid) == NULL) {
+        if(remove_task_by_pid(task->pid) == NULL) {
             panic("Tried to free a NULL task.\n");
             __asm__ __volatile__("cli; hlt;");
         }
@@ -220,15 +223,31 @@ Task* create_task_struct(Task **list) {
 }
 
 Task *get_next_task(void) {
-    Task *ctask = current_task->next;
-    if(ctask == NULL) {
-        // Set back to the head of the list
+    Task *ctask = current_task;
+    if(task_count == 0) {
+        panic("Attempted to schedule without running the kernel main?\n");
+        halt();
+    } else if(task_count == 1) {
+        // Just set it to the head of the list.
         ctask = tasks;
-    }
-    // Now find the next in-use task struct
-    while(ctask != NULL && !ctask->in_use) {
+    } else {
         ctask = ctask->next;
+        bool found_end = false;
+        do {
+            if(ctask == NULL && found_end == false) {
+                found_end = true;
+                // Set back to head of the list
+                ctask = tasks;
+            }
+            ctask = ctask->next;
+        } while(ctask != NULL && !ctask->in_use);
+        // If we got here and its still null something is wrong..
+        if(ctask == NULL) {
+            panic("No valid running tasks. Something went wrong.\n");
+            halt();
+        }
     }
+
     return ctask;
 }
 
@@ -262,6 +281,7 @@ Task* create_new_task(Task* task, const char *name, task_type_t type,
     task->type = type;
     task->pid = allocate_pid();
     task->in_use = true;
+    task->sleep = -1;
     /* Set the address of the stack */
     task->kstack = (uint64_t*) PHYS_TO_VIRT(kmalloc_pg());
     if(type == USER) {
@@ -358,7 +378,7 @@ Task *clone_task(Task *src, uint64_t global_sp, uint64_t global_rip) {
     Task *new_task = NULL;
     if(src != NULL) {
         // Get a page for a new task struct
-        new_task = create_task_struct(&tasks);
+        new_task = create_task_struct();
         // zero out the struct
         memset(new_task, 0, sizeof(Task));
         // Copy the struct (no deep copies)
@@ -420,8 +440,6 @@ void preempt(bool discard) {
         halt();
     }
 
-    // printk("\n==== NEXT - %s ====\n", current_task->name);
-
     if(discard) {
         // The old process no longer wants to run
         old_task->state = TERMINATED;
@@ -437,10 +455,13 @@ void set_task(Task *task) {
     current_task = task;
     current_task->state = RUNNING;
     /* Typically this is used only one time for setting the first kernel task */
-    tss.rsp0 = task->registers.rip;
+    tss.rsp0 = current_task->registers.rip;
     /* Set the rest of the registers */
     __asm__ __volatile__(
         /* Save the argument in the register */
+        "movq $0x33, %%rax;" // Since we added 64-bit gdt entry, tss moved by 1 spot 
+        "ltr %%ax;"          // Only needs to be done once ever
+        /* Start loading kmain */
         "movq %0, %%rax;"
         /* Set cr3 */
         "movq 0x88(%0), %%rdi;"
@@ -465,8 +486,9 @@ void set_task(Task *task) {
         "movq 0x40(%%rax), %%rsp;"
         /* Set rax */
         "movq 0x0(%%rax), %%rax;"
+        "iretq;"
         :
-        : "r"(task)
+        : "r"(current_task)
         :
     );
 }
@@ -478,6 +500,7 @@ void switch_tasks(Task *old, Task *new) {
     if(old != NULL && new != NULL && old != new) {
         if(old->state != TERMINATED) {
             old->state = READY;
+            printk("Switching out: %s\n", old->name);
             /* Save the current register state */
             __asm__ __volatile__(
                 /* save rax so we can use it for scratch */
@@ -518,10 +541,15 @@ void switch_tasks(Task *old, Task *new) {
             old->in_use = false;
             // printk("old has been released. %p\n", old);
         }
+        printk("Switching in: %s\n", new->name);
         // Save the previosu task so we can check a few fields
         prev_task = current_task;
         // Now set the new task to run
         current_task = new;
+        // Set the tss value
+        tss.rsp0 = (uint64_t)&((current_task->kstack)[511]);
+        // This task is now running
+        current_task->state = RUNNING;
         // Now swap to new task
         __asm__ __volatile__(
             /* Save the argument in the register */
@@ -549,70 +577,11 @@ void switch_tasks(Task *old, Task *new) {
             "movq 0x40(%%rax), %%rsp;"
             /* Set rax */
             "movq 0x0(%%rax), %%rax;"
+            "iretq;"
             :
             : "r"(current_task)
             : "memory"
         );
-        if(current_task->state == NEW) {
-            // printk("prev name: %s\n", prev_task->name);
-            // printk("this name: %s\n", current_task->name);
-            // Set the current task to a running state
-            current_task->state = RUNNING;
-            static bool first = true; 
-            if((current_task->type == USER && first) || (current_task->type == USER && prev_task->type == KERNEL)) {
-                first = false;
-                tss.rsp0 = (uint64_t)&((current_task->kstack)[511]);
-                current_task->state = RUNNING;
-               
-                __asm__ __volatile__(
-                    // "movq $0x23, %%rax;"
-                    // "movq %%rax, %%ds;"
-                    // "movq %%rax, %%es;"
-                    // "movq %%rax, %%fs;"
-                    // "movq %%rax, %%gs;"
-                    
-                    "movq $0x33, %%rax;" // Since we added 64-bit gdt entry, tss moved by 1 spot 
-                    "ltr %%ax;"
-                    // "pop %%rax;"
-                    "iretq;"
-                    :
-                    :
-                    :
-                );
-            } else {
-                // dump_task(current_task);
-                // dump_mm(current_task->mm);
-                // printk("name: %s\n", current_task->name);
-                // Just iretq
-                __asm__ __volatile__("iretq;");
-            }
-        } else {
-            current_task->state = RUNNING;
-            // Check to see if the task being scheduled is user or kernel
-            // if(current_task->type == USER && prev_task->type == KERNEL) {
-            //     printk("Switching rings on user task\n");
-            //     halt();
-            //     __asm__ __volatile__("iretq;");
-            // }
-            if(current_task->type == USER) {
-                // extern uint64_t global_sp;
-                // extern uint64_t global_rip;
-                printk("Continuing a started task: %s %d %d\n", current_task->name, current_task->pid, current_task->parent->pid);
-                BOCHS_MAGIC();
-                __asm__ __volatile__(
-                    // "pushq 0x23;"
-                    // "pushq %0;"
-                    // "pushq 0x202;"
-                    // "pushq 0x2b;"
-                    // "pushq %1;"
-                    // "add $0x8, %%rsp;"
-                    "iretq;"
-                    :
-                    : // "r"(global_sp), "r"(global_rip)
-                    :
-                );
-            }
-        }
     }
 }
 
@@ -641,10 +610,10 @@ bool insert_into_list(Task *task) {
     return success;
 }
 
-Task *get_task_by_pid(Task **list, pid_t pid) {
+Task *get_task_by_pid(pid_t pid) {
     Task *task = NULL;
-    if(list != NULL && *list != NULL && pid >= 0) {
-        Task *ctask = *list;
+    if(tasks != NULL && pid >= 0) {
+        Task *ctask = tasks;
         while(ctask != NULL) {
             if(ctask->pid == pid) {
                 task = ctask;
@@ -657,17 +626,17 @@ Task *get_task_by_pid(Task **list, pid_t pid) {
     return task;
 }
 
-Task *remove_task_by_pid(Task **list, pid_t pid) {
+Task *remove_task_by_pid(pid_t pid) {
     Task *task = NULL;
-    if(list != NULL && *list != NULL && pid >= 0) {
-        Task *ctask = *list;
+    if(tasks != NULL && pid >= 0) {
+        Task *ctask = tasks;
         while(ctask != NULL) {
             if(ctask->pid == pid) {
                 // found it!
                 task = ctask;
                 if(task->prev == NULL) {
                     // HEAD of the list
-                    *list = task->next;
+                    tasks = task->next;
                 } else {
                     // Some other part of the list
                     task->prev->next = task->next;
@@ -684,10 +653,10 @@ Task *remove_task_by_pid(Task **list, pid_t pid) {
     return task;
 }
 
-Task* get_free_task_struct(Task **list) {
+Task* get_free_task_struct(void) {
     Task *free_task = NULL;
-    if(list != NULL && *list != NULL) {
-        Task *ctask = *list;
+    if(tasks != NULL) {
+        Task *ctask = tasks;
         while(ctask != NULL) {
             if(!ctask->in_use) {
                 free_task = ctask;
