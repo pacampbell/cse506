@@ -86,15 +86,14 @@ uint64_t sys_fork() {
     // #1 Get current Task
     Task *current = get_current_task();
     // #2 clone task
-    printk("Cloning pid: %d name: %s\n", current->pid, current->name);
+    // printk("Cloning pid: %d name: %s\n", current->pid, current->name);
     Task *child = clone_task(current, global_sp, global_rip);
-    printk("Cloning of parent complete!\n");
+    // printk("Cloning of parent complete!\n");
     if(child != NULL) {
         // #3 schedule the task
         if(!insert_into_list(child)) {
             panic("FAILED TO INSERT CHILD PROCESS\n");
         }
-        panic("Schedule cloned task?\n");
     } else {
         panic("Failed to fork\n");
         return -1;
@@ -154,7 +153,7 @@ void sys_nanosleep(struct timespec *req, struct timespec *rem) {
     while(task->sleep > tick) {
         // Not ready to wake up just sleep
         printk("Sleeping until %d - currently: %d\n", task->sleep, tick);
-        BOCHS_MAGIC();
+        // BOCHS_MAGIC();
         preempt(false);
     }
     // Task is no longer sleeping. Reset
@@ -337,5 +336,7 @@ void init_syscall() {
     write_msr(IA32_MSR_STAR, star_value & 0xffffffff, (star_value >> 32) & 0xffffffff);
     // Set the flags to clear
     uint64_t flag_mask = IA32_FLAGS_INTERRUPT | IA32_FLAGS_DIRECTION; 
+    printk("Flags: %p\n", flag_mask);
     SET_FMASK(flag_mask);
+    printk("Flags mask: %p\n", read_msr(IA32_MSR_FMASK));
 }

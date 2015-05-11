@@ -43,7 +43,8 @@
                      rbp, rip, rsp,
                      r8, r9, r10, r11, r12, r13, r14, r15,
                      cr3,
-                     rflags;
+                     rflags,
+                     cs, ss;
         };
         typedef struct Registers Registers;
 

@@ -3,10 +3,10 @@
 
 int main(int argc, char *argv[]) {
     // pid_t pid = -1;
-    printf("In original task.\n");
+    printf("Hello, World! from user space.\n");
     // sleep(1000);
-    // int yield_count = 0;
-    // while(yield_count < 1) {
+    //  int yield_count = 0;
+    // while(yield_count < 6) {
     //     // printf("Time to yield\n");    
     //     yield();
     //     yield_count++;
@@ -23,7 +23,7 @@ int main(int argc, char *argv[]) {
     // 		printf("In parent. child: %d\n", pid);
     // 		break;
     // }
-    printf("Good bye world!\n");
+    // printf("Good bye world!\n");
     return 1;
 }
 

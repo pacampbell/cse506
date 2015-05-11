@@ -20,18 +20,14 @@ pml4_t *kernel_cr3;
  * services and threads. 
  */
 void kmain(void) {
-    /* Create a stack for handling system calls */
-    kstack = (uint64_t*)PHYS_TO_VIRT(kmalloc_pg());
-    kstack_top = &kstack[511];
-    kernel_cr3 = get_cr3();
-    // printk("kstack: %p kstack_top: %p\n", kstack, kstack_top);
+    /* Save some important values from the kernel */
+    save_kernel_global();
     /* do some basic setup */
     init_services();
     /* start the shell */
     start_shell();
     /* Everything is started now spin */
     while(1) {
-        // printk("\n ==== kmain ====\n");
         /* Done doing our work, now just wait */
         preempt(false);
     }
@@ -40,7 +36,7 @@ void kmain(void) {
 void init_services(void) {
     /* WARNING */
     /* If you change the order you should update constants in <sys/task.h> */
-    // create_kernel_task("idle", idle);           /* Should be pid 1 */
+    create_kernel_task("idle", idle);           /* Should be pid 1 */
     /* END WARNING */
 }
 
@@ -54,6 +50,13 @@ void start_shell(void) {
     // exec_tarfs_elf_args("bin/args", argc, argv, envp);
     // exec_tarfs_elf("bin/ps");
     exec_tarfs_elf("bin/hello");
-    exec_tarfs_elf("bin/ps");
+    // exec_tarfs_elf("bin/ps");
     // exec_tarfs_elf("bin/open");
+}
+
+void save_kernel_global(void) {
+    /* Create a stack for handling system calls */
+    kstack = (uint64_t*)PHYS_TO_VIRT(kmalloc_pg());
+    kstack_top = &kstack[511];
+    kernel_cr3 = get_cr3();
 }

@@ -73,7 +73,6 @@ struct mm_struct* load_elf(char *data, int len, Task *task, pml4_t *proc_pml4) {
 
         mm->brk = high_addr;
         mm->start_brk = mm->brk;
-
         return mm;
 
     } else {
