@@ -2,6 +2,7 @@
 #include <sys/syscall_k.h>
 #include <sys/task.h>
 #include <sys/pgtable.h>
+#include <sbunix/debug.h>
 #include <sys/tarfs.h>
 
 
@@ -75,11 +76,11 @@ uint64_t sys_fork() {
     Task *current = get_current_task();
     // #2 clone task
     Task *child = clone_task(current, global_sp, global_rip);
-    // #4 schedule the task
+    // #3 schedule the task
     if(!insert_into_list(child)) {
         panic("FAILED TO INSERT CHILD PROCESS\n");
     }
-    // #5 return new task pid
+    // #4 return new task pid
     return child->pid;
 }
 
@@ -186,7 +187,6 @@ uint64_t syscall_common_handler(uint64_t num, uint64_t arg1, uint64_t arg2, uint
             break;
         case SYS_brk:
             return_value = (uint64_t)sys_brk(arg1);
-            //panic("sys_brk not implemented.\n");
             break;
         case SYS_fork:
             return_value = sys_fork();
