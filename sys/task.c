@@ -480,7 +480,7 @@ void switch_tasks(Task *old, Task *new) {
     if(old != NULL && new != NULL && old != new) {
         if(old->state != TERMINATED) {
             old->state = READY;
-            printk("Swicthing out %s - ursp %p kstack: %p \n", old->name, old->registers.rsp, old->kstack);
+            // printk("Swicthing out %s - ursp %p kstack: %p \n", old->name, old->registers.rsp, old->kstack);
             BOCHS_MAGIC();
             /* Save the current register state */
             __asm__ __volatile__(
@@ -530,7 +530,7 @@ void switch_tasks(Task *old, Task *new) {
         // Set the tss value
         tss.rsp0 = (uint64_t)&((current_task->kstack)[511]);
         // Now swap to new task
-        printk("Switching in %s - rsp %p\n", current_task->name, current_task->registers.rsp);
+        // printk("Switching in %s - rsp %p\n", current_task->name, current_task->registers.rsp);
         BOCHS_MAGIC();
         __asm__ __volatile__(
             /* Save the argument in the register */
