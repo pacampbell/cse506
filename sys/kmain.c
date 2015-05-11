@@ -43,8 +43,8 @@ void init_services(void) {
 }
 
 void start_shell(void) {
-    int argc = 1;
-    char *argv[] = {"yo!!"};
+    int argc = 2;
+    char *argv[] = {"yo!!", "jo!!"};
     char *envp[] = {"ro!!", NULL};
 
 
