@@ -5,7 +5,7 @@
 #include <sbunix/string.h>
 #include <sbunix/kernel.h>
 
-static uint32_t tick = 0;
+volatile uint32_t tick = 0;
 static char string_buffer[1024];
 
 static void print_timer(void) {

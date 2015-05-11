@@ -18,10 +18,14 @@ void sys_exit(int ret) {
 }
 
 void sys_yield() {
-    // Task *task = get_current_task();
-    // printk("%s is yielding\n", task->name);
-    BOCHS_MAGIC();
-    preempt(false);
+    Task *task = get_current_task();
+    if(task != NULL) {
+        task->state = WAITING;
+        printk("In handler yields on %s\n", task->name);
+        preempt(false);
+    } else {
+        printk("NULL TASK\n");
+    }
 }
 
 // int fd, const void *buf, size_t count
@@ -83,15 +87,14 @@ uint64_t sys_fork() {
     // #1 Get current Task
     Task *current = get_current_task();
     // #2 clone task
-    printk("Cloning pid: %d name: %s\n", current->pid, current->name);
+    // printk("Cloning pid: %d name: %s\n", current->pid, current->name);
     Task *child = clone_task(current, global_sp, global_rip);
-    printk("Cloning of parent complete!\n");
+    // printk("Cloning of parent complete!\n");
     if(child != NULL) {
         // #3 schedule the task
         if(!insert_into_list(child)) {
             panic("FAILED TO INSERT CHILD PROCESS\n");
         }
-        panic("Schedule cloned task?\n");
     } else {
         panic("Failed to fork\n");
         return -1;
@@ -128,7 +131,7 @@ void sys_ps() {
     Task *task = get_task_list();
     printk("PID          TYPE            STATE            CMD\n");
     while(task != NULL) {
-        if(1 /* task->state != TERMINATED*/) {
+        if(task->state != TERMINATED) {
             printk("%d            %s          %s            %s\n",
                 task->pid,
                 task->type == KERNEL ? "KERNEL" : "USER  ",
@@ -139,13 +142,24 @@ void sys_ps() {
     }
 }
 
+extern uint32_t tick;
 void sys_nanosleep(struct timespec *req, struct timespec *rem) {
-    // time_t counter = 0;
-    panic("sys_nanosleep not implemented.\n");
-    // while(counter < 5) {
-    //      // __asm__ __volatile__("sti; hlt;");
-    //      counter++;
-    // }
+    extern uint32_t tick;
+    Task *task = get_current_task();
+    if(task->sleep == -1) {
+        task->sleep = tick + 100;
+        task->state = WAITING;
+    } 
+    // yield until its time to wake up
+    while(task->sleep > tick) {
+        // Not ready to wake up just sleep
+        printk("Sleeping until %d - currently: %d\n", task->sleep, tick);
+        // BOCHS_MAGIC();
+        preempt(false);
+    }
+    // Task is no longer sleeping. Reset
+    task->sleep = -1;
+    task->state = RUNNING;
 }
 
 int sys_open(const char *pathname, int flags) {
@@ -333,5 +347,7 @@ void init_syscall() {
     write_msr(IA32_MSR_STAR, star_value & 0xffffffff, (star_value >> 32) & 0xffffffff);
     // Set the flags to clear
     uint64_t flag_mask = IA32_FLAGS_INTERRUPT | IA32_FLAGS_DIRECTION; 
+    printk("Flags: %p\n", flag_mask);
     SET_FMASK(flag_mask);
+    printk("Flags mask: %p\n", read_msr(IA32_MSR_FMASK));
 }
