@@ -30,7 +30,7 @@ int brk(void *end_data_segment);
 void *sbrk(uint64_t bytes);
 
 // processes
-typedef uint32_t pid_t;
+typedef ssize_t pid_t;
 pid_t fork(void);
 pid_t getpid(void);
 pid_t getppid(void);
@@ -83,6 +83,8 @@ int closedir(struct DIR *dir);
 char *find_env_var(char* envp[], char* name);
 int find_env_var_orig(char* envp[], char* name);
 
+int atoi(char *cp);
+int kill(pid_t pid);
 char *find_env_var(char* envp[], char* name);
 
 #endif

@@ -172,6 +172,13 @@ int sys_execve(char *filename, char *argv[], char *envp[]) {
     return -1; 
 }
 
+int sys_kill(pid_t pid) {
+    Task *tsk_lst = get_task_list();
+    Task *tsk = get_task_by_pid(&tsk_lst, pid);
+    tsk->state = TERMINATED;
+    return 1;
+}
+
 /**
  * Upon entry to this function, all interrupts are disabeled, and we still are
  * using the stack of the userspace process.
@@ -280,6 +287,9 @@ uint64_t syscall_common_handler(uint64_t num, uint64_t arg1, uint64_t arg2, uint
             break;
         case SYS_yield:
             sys_yield();
+            break;
+        case SYS_kill:
+            return_value = sys_kill(arg1);
             break;
         default:
             printk("Unimplemented syscall %d\n", num);

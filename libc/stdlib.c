@@ -264,6 +264,21 @@ char *find_env_var(char* envp[], char* name) {
     return var;
 }
 
+int atoi(char *cp) {
+    int rtn = 0;
+
+    for(; *cp != '\0'; cp++) {
+        if((int)*cp < 0x30 || 0x39 < (int)*cp) {
+            return -99;
+        }
+
+        rtn *= 10;
+        rtn += *cp - 0x30;
+    }
+
+    return rtn;
+}
+
 //this one gives you the original pointer
 int find_env_var_orig(char* envp[], char* name) {
     int rc;
@@ -271,3 +286,8 @@ int find_env_var_orig(char* envp[], char* name) {
     for(rc = 0; envp[rc] != NULL && !strbegwith(name, envp[rc]); rc++);
     return rc;
 }
+
+int kill(pid_t pid) {
+    return syscall_1(SYS_kill, pid);
+}
+

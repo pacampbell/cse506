@@ -28,5 +28,7 @@
 #define SYS_ps        300
 /* Since we are a cooperative OS lets provide a yield call */
 #define SYS_yield     301
+/* so users can kill other processes */
+#define SYS_kill      302
 
 #endif
