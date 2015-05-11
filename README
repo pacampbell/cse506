@@ -1,6 +1,8 @@
 Michael Salerno  108512298
 Paul    Campbell 108481554
 
+This is the 60 pt OS final project.
+
 How to test binaries:
   1) make sure the binary is in the rootfs/bin/ folder
   2) go into the sys/kmain.c and call the binary by using
@@ -11,8 +13,6 @@ How to test binaries:
 Included binaries:
   - args [arg1] [arg2] ...
       This program tests that args are placed on the stack correctly
-  - exec
-      Attempts to test the execvce syscal
   - malloc
       Attempts to test the malloc
   - open
