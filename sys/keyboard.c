@@ -9,6 +9,8 @@
 #define SHFT_UP 0xAA
 #define ENTER   0x9C
 
+#define READ_SIZE 50
+
 #define KEY_MASK 0xff
 #define STDIN_BUFFER_SIZE 2048
 
@@ -16,7 +18,9 @@ void printk(const char *format, ...);
 
 static bool is_shft_dn = false;
 static bool is_cntrl_dn = false;
-static bool pressed_enter= false;
+static volatile bool pressed_enter= false;
+//static char buf[READ_SIZE];
+
 
 /* Character table mappings for the scan codes */
 char* map[] = {
@@ -54,22 +58,26 @@ char* s_map[] = {
 // }
 
 int gets(uint64_t addr, size_t len) {
-    // __asm__ __volatile__("sti;");
+    if (len > READ_SIZE) {
+        panic("gets len too big\n");
+        return -1;
+    }
     int count = 0;
     volatile char* curs = get_cursor();
     pressed_enter = 0;
+    __asm__ __volatile__("sti;");
     
     while (pressed_enter == false) {
-        printk("loop: %d\n", count++);
         __asm__ __volatile__("hlt;");
     }
 
     while ( *curs != '\n' && *curs != '\0' && count < (len - 1 ) ) {
         *((volatile char*)(addr++)) = *curs;
         count++;
+        curs++;
+        curs++;
     }
-
-    addr = '\0';
+    *((volatile char*)(addr)) = '\0';
 
     return count;
 }
@@ -99,6 +107,8 @@ void keyboard_callback(registers_t regs) {
             }
             break;
     }
+
+    if (b == ENTER) pressed_enter = true;
 }
 
 void init_keyboard(void) {

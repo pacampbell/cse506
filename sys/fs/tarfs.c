@@ -100,3 +100,14 @@ void exec_tarfs_elf(const char *path) {
     }
 }
 
+void exec_tarfs_elf_args(const char *path, int argc, char *argv[], char *envp[]) {
+    tarfs_entry e;
+    memset(&e, 0, sizeof(e));
+    if(traverse_tars(path, &e) != NULL) {
+        /* Try to load file as elf */
+        create_user_elf_args_task(path, e.data_base, e.size, argc, argv, envp);
+    } else {
+        printk("Unable to find: %s in tarfs\n", path);
+    }
+}
+

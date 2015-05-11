@@ -144,6 +144,26 @@ void dump_task(Task *task) {
 }
 
 typedef void (*code)();
+
+Task* create_user_elf_args_task(const char *name, char* elf, uint64_t size, int argc, char *argv[], char *envp[]) {
+    // Get the kernel page tables
+    pml4_t *kernel_pml4 = (pml4_t *)get_cr3();
+    // Copy the kernels page tables
+    pml4_t *user_pml4 = copy_page_tables(kernel_pml4);
+    // Allocate space for a new user task
+    Task *user_task = create_task_struct(&tasks);
+    //user_task->mm = load_elf(elf, size, user_pml4);
+    user_task->mm = load_elf(elf, size, user_task, user_pml4);
+    // Initialize the task
+    create_new_task(user_task, name, USER, NEUTRAL_PRIORITY, 0, user_pml4, 
+                   (code)user_task->mm->start_code);
+//void load_elf_args(Task *tsk, int argc, char *argv[], char *envp[]) {
+    load_elf_args(user_task, argc,argv,envp);
+    // Add the task to the scheduler list
+    insert_into_list(user_task);
+    return user_task;
+
+}
       
 Task* create_user_elf_task(const char *name, char* elf, uint64_t size) {
     // Get the kernel page tables
@@ -317,7 +337,6 @@ Task* create_new_task(Task* task, const char *name, task_type_t type,
     task->registers.cr3 = (uint64_t)pml4;
     task->registers.rsp = type == KERNEL ? (uint64_t)task->kstack + PAGE_SIZE - 8 : (uint64_t)task->ustack + PAGE_SIZE - 8; // Start the stack pointer at the other side
     task->registers.rbp = task->registers.rsp;
-    // printk("stack base: %p\n", task->registers.rbp);
 
     if(task->mm != NULL) {
         task->mm->start_stack = task->registers.rsp;

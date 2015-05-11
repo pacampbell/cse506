@@ -47,6 +47,12 @@
         };
         typedef struct Registers Registers;
 
+        struct args_struct {
+            uint64_t argc;
+            uint64_t argv;
+            uint64_t envp;
+        };
+
         struct Task {
             Registers registers;                /* Struct containing all the IA-64 registers */
             uint64_t *kstack;                   /* Address of the kernel stack */
@@ -63,6 +69,7 @@
             struct Task *prev;                  /* Previous Task in the list */
             struct mm_struct *mm, *active_mm;   /* The mm_struct of this task */
             struct file *files[MAX_FD];
+            struct args_struct args;
         };
         typedef struct Task Task;
 
@@ -151,6 +158,7 @@
         Task *get_current_task(void);
         Task *clone_task(Task *src, uint64_t global_sp, uint64_t global_rip);
         Task *get_task_list(void);
+        Task* create_user_elf_args_task(const char *name, char* elf, uint64_t size, int argc, char *argv[], char *envp[]);
 
         /**
          * Get the next valid task that is in use in the task list.
