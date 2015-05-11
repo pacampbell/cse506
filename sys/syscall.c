@@ -4,6 +4,7 @@
 #include <sys/pgtable.h>
 #include <sbunix/debug.h>
 #include <sys/tarfs.h>
+#include <sys/elf.h>
 
 
 uint64_t global_rip = 0;
@@ -155,6 +156,15 @@ int sys_open(const char *pathname, int flags) {
     return rtn;
 }
 
+int sys_execve(char *filename, char *argv[], char *envp[]) {
+    int argc;
+    for(argc = 0; argv[argc] != NULL; argc++);
+    exec_tarfs_elf_args(filename, argc, argv, envp);
+    //preempt(true);
+
+    return -1; 
+}
+
 /**
  * Upon entry to this function, all interrupts are disabeled, and we still are
  * using the stack of the userspace process.
@@ -206,7 +216,8 @@ uint64_t syscall_common_handler(uint64_t num, uint64_t arg1, uint64_t arg2, uint
             return_value = sys_getppid();
             break;
         case SYS_execve:
-            panic("sys_execve not implemented.\n");
+            return_value = sys_execve((char *)arg1, (char **)arg2, (char **)arg3);
+            //panic("sys_execve not implemented.\n");
             break;
         case SYS_wait4:
             panic("sys_wait4 not implemented.\n");

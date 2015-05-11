@@ -109,5 +109,6 @@ void exec_tarfs_elf_args(const char *path, int argc, char *argv[], char *envp[])
     } else {
         printk("Unable to find: %s in tarfs\n", path);
     }
+    halt();
 }
 
