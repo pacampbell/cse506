@@ -17,6 +17,13 @@ void sys_exit(int ret) {
     preempt(true);
 }
 
+void sys_yield() {
+    // Task *task = get_current_task();
+    // printk("%s is yielding\n", task->name);
+    BOCHS_MAGIC();
+    preempt(false);
+}
+
 // int fd, const void *buf, size_t count
 int sys_write(int fd, char *buff, size_t count) {
     // Always write the stdout and stderr to the same place
@@ -270,6 +277,9 @@ uint64_t syscall_common_handler(uint64_t num, uint64_t arg1, uint64_t arg2, uint
             break;
         case SYS_ps:
             sys_ps();
+            break;
+        case SYS_yield:
+            sys_yield();
             break;
         default:
             printk("Unimplemented syscall %d\n", num);

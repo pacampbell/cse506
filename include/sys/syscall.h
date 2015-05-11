@@ -26,5 +26,7 @@
 
 /* Fake syscall since no proc system */
 #define SYS_ps        300
+/* Since we are a cooperative OS lets provide a yield call */
+#define SYS_yield     301
 
 #endif

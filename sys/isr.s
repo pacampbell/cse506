@@ -7,122 +7,121 @@
 .globl isr_common_stub
 isr_common_stub:
    # push all registers onto the stack
-   push rax
-   push rbx
-   push rcx
-   push rdx
-   push rbp
-   push rsi
-   push rdi
-   push r8
-   push r9
-   push r10
-   push r11
-   push r12
-   push r13
-   push r14
-   push r15
+   pushq rax
+   pushq rbx
+   pushq rcx
+   pushq rdx
+   pushq rbp
+   pushq rsi
+   pushq rdi
+   pushq r8
+   pushq r9
+   pushq r10
+   pushq r11
+   pushq r12
+   pushq r13
+   pushq r14
+   pushq r15
 
    # Save the ds value
-   mov rax, ds
-   push rax
+   movq rax, ds
+   pushq rax
 
    # load the kernel data segment
-   mov rax, 0x10   
-   mov ds, rax
-   mov es, rax
-   mov fs, rax
-   mov gs, rax
+   movq rax, 0x10   
+   movq ds, rax
+   movq es, rax
+   movq fs, rax
+   movq gs, rax
 
-   call isr_handler  # Defined in isr.c
+   callq isr_handler  # Defined in isr.c
 
    # reload the original data segment descriptor
-   pop rax
-   mov ds, rax
-   mov es, rax
-   mov fs, rax
-   mov gs, rax
+   popq rax
+   movq ds, rax
+   movq es, rax
+   movq fs, rax
+   movq gs, rax
    
    # pop all registers off the stack
-   pop r15
-   pop r14
-   pop r13
-   pop r12
-   pop r11
-   pop r10
-   pop r9
-   pop r8
-   pop rdi
-   pop rsi
-   pop rbp
-   pop rdx
-   pop rcx
-   pop rbx
-   pop rax
+   popq r15
+   popq r14
+   popq r13
+   popq r12
+   popq r11
+   popq r10
+   popq r9
+   popq r8
+   popq rdi
+   popq rsi
+   popq rbp
+   popq rdx
+   popq rcx
+   popq rbx
+   popq rax
 
    # re-enable interrupts
-   add rsp, 0x18
-   # sti
+   addq rsp, 0x18
+   sti
    # Return from the interrupt
    iretq
 
 .globl irq_common_stub
 irq_common_stub:
   # push all registers onto the stack
-  push rax
-  push rbx
-  push rcx
-  push rdx
-  push rbp
-  push rsi
-  push rdi
-  push r8
-  push r9
-  push r10
-  push r11
-  push r12
-  push r13
-  push r14
-  push r15
+  pushq rax
+  pushq rbx
+  pushq rcx
+  pushq rdx
+  pushq rbp
+  pushq rsi
+  pushq rdi
+  pushq r8
+  pushq r9
+  pushq r10
+  pushq r11
+  pushq r12
+  pushq r13
+  pushq r14
+  pushq r15
 
-  mov rax, ds
-  push rax
+  movq rax, ds
+  pushq rax
 
-  mov rax, 0x10   # load the kernel data segment
-  mov ds, rax
-  mov es, rax
-  mov fs, rax
-  mov gs, rax
+  movq rax, 0x10   # load the kernel data segment
+  movq ds, rax
+  movq es, rax
+  movq fs, rax
+  movq gs, rax
 
-  # mov rdi, 0x1234
-  call irq_handler  # Defined in isr.c
+  callq irq_handler  # Defined in isr.c
 
   # reload the original data segment descriptor
-  pop rax
-  mov ds, rax
-  mov es, rax
-  mov fs, rax
-  mov gs, rax
+  popq rax
+  movq ds, rax
+  movq es, rax
+  movq fs, rax
+  movq gs, rax
 
   # pop all registers off the stack
-  pop r15
-  pop r14
-  pop r13
-  pop r12
-  pop r11
-  pop r10
-  pop r9
-  pop r8
-  pop rdi
-  pop rsi
-  pop rbp
-  pop rdx
-  pop rcx
-  pop rbx
-  pop rax
+  popq r15
+  popq r14
+  popq r13
+  popq r12
+  popq r11
+  popq r10
+  popq r9
+  popq r8
+  popq rdi
+  popq rsi
+  popq rbp
+  popq rdx
+  popq rcx
+  popq rbx
+  popq rax
 
   # re-enable interrupts
-  add rsp, 0x10
-  # sti
+  addq rsp, 0x10
+  sti
   # Return from the interrupt
   iretq
