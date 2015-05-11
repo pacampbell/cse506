@@ -565,11 +565,11 @@ void switch_tasks(Task *old, Task *new) {
                 current_task->state = RUNNING;
                
                 __asm__ __volatile__(
-                    "movq $0x23, %%rax;"
-                    "movq %%rax, %%ds;"
-                    "movq %%rax, %%es;"
-                    "movq %%rax, %%fs;"
-                    "movq %%rax, %%gs;"
+                    // "movq $0x23, %%rax;"
+                    // "movq %%rax, %%ds;"
+                    // "movq %%rax, %%es;"
+                    // "movq %%rax, %%fs;"
+                    // "movq %%rax, %%gs;"
                     
                     "movq $0x33, %%rax;" // Since we added 64-bit gdt entry, tss moved by 1 spot 
                     "ltr %%ax;"
@@ -605,7 +605,7 @@ void switch_tasks(Task *old, Task *new) {
                     // "pushq 0x202;"
                     // "pushq 0x2b;"
                     // "pushq %1;"
-                    "add $0x8, %%rsp;"
+                    // "add $0x8, %%rsp;"
                     "iretq;"
                     :
                     : // "r"(global_sp), "r"(global_rip)

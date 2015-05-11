@@ -60,6 +60,7 @@ int dup2(int oldfd, int newfd);
 
 /* SBUNIX syscall */
 void ps(void);
+void yield(void);
 
 // directories
 #define NAME_MAX 255

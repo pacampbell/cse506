@@ -241,6 +241,10 @@ void ps() {
     syscall_0(SYS_ps);
 }
 
+void yield() {
+    syscall_0(SYS_yield);
+}
+
 //int closedir(struct DIR *dir) {
 int closedir(struct DIR *dir) {
     free(dir);

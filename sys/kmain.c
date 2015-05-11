@@ -43,15 +43,15 @@ void init_services(void) {
 }
 
 void start_shell(void) {
-    int argc = 2;
-    char *argv[] = {"yo!!", "jo!!"};
-    char *envp[] = {"ro!!", NULL};
+    // int argc = 2;
+    // char *argv[] = {"yo!!", "jo!!"};
+    // char *envp[] = {"ro!!", NULL};
 
 
     /* Do some testing for now */
-    exec_tarfs_elf_args("bin/args", argc, argv, envp);
+    // exec_tarfs_elf_args("bin/args", argc, argv, envp);
     // exec_tarfs_elf("bin/ps");
-    // exec_tarfs_elf("bin/hello");
+    exec_tarfs_elf("bin/hello");
     // exec_tarfs_elf("bin/ps");
     // exec_tarfs_elf("bin/open");
 }
