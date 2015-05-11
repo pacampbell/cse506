@@ -187,8 +187,7 @@ int sys_execve(char *filename, char *argv[], char *envp[]) {
 }
 
 int sys_kill(pid_t pid) {
-    Task *tsk_lst = get_task_list();
-    Task *tsk = get_task_by_pid(&tsk_lst, pid);
+    Task *tsk = get_task_by_pid(pid);
     tsk->state = TERMINATED;
     return 1;
 }

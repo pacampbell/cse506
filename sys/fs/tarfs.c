@@ -37,8 +37,6 @@ static uint64_t covert_base_8(char *str) {
     return value;
 }
 
-
-
 tarfs_entry* traverse_tars(const char *path, tarfs_entry *t_entry) {
     tarfs_entry *found = NULL;  
     Header *entry = (Header*)(&_binary_tarfs_start);
