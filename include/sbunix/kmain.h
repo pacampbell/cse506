@@ -11,5 +11,6 @@
         void kmain(void);
         void init_services(void);
         void start_shell(void);
+        void save_kernel_global(void);
     #endif
 #endif
