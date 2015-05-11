@@ -64,6 +64,7 @@
         void kfree_pg(void *address);
         void* kmalloc_vma(pml4_t *cr3, uint64_t virt_base, size_t size, uint64_t permissions);
         bool leaks_pg(uint64_t virt_base, size_t size);
+        uint64_t calculate_total_page_by_size(size_t size, uint64_t base_addr);
 
         /**
          * Makes a copy of a src page table.
@@ -100,6 +101,18 @@
         #define PHYS_TO_VIRT(physical) (((uint64_t) (physical) + VIRTUAL_OFFSET))
         #define VIRT_TO_PHYS(virtual) (((uint64_t) (virtual) - VIRTUAL_OFFSET))
 
+        #define PG_RND_UP(address) (((uint64_t)(address) + PAGE_SIZE) & PG_ALIGN)
+        #define PG_RND_DOWN(address) (((uint64_t)(address) & PG_ALIGN))
+
+        #define FLUSH_TLB(virtual) do {             \
+            __asm__ __volatile__(                   \
+                "invlpg (%0)"                       \
+                :                                   \
+                : "b"((void*)(virtual))             \
+                : "memory"                          \
+            );                                      \
+        } while(0)
+
         /**
          * Walks a page table and prints out all the contents.
          */
@@ -110,6 +123,12 @@
         pd_t* get_pdpte(pml4_t *cr3, uint64_t virtual_address);
         pt_t* get_pde(pml4_t *cr3, uint64_t virtual_address);
         uint64_t get_pte(pml4_t *cr3, uint64_t virtual_address);
+
+        /* Cleaner insertion functions */
+        pdpt_t* insert_pml4e(pml4_t *cr3, uint64_t virtual_address);
+        pd_t* insert_pdpte(pml4_t *cr3, uint64_t virtual_address);
+        pt_t* insert_pde(pml4_t *cr3, uint64_t virtual_address);
+        uint64_t insert_pte(pml4_t *cr3, uint64_t virtual_address, uint64_t permissions);
 
         /**
          * Gets the page table using the virtual address

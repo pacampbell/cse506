@@ -5,9 +5,6 @@
 idt_entry_t idt_entries[MAX_IDT_ENTRIES];
 idt_ptr_t idt_ptr;
 
-/* FIXME: need for debugging; should remove this at some point .. */
-void printk(const char *fmt, ...);
-
 /* Function defined in idt.s */
 extern void idt_flush(uint64_t idt_address);
 extern void remap_pic(void);

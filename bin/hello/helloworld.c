@@ -2,10 +2,10 @@
 #include <stdlib.h>
 
 int main(int argc, char *argv[]) {
-    pid_t pid = -1;
-    printf("In original task.\n");
+    pid_t c_pid = -1;
+    printf("Hello, World! from user space.\n");
 
-    switch((pid = fork())) {
+    switch((c_pid = fork())) {
     	case -1:
     		printf("Fork failed\n");
     		break;
@@ -13,7 +13,7 @@ int main(int argc, char *argv[]) {
     		printf("In the child!!!\n");
     		break;
     	default:
-    		printf("In parent. child: %d\n", pid);
+    		printf("In parent: %d child pid: %d\n", getpid(), c_pid);
     		break;
     }
     return 1;

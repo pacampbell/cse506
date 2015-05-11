@@ -43,9 +43,9 @@ void start(uint32_t* modulep, void* physbase, void* physfree) {
     Task *kmain_task = create_kernel_task("kmain", kmain);
     // dump_task(kmain_task);
     // Setup timer and keyboard here
-    // init_timer(50);
-    // init_keyboard();
-    // __asm("sti");
+    init_timer(50);
+    init_keyboard();
+    __asm("sti");
     // Start kmain
     set_task(kmain_task);
 }
