@@ -62,7 +62,6 @@ isr_common_stub:
 
    # re-enable interrupts
    addq rsp, 0x18
-   sti
    # Return from the interrupt
    iretq
 
@@ -122,6 +121,5 @@ irq_common_stub:
 
   # re-enable interrupts
   addq rsp, 0x10
-  sti
   # Return from the interrupt
   iretq

@@ -4,7 +4,7 @@
 int main(int argc, char *argv[]) {
     // pid_t pid = -1;
     printf("Hello, World! from user space.\n");
-    // sleep(1000);
+    sleep(1000);
     //  int yield_count = 0;
     // while(yield_count < 6) {
     //     // printf("Time to yield\n");    

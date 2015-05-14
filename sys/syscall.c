@@ -157,6 +157,7 @@ void sys_nanosleep(struct timespec *req, struct timespec *rem) {
         // BOCHS_MAGIC();
         preempt(false);
     }
+    BOCHS_MAGIC();
     // Task is no longer sleeping. Reset
     task->sleep = -1;
     task->state = RUNNING;
