@@ -22,6 +22,7 @@ void sys_yield() {
     Task *task = get_current_task();
     if(task != NULL) {
         task->state = WAITING;
+        // BOCHS_MAGIC();
         printk("In handler yields on %s\n", task->name);
         preempt(false);
     } else {
@@ -62,7 +63,6 @@ uint64_t sys_read(int fd, void *buff, size_t count) {
         read = gets((uint64_t)buff, count);
     }
     
-    // gets((uint64_t)buff, count);
     return read;
 }
 
@@ -87,6 +87,7 @@ off_t sys_lseek(int fd, off_t offset, int whence) {
             return f->at - f->start;
         default:
             panic("that wence not yet implemented");
+            break;
     }
     return -1;
 }
@@ -113,9 +114,7 @@ uint64_t sys_fork() {
     // #1 Get current Task
     Task *current = get_current_task();
     // #2 clone task
-    // printk("Cloning pid: %d name: %s\n", current->pid, current->name);
     Task *child = clone_task(current, global_sp, global_rip);
-    // printk("Cloning of parent complete!\n");
     if(child != NULL) {
         // #3 schedule the task
         if(!insert_into_list(child)) {
@@ -183,7 +182,7 @@ void sys_nanosleep(struct timespec *req, struct timespec *rem) {
         // BOCHS_MAGIC();
         preempt(false);
     }
-    BOCHS_MAGIC();
+    // BOCHS_MAGIC();
     // Task is no longer sleeping. Reset
     task->sleep = -1;
     task->state = RUNNING;

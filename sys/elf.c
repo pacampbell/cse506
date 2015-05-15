@@ -19,8 +19,10 @@ struct mm_struct* load_elf(char *data, int len, Task *task, pml4_t *proc_pml4) {
         Elf64_Ehdr *hdr = (Elf64_Ehdr*)data;
 
         //create new mm_struct
+        set_cr3(kern_pml4);
         struct mm_struct *mm = (struct mm_struct*)kmalloc_kern(PAGE_SIZE);
         memset(mm, 0, sizeof(struct mm_struct));
+        
         if(hdr->e_shstrndx == 0x00) panic("NO STRING TABLE");
 
         mm->start_code = ((Elf64_Ehdr*) data)->e_entry;
@@ -38,18 +40,17 @@ struct mm_struct* load_elf(char *data, int len, Task *task, pml4_t *proc_pml4) {
                     halt();
                 }
 
+                set_cr3(kern_pml4);
                 struct vm_area_struct *vma = (struct vm_area_struct*) kmalloc_kern(PAGE_SIZE);
+                
+                set_cr3(proc_pml4);
                 if(kmalloc_vma(proc_pml4, prgm_hdr->p_vaddr, prgm_hdr->p_memsz, USER_SETTINGS) == NULL) {
                     panic("KMALLOC FAILED - elf.c:load_elf:34\n");
                     printk("SIZE: %d\n", prgm_hdr->p_filesz);
                 }
-
-                set_cr3(proc_pml4);
                 memset((void*)prgm_hdr->p_vaddr, 0, prgm_hdr->p_memsz);
-                //printk("memcpy dest: %p src: %p size: %p\n", prgm_hdr->p_vaddr, data + prgm_hdr->p_offset, prgm_hdr->p_filesz);
                 memcpy((void*)prgm_hdr->p_vaddr, data + prgm_hdr->p_offset, prgm_hdr->p_filesz);
                 
-                //memcpy((void*)prgm_hdr->p_vaddr, data + prgm_hdr->p_offset, prgm_hdr->p_memsz);
                 set_cr3(kern_pml4);
                 vma->vm_start = prgm_hdr->p_vaddr;
                 vma->vm_end = (uint64_t)(prgm_hdr->p_vaddr + prgm_hdr->p_memsz);
@@ -103,7 +104,6 @@ void load_elf_args(Task *tsk, int argc, char *argv[], char *envp[]) {
     *new_stack = argc;
     new_stack++;
 
-    //tsk->args.argv = PHYS_TO_VIRT(kmalloc_pg());
     tsk->args.argv = (uint64_t)kmalloc_vma((pml4_t*)tsk->registers.cr3, (tsk->mm->start_stack + (4*PAGE_SIZE)) & PG_ALIGN, 1, USER_SETTINGS);
     char *tsk_argv =  (char*)tsk->args.argv;
     for (int i = 0; i < argc; i++, new_stack++) {

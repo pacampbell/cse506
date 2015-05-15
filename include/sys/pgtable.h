@@ -7,6 +7,7 @@
         #include <sbunix/string.h>
         #include <sys/screen.h>
         #include <sys/defs.h>
+        #include <sys/task.h>
         
         #define FREE 1
         #define USED 0
@@ -38,21 +39,6 @@
         #define L2_SHIFT (21)
         #define L1_SHIFT (12)
 
-#define UPPER_ADDR(x) ( (uint64_t*) (0xffffL << 48 | (x) ) )
-
-#define PGTBL_ADDR UPPER_ADDR((RECURSIVE_SLOT<<L4_SHIFT))
-
-#define PGDIR_ADDR UPPER_ADDR((RECURSIVE_SLOT<<L4_SHIFT) \
-                     |(RECURSIVE_SLOT<<L3_SHIFT))
-
-#define PDPT_ADDR UPPER_ADDR((RECURSIVE_SLOT<<L4_SHIFT) \
-                     |(RECURSIVE_SLOT<<L3_SHIFT) \
-                     |(RECURSIVE_SLOT<<L2_SHIFT))
-
-#define PML4T_ADDR UPPER_ADDR((RECURSIVE_SLOT<<L4_SHIFT) \
-                     |(RECURSIVE_SLOT<<L3_SHIFT) \
-                     |(RECURSIVE_SLOT<<L2_SHIFT) \
-                     |(RECURSIVE_SLOT<<L1_SHIFT))
 
        
 
@@ -99,10 +85,10 @@
 
         /**
          * Makes a copy of a src page table.
-         * @param src Page table pml4 to start copying.
+         * @param src Source task to copy page tables of.
          * @return Returns a copy of src.
          */
-        pml4_t* copy_page_tables(pml4_t *src);
+        pml4_t* copy_page_tables(Task *src);
 
         /**
          * Inserts a page into the page table referenced by cr3
@@ -179,5 +165,13 @@
         uint64_t get_pdpte(pml4_t *cr3, uint64_t virtual_address);
         uint64_t get_pde(pml4_t *cr3, uint64_t virtual_address);
         uint64_t get_pte(pml4_t *cr3, uint64_t virtual_address);
+
+
+        #define UPPER_ADDR(x) ((uint64_t*) (0xffffL << 48 | (x)))
+        #define PGTBL_ADDR (UPPER_ADDR(RECURSIVE_SLOT << L4_SHIFT))
+        #define PGDIR_ADDR (UPPER_ADDR((RECURSIVE_SLOT << L4_SHIFT) | (RECURSIVE_SLOT << L3_SHIFT)))
+        #define PDPT_ADDR (UPPER_ADDR((RECURSIVE_SLOT << L4_SHIFT) | (RECURSIVE_SLOT << L3_SHIFT) | (RECURSIVE_SLOT << L2_SHIFT)))
+        #define PML4T_ADDR (UPPER_ADDR(RECURSIVE_SLOT << L4_SHIFT) | (RECURSIVE_SLOT << L3_SHIFT) | (RECURSIVE_SLOT << L2_SHIFT) | (RECURSIVE_SLOT << L1_SHIFT))
+
     #endif
 #endif

@@ -11,6 +11,7 @@ static Task *prev_task = NULL;
 volatile uint64_t task_count = 0;
 
 extern void* kern_base;
+extern uint64_t kernel_cr3;
 
 /* Used for assigning a pid to a task */
 uint64_t pid_map[PID_MAP_LENGTH];
@@ -170,14 +171,9 @@ Task* create_user_elf_args_task(const char *name, char* elf, uint64_t size, int 
       
 Task* create_user_elf_task(const char *name, char* elf, uint64_t size) {
     printk("Creating: %s\n", name);
-    // Get the kernel page tables
-    pml4_t *kernel_pml4 = (pml4_t *)get_cr3();
-    // panic("START KERNEL TABLES\n");
-    // dump_tables(kernel_pml4);
-    // panic("END KERNEL TABLES\n");
     // Copy the kernels page tables
-    BOCHS_MAGIC();
-    pml4_t *user_pml4 = copy_page_tables(kernel_pml4);
+    // BOCHS_MAGIC();
+    pml4_t *user_pml4 = copy_page_tables((pml4_t*)kernel_cr3);
     // Allocate space for a new user task
     Task *user_task = create_task_struct();
     //user_task->mm = load_elf(elf, size, user_pml4);
@@ -239,7 +235,6 @@ Task *get_next_task(void) {
         // Just set it to the head of the list.
         ctask = tasks;
     } else {
-        // printk("Current task count: %d\n", task_count);
         ctask = ctask->next;
         bool found_end = false;
         // panic("SEARCH FOR NEXT TASK\n");
@@ -248,12 +243,10 @@ Task *get_next_task(void) {
                 // Reset to the front of the list
                 found_end = true;
                 ctask = tasks;
-                // printk("Reset to the head\n");
             } else if(ctask != NULL) {
                 if(ctask != NULL && ctask->in_use) {
                     // found the next task.
                     // get out of this crazy loop
-                    // printk("FOUND THE NEXT TASK\n");
                     break;
                 }
                 ctask = ctask->next;
@@ -362,12 +355,14 @@ Task *clone_task(Task *src, uint64_t global_sp, uint64_t global_rip) {
         new_task = create_task_struct();
         // zero out the struct
         memset(new_task, 0, sizeof(Task));
-        // Copy the struct (no deep copies)
+        // Copy the src struct (no deep copies)
         memcpy(new_task, src, sizeof(Task));
         // Copy the page tables of the source process
-        // pml4_t *current_pml4 = get_cr3();
-        // set_cr3(g_kernel_pgtable);
-        pml4_t *cloned_pml4 = copy_page_tables((pml4_t*)(src->registers.cr3));
+        panic("KERNEL TABLE DUMP\n");
+        dump_tables((pml4_t*)src->registers.cr3);
+        panic("KERNEL TABLE DUMP\n");
+        halt();
+        // pml4_t *cloned_pml4 = copy_page_tables((pml4_t*)(src->registers.cr3));
         // Set copied cr3
         new_task->registers.cr3 = (uint64_t)cloned_pml4;
         // Assign a new pid
@@ -385,15 +380,13 @@ Task *clone_task(Task *src, uint64_t global_sp, uint64_t global_rip) {
         new_task->prev = NULL;
         new_task->children = NULL;
         // Create new kstack and ustack
-        new_task->kstack = (uint64_t*) PHYS_TO_VIRT(kmalloc_pg());
+        new_task->kstack = (uint64_t*) kmalloc_kern(PAGE_SIZE * 4);
         // memset(new_task->kstack, 0, PAGE_SIZE);        
         // Create new user stack
         if(new_task->type == USER) {
             uint64_t stack_size = PG_RND_UP(new_task->mm->start_stack) - global_sp;
             // Allocate space for a new user stack
             new_task->ustack = (uint64_t*)kmalloc_vma(cloned_pml4, new_task->mm->start_stack & PG_ALIGN, stack_size, USER_SETTINGS);
-            // printk("rsp: %p ustack_base: %p size: %d byte(s)\n", global_sp, new_task->mm->start_stack, stack_size);
-        
         } else {
             panic("ERROR: COPY KERNEL TASK?\n");
             halt();
@@ -404,8 +397,9 @@ Task *clone_task(Task *src, uint64_t global_sp, uint64_t global_rip) {
         new_task->kstack[2045] = 0x200202;
         new_task->kstack[2044] = 0x2b;
         new_task->kstack[2043] = global_rip;
-        // Set RSP to be address of 507
-        new_task->registers.rsp = (uint64_t)&(new_task->kstack[507]);
+        // Set RSP to be address of 2043
+        new_task->registers.rsp = (uint64_t)&(new_task->kstack[2043]);
+        BOCHS_MAGIC();
         // set_cr3(current_pml4);
     } else {
         panic("UNABLE TO CLONE NULL TASK");
