@@ -5,6 +5,7 @@
 #include <sys/pgtable.h>
 #include <sys/screen.h>
 #include <sys/task.h>
+#include <sys/tarfs.h>
 
 void print_elf_hdr(Elf64_Ehdr *hdr);
 bool same_pg(uint64_t pg, uint64_t addr);
@@ -97,12 +98,9 @@ void load_elf_args(Task *tsk, int argc, char *argv[], char *envp[]) {
     }
 
     new_stack = (uint64_t*)tsk->mm->start_stack;
-    printk("task stack: %p\n", tsk->mm->start_stack);
-    printk("new stack: %p\n", (uint64_t)new_stack);
 
     *new_stack = argc;
     new_stack++;
-    printk("ustack: %p\n", tsk->ustack[512]);
 
     //tsk->args.argv = PHYS_TO_VIRT(kmalloc_pg());
     tsk->args.argv = (uint64_t)kmalloc_vma((pml4_t*)tsk->registers.cr3, (tsk->mm->start_stack + (4*PAGE_SIZE)) & PG_ALIGN, 1, USER_SETTINGS);

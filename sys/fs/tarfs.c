@@ -37,6 +37,26 @@ static uint64_t covert_base_8(char *str) {
     return value;
 }
 
+void ls_tars(void) {
+    Header *entry = (Header*)(&_binary_tarfs_start);
+
+    while(entry < (Header*)(&_binary_tarfs_end)) {
+        uint64_t e_size = covert_base_8(entry->size);
+        if (entry->name[0] != '\0') { 
+            printk("%s\n", entry->name);
+        }
+
+        if(e_size > 0) {
+            // Add the padding to the entry size
+            entry = entry + 1 + (e_size / 513 + 1);
+        } else {
+            entry = entry + 1;
+        }
+    }
+    printk("tar: %p\n", &_binary_tarfs_start);
+    printk("tar: %p\n", &_binary_tarfs_end);
+}
+
 tarfs_entry* traverse_tars(const char *path, tarfs_entry *t_entry) {
     tarfs_entry *found = NULL;  
     Header *entry = (Header*)(&_binary_tarfs_start);
@@ -107,6 +127,5 @@ void exec_tarfs_elf_args(const char *path, int argc, char *argv[], char *envp[])
     } else {
         printk("Unable to find: %s in tarfs\n", path);
     }
-    halt();
 }
 

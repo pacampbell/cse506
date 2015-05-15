@@ -3,6 +3,7 @@
 #include <sys/elf.h>
 #include <sys/screen.h>
 #include <sbunix/debug.h>
+#include <sys/tarfs.h>
 
 static Task *tasks = NULL;
 static Task *current_task = NULL;
@@ -157,7 +158,7 @@ Task* create_user_elf_args_task(const char *name, char* elf, uint64_t size, int 
     // Initialize the task
     create_new_task(user_task, name, USER, NEUTRAL_PRIORITY, 0, user_pml4, 
                    (code)user_task->mm->start_code);
-//void load_elf_args(Task *tsk, int argc, char *argv[], char *envp[]) {
+    //add the args to the stack
     load_elf_args(user_task, argc,argv,envp);
     // Add the task to the scheduler list
     insert_into_list(user_task);
