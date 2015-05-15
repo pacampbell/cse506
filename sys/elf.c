@@ -44,21 +44,8 @@ struct mm_struct* load_elf(char *data, int len, Task *task, pml4_t *proc_pml4) {
                     printk("SIZE: %d\n", prgm_hdr->p_filesz);
                 }
 
-                printk("proc vaddr: %p\n", prgm_hdr->p_vaddr);
-                printk("proc pml4: %p\n", proc_pml4);
-                printk("proc pml4e: %p\n", get_pml4e(proc_pml4, prgm_hdr->p_vaddr));
-                printk("proc pdpte: %p\n", get_pdpte(proc_pml4, prgm_hdr->p_vaddr));
-                printk("proc pde: %p\n", get_pde(proc_pml4, prgm_hdr->p_vaddr));
-                printk("proc pte: %p\n", get_pte(proc_pml4, prgm_hdr->p_vaddr));
-
                 set_cr3(proc_pml4);
-                printk("kernel_cr3: %p current_cr3: %p proc_cr3: %p\n", kernel_cr3, get_cr3(), proc_pml4);
-                ((char*)(prgm_hdr->p_vaddr))[0] = 'q';
                 memset((void*)prgm_hdr->p_vaddr, 0, prgm_hdr->p_memsz);
-
-                printk("kernel_cr3: %p current_cr3: %p proc_cr3: %p\n", kernel_cr3, get_cr3(), proc_pml4);
-                halt();
-                
                 //printk("memcpy dest: %p src: %p size: %p\n", prgm_hdr->p_vaddr, data + prgm_hdr->p_offset, prgm_hdr->p_filesz);
                 memcpy((void*)prgm_hdr->p_vaddr, data + prgm_hdr->p_offset, prgm_hdr->p_filesz);
                 
