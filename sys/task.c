@@ -213,10 +213,10 @@ Task* create_task_struct(void) {
         // There was no more free tasks so create a new one
         task = (Task*)kmalloc_kern(PAGE_SIZE);
         memset(task, 0, sizeof(Task));
-        printk("Created new task struct\n");
+        // printk("Created new task struct\n");
     } else {
         // Remove this task from the insert_into_list
-        panic("REPUROSING\n");
+        panic("REPUROSING Task struct\n");
         printk("previous life name: %s\n", task->name);
         free_file_list(task->files, MAX_FD);
         if(remove_task_by_pid(task->pid) == NULL) {
@@ -276,7 +276,7 @@ void setup_new_stack(Task *task) {
     task->kstack[2043] = task->registers.rip;  // The entry point (on a forked task this might not be the start)
     // Set the stack pointer to the amount of items pushed
     task->registers.rsp = (uint64_t)&(task->kstack[2043]);
-    printk("kstack_top: %p\n", task->registers.rsp);
+    // printk("kstack_top: %p\n", task->registers.rsp);
 }
 
 Task* create_new_task(Task* task, const char *name, task_type_t type,

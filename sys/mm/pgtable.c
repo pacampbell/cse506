@@ -22,7 +22,7 @@ void* pg_to_addr(uint64_t pg) {
 int addr_to_pg(void* addr) {
     //return ((uint64_t)addr - (uint64_t)free_pg_list_end) / PAGE_SIZE;
     //return ((uint64_t)addr - (uint64_t)kern_base) / PAGE_SIZE;
-    printk("free_pg_offset: %p, PAGE_SIZE: %p, addr: %p\n", free_pg_offset, PAGE_SIZE, addr);
+    // printk("free_pg_offset: %p, PAGE_SIZE: %p, addr: %p\n", free_pg_offset, PAGE_SIZE, addr);
     return ((uint64_t)addr - free_pg_offset) / PAGE_SIZE;
 }
 
@@ -41,7 +41,10 @@ int get_free_page() {
 }
 
 void mark_address_range_free(uint64_t start, uint64_t end, int free) {
-    if(end < free_pg_offset) {panic("skipping\n");return;}
+    if(end < free_pg_offset) {
+        // panic("skipping\n");
+        return;
+    }
     if(start < free_pg_offset) start = free_pg_offset;
     int s, e; 
     s = addr_to_pg((void*)start);
@@ -317,15 +320,21 @@ uint64_t insert_page(pml4_t *cr3, uint64_t virtual_address, uint64_t permissions
 pml4_t* copy_page_tables(pml4_t *src) {
     pml4_t *copy = NULL;
     if(src != NULL) {
+        pml4_t *ocr3 = get_cr3();
+        // printk("kernel: %p ocr3: %p src: %p\n", kernel_cr3, ocr3, src);
         src  = (pml4_t*) PHYS_TO_VIRT(src);
         copy = (pml4_t*) kmalloc_kern(PAGE_SIZE);
+        pml4_t *copy_phys = (pml4_t*)VIRT_TO_PHYS(copy);
         // Zero out the new pml4
         memset(copy, 0, sizeof(pml4_t));
         // Link the kernel pages into this page table entry
         copy->entries[511] = src->entries[511];
-        copy->entries[510] = src->entries[510];
+        set_cr3(copy_phys);
+        // printk("kernel: %p ocr3: %p src: %p current: %p\n", kernel_cr3, ocr3, src, get_cr3());
+        copy->entries[510] = (uint64_t)copy_phys | P | RW | US;
         // Change the copy back to a physical address
-        copy = (pml4_t*)VIRT_TO_PHYS(copy);
+        copy = copy_phys;
+        set_cr3(ocr3);
         // FIXME implement for child process - user pages
     }
     return copy;
@@ -416,7 +425,7 @@ uint64_t get_pml4e(pml4_t *cr3, uint64_t virtual_address) {
     pml4_t *ocr3 = get_cr3();
     // Set the new cr3
     set_cr3(cr3);
-    printk("get_pml4e: kernel_cr3: %p current cr3: %p virtual: %p\n", kernel_cr3, get_cr3(), virtual_address);
+    //printk("get_pml4e: kernel_cr3: %p current cr3: %p virtual: %p\n", kernel_cr3, get_cr3(), virtual_address);
     // Get the value at the address
     uint64_t phys_addr = PML4T_ADDR[extract_pml4(virtual_address)];
     // Set back the previous cr3
@@ -429,7 +438,7 @@ uint64_t get_pdpte(pml4_t *cr3, uint64_t virtual_address) {
     pml4_t *ocr3 = get_cr3();
     // Set the new cr3
     set_cr3(cr3);
-    printk("get_pdpte: kernel_cr3: %p current cr3: %p virtual: %p\n", kernel_cr3, get_cr3(), virtual_address);
+    //printk("get_pdpte: kernel_cr3: %p current cr3: %p virtual: %p\n", kernel_cr3, get_cr3(), virtual_address);
     // Get the value at the address
     uint64_t *base_addr = (uint64_t*)((uint64_t)PDPT_ADDR | (extract_pml4(virtual_address) << 12));
     uint64_t phys_addr = base_addr[extract_directory_ptr(virtual_address)];
@@ -458,7 +467,7 @@ uint64_t get_pde(pml4_t *cr3, uint64_t virtual_address) {
     pml4_t *ocr3 = get_cr3();
     // Set the new cr3
     set_cr3(cr3);
-    printk("get_pde: kernel_cr3: %p current cr3: %p virtual: %p\n", kernel_cr3, get_cr3(), virtual_address);
+    //printk("get_pde: kernel_cr3: %p current cr3: %p virtual: %p\n", kernel_cr3, get_cr3(), virtual_address);
     // Get the value at the address
     uint64_t *base_addr = (uint64_t*)((uint64_t)PGDIR_ADDR | (extract_pml4(virtual_address) << 21) | (extract_directory_ptr(virtual_address) << 12));
     uint64_t phys_addr = base_addr[extract_directory(virtual_address)];
@@ -485,7 +494,7 @@ uint64_t get_pte(pml4_t *cr3, uint64_t virtual_address) {
     pml4_t *ocr3 = get_cr3();
     // Set the new cr3
     set_cr3(cr3);
-    printk("get_pte: kernel_cr3: %p current cr3: %p virtual: %p\n", kernel_cr3, get_cr3(), virtual_address);
+    //printk("get_pte: kernel_cr3: %p current cr3: %p virtual: %p\n", kernel_cr3, get_cr3(), virtual_address);
     // Get the value at the address
     uint64_t *base_addr = (uint64_t*)((uint64_t)PGTBL_ADDR | (extract_pml4(virtual_address) << 30) | (extract_directory_ptr(virtual_address) << 21) | (extract_directory(virtual_address) << 12));
     uint64_t phys_addr = base_addr[extract_table(virtual_address)];
