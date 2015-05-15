@@ -5,6 +5,7 @@
 #include <sbunix/debug.h>
 #include <sys/tarfs.h>
 #include <sys/elf.h>
+#include <sys/fs/file.h>
 
 
 uint64_t global_rip = 0;
@@ -63,6 +64,31 @@ uint64_t sys_read(int fd, void *buff, size_t count) {
     
     // gets((uint64_t)buff, count);
     return read;
+}
+
+off_t sys_lseek(int fd, off_t offset, int whence) {
+        if (fd < 0 || fd > MAX_FD) return -1;
+
+        Task *tsk = get_current_task();
+        if(tsk->files[fd] == NULL) return -1;
+
+        struct file *f = tsk->files[fd]; 
+
+    switch (whence) {
+        case SEEK_SET:
+            f->at = f->start + offset;
+            return offset;
+            break;
+        case SEEK_CUR:
+            f->at += offset;
+            return f->at - f->start;
+        case SEEK_END:
+            f->at = f->end + offset; 
+            return f->at - f->start;
+        default:
+            panic("that wence not yet implemented");
+    }
+    return -1;
 }
 
 void* sys_brk(uint64_t addr) {
@@ -273,7 +299,7 @@ uint64_t syscall_common_handler(uint64_t num, uint64_t arg1, uint64_t arg2, uint
             return_value = sys_write(arg1, (char*)arg2, arg3);
             break;
         case SYS_lseek:
-            panic("sys_lseek not implemented.\n");
+            return_value = sys_lseek(arg1,arg2, arg3);
             break;
         case SYS_close:
             panic("sys_close not implemented.\n");

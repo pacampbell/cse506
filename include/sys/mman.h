@@ -17,7 +17,7 @@
 
 #define MAP_FAILED ((void*)-1)
 
-typedef uint64_t off_t;
+typedef long off_t;
 typedef uint64_t size_t;
 
 void *mmap(void *addr, size_t length, int prot, int flags, int fd, off_t offset);
