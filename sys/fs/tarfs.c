@@ -80,6 +80,7 @@ tarfs_entry* traverse_tars(const char *path, tarfs_entry *t_entry) {
             entry = entry + 1;
         }
     }
+    printk("name: %s\n", found->path);
     return found;
 }
 
@@ -90,7 +91,7 @@ struct file* tarfs_to_file(const char *path) {
     memset(&e, 0, sizeof(e));
 
     if(traverse_tars(path, &e) != NULL) {
-        f = (struct file*)PHYS_TO_VIRT(kmalloc_pg());
+        f = (struct file*)kmalloc_kern(sizeof(struct file));
         if (f == NULL) {
             panic("Could not make new file\n");
             halt();
