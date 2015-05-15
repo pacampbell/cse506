@@ -224,7 +224,7 @@ Task* create_task_struct(void) {
         free_file_list(task->files, MAX_FD);
         if(remove_task_by_pid(task->pid) == NULL) {
             panic("Tried to free a NULL task.\n");
-            __asm__ __volatile__("cli; hlt;");
+            halt();
         }
     }
     return task;
@@ -482,7 +482,7 @@ void switch_tasks(Task *old, Task *new) {
         if(old->state != TERMINATED) {
             old->state = READY;
             // printk("Swicthing out %s - ursp %p kstack: %p \n", old->name, old->registers.rsp, old->kstack);
-            BOCHS_MAGIC();
+            // BOCHS_MAGIC();
             /* Save the current register state */
             __asm__ __volatile__(
                 /* save rax so we can use it for scratch */
@@ -532,7 +532,7 @@ void switch_tasks(Task *old, Task *new) {
         tss.rsp0 = (uint64_t)&((current_task->kstack)[511]);
         // Now swap to new task
         // printk("Switching in %s - rsp %p\n", current_task->name, current_task->registers.rsp);
-        BOCHS_MAGIC();
+        // BOCHS_MAGIC();
         __asm__ __volatile__(
             /* Save the argument in the register */
             "movq %0, %%rax;"

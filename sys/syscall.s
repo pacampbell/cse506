@@ -57,6 +57,8 @@ syscall_entry:
 	popq %rsp
 	# put back the rbx value
 	popq %rbx
+	# Bochs debugging
+	xchg %bx, %bx
 	# Jump back to userspace
 	sysretq
 	# retq

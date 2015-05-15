@@ -3,12 +3,10 @@
 #include <sbunix/debug.h>
 
 void idle(void) {
-    // TODO: fix this
     while(1) {
         __asm__ __volatile__("hlt;");
         preempt(false);
-    } 
-    preempt(true);
+    }
 }
 
 uint64_t *kstack;
@@ -50,9 +48,9 @@ void start_shell(void) {
     // exec_tarfs_elf_args("bin/args", argc, argv, envp);
     // exec_tarfs_elf_args("bin/exec", argc, argv, envp);
     // exec_tarfs_elf("bin/ps");
-    // exec_tarfs_elf("bin/hello");
+    exec_tarfs_elf("bin/hello");
     // exec_tarfs_elf("bin/ps");
-    exec_tarfs_elf("bin/open");
+    // exec_tarfs_elf("bin/open");
 }
 
 void save_kernel_global(void) {
