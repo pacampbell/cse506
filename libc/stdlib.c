@@ -104,11 +104,8 @@ void free(void *ptr) {
 }
 
 void *sbrk(uint64_t bytes) {
-    printf("================================\n");
     char *cur = (char*) syscall_1(SYS_brk, 0);
     char *tmp = cur + bytes;
-    printf("================================\n");
-    printf("curr: %x\n", cur);
     syscall_1(SYS_brk, (uint64_t)tmp);
     return (void*)cur;
 }

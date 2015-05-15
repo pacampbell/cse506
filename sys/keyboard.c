@@ -62,7 +62,7 @@ char* s_map[] = {
 // }
 
 int gets(uint64_t addr, size_t len) {
-    if (len > READ_SIZE) {
+    if (0 && len > READ_SIZE) {
         panic("gets len too big\n");
         return -1;
     }

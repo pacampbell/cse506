@@ -78,7 +78,6 @@ off_t sys_lseek(int fd, off_t offset, int whence) {
         case SEEK_SET:
             f->at = f->start + offset;
             return offset;
-            break;
         case SEEK_CUR:
             f->at += offset;
             return f->at - f->start;
@@ -87,6 +86,7 @@ off_t sys_lseek(int fd, off_t offset, int whence) {
             return f->at - f->start;
         default:
             panic("that wence not yet implemented");
+            break;
     }
     return -1;
 }
@@ -127,10 +127,6 @@ uint64_t sys_fork() {
     }
     // #4 return new task pid
     return child->pid;
-}
-
-void sys_exec() {
-
 }
 
 void sys_waitpid() {
@@ -208,7 +204,7 @@ int sys_execve(char *filename, char *argv[], char *envp[]) {
     int argc;
     for(argc = 0; argv[argc] != NULL; argc++);
     exec_tarfs_elf_args(filename, argc, argv, envp);
-    //preempt(true);
+    preempt(true);
 
     return -1; 
 }
@@ -271,7 +267,6 @@ uint64_t syscall_common_handler(uint64_t num, uint64_t arg1, uint64_t arg2, uint
             break;
         case SYS_execve:
             return_value = sys_execve((char *)arg1, (char **)arg2, (char **)arg3);
-            //panic("sys_execve not implemented.\n");
             break;
         case SYS_wait4:
             panic("sys_wait4 not implemented.\n");
