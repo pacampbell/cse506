@@ -18,6 +18,7 @@ pml4_t *kernel_cr3;
  * services and threads. 
  */
 void kmain(void) {
+    ls_tars();
     /* Save some important values from the kernel */
     save_kernel_global();
     /* do some basic setup */
@@ -39,16 +40,17 @@ void init_services(void) {
 }
 
 void start_shell(void) {
-    //int argc = 2;
-    //char *argv[] = {"yo!!", "jo!!", NULL};
-    //char *envp[] = {"ro!!", NULL};
+   int argc = 1;
+   char *argv[] = {"bin/sbush",NULL};
+   char *envp[] = {"PATH=bin/sbush", NULL};
 
 
     /* Do some testing for now */
+    // exec_tarfs_elf_args("bin/cat", argc, argv, envp);
+    exec_tarfs_elf_args("bin/sbush", argc, argv, envp);
     // exec_tarfs_elf_args("bin/args", argc, argv, envp);
     // exec_tarfs_elf_args("bin/exec", argc, argv, envp);
     // exec_tarfs_elf("bin/ps");
-    exec_tarfs_elf("bin/hello");
     // exec_tarfs_elf("bin/ps");
     // exec_tarfs_elf("bin/open");
 }

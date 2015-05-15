@@ -6,20 +6,23 @@ extern char kernmem;
 extern void *kern_free;
 extern void *kern_base;
 
-
-
 pml4_t *g_kernel_pgtable = NULL;
 uint32_t *free_pg_list;
-void* free_pg_list_end;
+uint64_t free_pg_list_end;
+uint64_t free_pg_offset;
 
 void* pg_to_addr(uint64_t pg) {
     //return (void*)((pg * PAGE_SIZE) + ((uint64_t)free_pg_list_end));
-    return (void*)((pg * PAGE_SIZE) + ((uint64_t)kern_base));
+    //return (void*)((pg * PAGE_SIZE) + ((uint64_t)kern_base));
+    return (void*)((pg * PAGE_SIZE) + (free_pg_offset));
+    
 }
 
 int addr_to_pg(void* addr) {
     //return ((uint64_t)addr - (uint64_t)free_pg_list_end) / PAGE_SIZE;
-    return ((uint64_t)addr - (uint64_t)kern_base) / PAGE_SIZE;
+    //return ((uint64_t)addr - (uint64_t)kern_base) / PAGE_SIZE;
+    printk("free_pg_offset: %p, PAGE_SIZE: %p, addr: %p\n", free_pg_offset, PAGE_SIZE, addr);
+    return ((uint64_t)addr - free_pg_offset) / PAGE_SIZE;
 }
 
 int get_free_page() {
@@ -27,10 +30,39 @@ int get_free_page() {
 
     for(; pg < MAX_PAGES && !is_pg_free(pg); pg++);
 
-    if(pg >= MAX_PAGES)
+    if(pg >= MAX_PAGES) {
+        panic("Ran out of pages!!!!\n");
+        halt();
         return -1;
+    }
 
     return pg;
+}
+
+void mark_address_range_free(uint64_t start, uint64_t end, int free) {
+    if(end < free_pg_offset) {panic("skipping\n");return;}
+    if(start < free_pg_offset) start = free_pg_offset;
+    int s, e; 
+    s = addr_to_pg((void*)start);
+    e = addr_to_pg((void*)end);
+
+    for (; s <= e; s++) {
+        set_pg_free(s, free);
+    }
+}
+
+void mem_usg() {
+    uint64_t used = 0, free = 0;
+    for (int i = 0; i < MAX_PAGES; i++) {
+        if(is_pg_free(i)) {
+            free++;
+        } else {
+            used++;
+        }       
+    }
+
+    printk("free: %d, used: %d, %%%d", free, used, free/used);
+
 }
 
 /**
@@ -43,12 +75,14 @@ void init_free_pg_list(void *physfree) {
     uint32_t all_on = 0xFFFFFFFF;
 
     for(int i = 0; i < size; i++) {
-        *(free_pg_list + i) |= all_on;
+        *(free_pg_list + i) &= ~all_on;
     }
 
-    free_pg_list_end = free_pg_list + size;
+    free_pg_list_end = (uint64_t)(free_pg_list + size);
 
-    kern_free += (uint64_t)(sizeof(char) * MAX_PAGES);
+    kern_free = (void*)PG_RND_UP(free_pg_list_end);
+    printk("start: %p, end: %p, kern_free: %p\n", free_pg_list, free_pg_list_end, kern_free);
+    free_pg_offset = (uint64_t)kern_free;
 }
 
 /**
@@ -75,6 +109,8 @@ uint32_t set_pg_free(int page, int free) {
 }
 
 void set_kern_pg_used(uint64_t beg, uint64_t end) {
+    panic("STOP USING ME!!\n");
+    halt();
     int beg_i = beg / PAGE_SIZE;
     int end_i = end / PAGE_SIZE;
 
@@ -266,7 +302,7 @@ pt_t* get_pt(pml4_t *pml4, uint64_t virtual_address) {
 
 void* kmalloc_pg(void) {
     uint32_t page_index = get_free_page();       // Get a free page from the page allocator
-    set_pg_free(page_index, 0);                  // Mark the page in use
+    set_pg_free(page_index, USED);                  // Mark the page in use
     void *address = pg_to_addr(page_index);      // Convert the page index to an address
     return address;
 }
@@ -312,7 +348,9 @@ uint64_t insert_page(pml4_t *cr3, uint64_t virtual_address, uint64_t permissions
     pml4_t *old_cr3 = get_cr3();
     set_cr3(cr3);
     // Get a new page to insert into the table
-    uint64_t page = (uint64_t)kmalloc_pg() | permissions;
+    uint64_t pg_tmp = (uint64_t)kmalloc_pg();
+    printk("new pg: %p\n", pg_tmp);
+    uint64_t page = pg_tmp | permissions;
     // Get the page table offset from the virtual address 
     uint64_t pt_index = extract_table(virtual_address);
     if(page_table->entries[pt_index] != 0x0) {

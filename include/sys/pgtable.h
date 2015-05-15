@@ -7,6 +7,9 @@
         #include <sbunix/string.h>
         #include <sys/screen.h>
         #include <sys/defs.h>
+        
+        #define FREE 1
+        #define USED 0
 
         #define MAX_PAGES 8192
         #define WORD_SIZE_BITS 32
@@ -50,6 +53,7 @@
         typedef struct pd_t pd_t;
         typedef struct pt_t pt_t;
 
+        void mark_address_range_free(uint64_t start, uint64_t end, int free);
         void init_free_pg_list(void *physfree);
         uint32_t is_pg_free(int page);
         uint32_t set_pg_free(int page, int free);
