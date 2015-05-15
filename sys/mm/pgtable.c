@@ -5,6 +5,7 @@
 extern char kernmem;
 extern void *kern_free;
 extern void *kern_base;
+extern pml4_t *kernel_cr3;
 
 pml4_t *g_kernel_pgtable = NULL;
 uint32_t *free_pg_list;
@@ -150,7 +151,7 @@ void initializePaging(uint64_t physbase, uint64_t physfree) {
     // Increment the kernel memory by 1 more page
     kern_physbase += PAGE_SIZE;
     /* Set CR3 */
-    // pml4->entries[510] = (uint64_t)pml4 | P | RW | US; // self referencing impl...
+    pml4->entries[510] = (uint64_t)pml4 | P | RW | US;
     // Set CR3
     set_cr3(pml4);
     // tell the print driver to use new address
@@ -164,78 +165,27 @@ void initializePaging(uint64_t physbase, uint64_t physfree) {
 }
 
 pt_t* get_pt_virt(pml4_t *pml4, uint64_t virtual_address, uint64_t permissions) {
-    uint64_t pml4_index = extract_pml4(virtual_address);
-    uint64_t pdpt_index = extract_directory_ptr(virtual_address);
-    uint64_t pd_index = extract_directory(virtual_address);
-    // Store the current cr3 and set the new one
-    pml4_t *old_cr3 = get_cr3();
-    set_cr3(pml4);
-    // printk("virtual_address: %p\n", virtual_address);
-    // Now begin finding the base address for each step of the walk
-    // also zero out lower 12 bits for permissions and copy the rest
-    // printk("pml4 index: %d\n", pml4_index);
-    pml4 = (pml4_t*)PHYS_TO_VIRT((uint64_t)pml4 & PG_ALIGN);
-    uint64_t pdpt_base_addr = pml4->entries[pml4_index] & PG_ALIGN;
-    // printk("pdpt_base_addr: %p\n", pdpt_base_addr);
-    // Check to see if we have empty entry
-    if(pdpt_base_addr == 0x0) {
-        // Get a new page
-        pdpt_t *page = (pdpt_t*) PHYS_TO_VIRT(kmalloc_pg());
-        // Move the kernel free pointer by 1 page
-        kern_free = kern_free + PAGE_SIZE;
-        // Zero out the memory
-        memset(page, 0, PAGE_SIZE);
-        // Set the page into the current index and set permissions in the lower 12 bits
-        pml4->entries[pml4_index] = VIRT_TO_PHYS(page) | permissions;
-        // printk("pml4e final: %p %d\n", pml4->entries[pml4_index], pml4_index);
-        // Finally set the new page to pdpt_base
-        pdpt_base_addr = (uint64_t)page;
-    } else {
-        pdpt_base_addr = PHYS_TO_VIRT(pdpt_base_addr);
+    // printk("pml4-selfref: %p\n", pml4_selfref);
+    // printk("pdpt-selfref: %p\n", pdpt_selfref);
+    // printk("Virtual address: %p\n", virtual_address);
+    uint64_t pml4e = get_pml4e(pml4, virtual_address);
+    if(pml4e == 0) {
+       pml4e = insert_pml4e(pml4, virtual_address, (uint64_t)kmalloc_pg() | permissions); 
     }
+    // printk("pml4e: %p entry: %d\n", pml4e, extract_pml4(virtual_address));
 
-    // printk("pdpt_index: %d\n", pdpt_index);
-    uint64_t pd_base_addr = ((pdpt_t*)pdpt_base_addr)->entries[pdpt_index] & PG_ALIGN;
-    // printk("pd_base_addr: %p\n", pd_base_addr);
-    // Check to see if we have empty entry
-    if(pd_base_addr == 0x0) {
-        // Get a new page
-        pd_t *page = (pd_t*) PHYS_TO_VIRT(kmalloc_pg());
-        // Move the kernel free pointer by 1 page
-        kern_free = kern_free + PAGE_SIZE;
-        // Zero out the memory
-        memset(page, 0, PAGE_SIZE);
-        // Set the page into the current index and set permissions in the lower 12 bits
-        ((pdpt_t*)pdpt_base_addr)->entries[pdpt_index] = VIRT_TO_PHYS(page) | permissions;
-        // printk("pdpte final: %p %d\n", ((pdpt_t*)pdpt_base_addr)->entries[pdpt_index], pdpt_index);
-        // Finally set the new page to pd_base
-        pd_base_addr = (uint64_t)page;
-    } else {
-        pd_base_addr = PHYS_TO_VIRT(pd_base_addr);
+    uint64_t pdpte = get_pdpte(pml4, virtual_address);
+    if(pdpte == 0) {
+        pdpte = insert_pdpte(pml4, virtual_address, (uint64_t)kmalloc_pg() | permissions);
     }
+    // printk("pdpte: %p entry: %d\n", pdpte, extract_directory_ptr(virtual_address));
 
-
-    // printk("pd_index: %d\n", pd_index);
-    uint64_t pt_base_addr = ((pd_t*)pd_base_addr)->entries[pd_index] & PG_ALIGN;
-    // printk("pt_base_addr: %p\n", pt_base_addr);
-    if(pt_base_addr == 0x0) {
-        // Get a new page
-        pt_t *page = (pt_t*) PHYS_TO_VIRT(kmalloc_pg());
-        // Move the kernel free pointer by 1 page
-        kern_free = kern_free + PAGE_SIZE;
-        // Zero out the memory
-        memset(page, 0, PAGE_SIZE);
-        // Set the page into the current index and set permissions in the lower 12 bits
-        ((pd_t*)pd_base_addr)->entries[pd_index] = VIRT_TO_PHYS(((uint64_t)page)) | permissions;
-        // printk("pte final: %p %d\n", ((pd_t*)pd_base_addr)->entries[pd_index], pd_index);
-        // Finally set the new page to pd_base
-        pt_base_addr = (uint64_t)page;
-    }else {
-        pt_base_addr = PHYS_TO_VIRT(pt_base_addr);
+    uint64_t pde = get_pde(pml4, virtual_address);
+    if(pde == 0) {
+        pde = insert_pde(pml4, virtual_address, (uint64_t)kmalloc_pg() | permissions);
     }
-    set_cr3(old_cr3);
-    // printk("pte_final_virt: %p\n", pt_base_addr);
-    return (pt_t*)pt_base_addr;
+    // printk("pde: %p entry: %d\n", pde, extract_directory(virtual_address));
+    return (pt_t*)PHYS_TO_VIRT(pde);
 }
 
 pt_t* get_pt(pml4_t *pml4, uint64_t virtual_address) {
@@ -257,7 +207,7 @@ pt_t* get_pt(pml4_t *pml4, uint64_t virtual_address) {
         memset(page, 0, PAGE_SIZE);
         // Set the page into the current index and set permissions in the lower 12 bits
         pml4->entries[pml4_index] = ((uint64_t)page) | KERN_SETTINGS;
-        //printk("pml4e final: %p\n", pml4->entries[pml4_index]);
+        // printk("pml4e final: %p\n", pml4->entries[pml4_index]);
         // Finally set the new page to pdpt_base
         pdpt_base_addr = (uint64_t)page;
     }
@@ -275,7 +225,7 @@ pt_t* get_pt(pml4_t *pml4, uint64_t virtual_address) {
         memset(page, 0, PAGE_SIZE);
         // Set the page into the current index and set permissions in the lower 12 bits
         ((pdpt_t*)pdpt_base_addr)->entries[pdpt_index] = ((uint64_t)page) | KERN_SETTINGS;
-        //printk("pdpte final: %p\n", ((pdpt_t*)pdpt_base_addr)->entries[pdpt_index]);
+        // printk("pdpte final: %p\n", ((pdpt_t*)pdpt_base_addr)->entries[pdpt_index]);
         // Finally set the new page to pd_base
         pd_base_addr = (uint64_t)page;
     }
@@ -292,7 +242,7 @@ pt_t* get_pt(pml4_t *pml4, uint64_t virtual_address) {
         memset(page, 0, PAGE_SIZE);
         // Set the page into the current index and set permissions in the lower 12 bits
         ((pd_t*)pd_base_addr)->entries[pd_index] = ((uint64_t)page) | KERN_SETTINGS;
-        //printk("pte final: %p\n", ((pd_t*)pd_base_addr)->entries[pd_index]);
+        // printk("pte final: %p\n", ((pd_t*)pd_base_addr)->entries[pd_index]);
         // Finally set the new page to pd_base
         pt_base_addr = (uint64_t)page;
     }
@@ -304,7 +254,14 @@ void* kmalloc_pg(void) {
     uint32_t page_index = get_free_page();       // Get a free page from the page allocator
     set_pg_free(page_index, USED);                  // Mark the page in use
     void *address = pg_to_addr(page_index);      // Convert the page index to an address
+    // printk("new pg: %p\n", address);
     return address;
+}
+
+void *kmalloc_kern(size_t size) {
+    uint32_t page_index = get_free_page();
+    void *address = (void*)PHYS_TO_VIRT(pg_to_addr(page_index));
+    return kmalloc_vma(kernel_cr3, (uint64_t)address, size, KERN_SETTINGS);
 }
 
 bool leaks_pg(uint64_t virt_base, size_t size) {
@@ -314,8 +271,6 @@ bool leaks_pg(uint64_t virt_base, size_t size) {
 
 void *kmalloc_vma(pml4_t *cr3, uint64_t virt_base, size_t size, uint64_t permissions) {
     void *new_allocation = NULL;
-    // pml4_t *old_pml4 = get_cr3();
-    // set_cr3(cr3);
     if(size > 0) {
         // Figure out how many pages we need
         int num_pages = size / PAGE_SIZE;
@@ -344,150 +299,71 @@ uint64_t calculate_total_page_by_size(size_t size, uint64_t base_addr) {
 
 uint64_t insert_page(pml4_t *cr3, uint64_t virtual_address, uint64_t permissions) {
     // Get the page table using this pml4 and virtual address
-    pt_t* page_table = (pt_t*) get_pt_virt(cr3, virtual_address, permissions);
-    pml4_t *old_cr3 = get_cr3();
-    set_cr3(cr3);
+    get_pt_virt(cr3, virtual_address, permissions);
     // Get a new page to insert into the table
     uint64_t pg_tmp = (uint64_t)kmalloc_pg();
-    printk("new pg: %p\n", pg_tmp);
+    // printk("new pg: %p\n", pg_tmp);
     uint64_t page = pg_tmp | permissions;
-    // Get the page table offset from the virtual address 
-    uint64_t pt_index = extract_table(virtual_address);
-    if(page_table->entries[pt_index] != 0x0) {
-        // panic("PAGE ALREADY EXISTS\n");
-        // printk("Old Entry: %p\n", page_table->entries[pt_index]);
-        // Page Already exists so insert then invalidate the tlb
-        page_table->entries[pt_index] = page;
-        // printk("New Entry: %p\n", page_table->entries[pt_index]);
-        FLUSH_TLB(virtual_address);
+    uint64_t exists = get_pte(cr3, virtual_address);
+    if(exists) {
+        insert_pte(cr3, virtual_address, page);
+        FLUSH_TLB(virtual_address); 
     } else {
-        page_table->entries[pt_index] = page;
+        insert_pte(cr3, virtual_address, page);
     }
-    // Set back the old cr3
-    set_cr3(old_cr3);
     return PHYS_TO_VIRT(page & PG_ALIGN);
 }
 
-extern pml4_t *kernel_cr3;
 pml4_t* copy_page_tables(pml4_t *src) {
     pml4_t *copy = NULL;
     if(src != NULL) {
-        // panic("START COPYING PAGE TABLES\n");
-        pml4_t *cr3_current = get_cr3();
-        // Convert the source to virtual
         src  = (pml4_t*) PHYS_TO_VIRT(src);
-        // Make new page for copy pml
-        copy = (pml4_t*) PHYS_TO_VIRT(kmalloc_pg());
+        copy = (pml4_t*) kmalloc_kern(PAGE_SIZE);
+        // Zero out the new pml4
         memset(copy, 0, sizeof(pml4_t));
-        // Start interating through the pml4e's
-        for(int i = 0; i < MAX_TABLE_ENTRIES; i++) {
-            if((src->entries[i] & USER_SETTINGS) == 0x3) {
-                printk("Linking Kernel entry[%d]: %p\n", i, src->entries[i]);
-                copy->entries[i] = src->entries[i];
-            } else if((src->entries[i] & P) == P) {
-                printk("Cloning user entry[%d]: %p\n", i, src->entries[i]);
-                // For every user pml4e we need a new page
-                pdpt_t *pml4e = (pdpt_t*)((uint64_t)kmalloc_pg() | USER_SETTINGS);
-                // Add this entry to the pml4
-                copy->entries[i] = (uint64_t)pml4e;
-                // Now make it virtual
-                pml4e = (pdpt_t*)PHYS_TO_VIRT((uint64_t)pml4e & PG_ALIGN);
-                memset(pml4e, 0, sizeof(pdpt_t));
-                // Begin iterating through the pdpte's
-                pdpt_t *src_pml4e = (pdpt_t*)PHYS_TO_VIRT(src->entries[i] & PG_ALIGN);
-                for(int j = 0; j < MAX_TABLE_ENTRIES; j++) {
-                    if((src_pml4e->entries[j] & P) == P) {
-                        printk("Cloning page directory pointer table entry[%d]: %p\n", j, src_pml4e->entries[j]);
-                        // for every pdpte we need a new page
-                        pd_t *pdpte = (pd_t*)((uint64_t)kmalloc_pg() | USER_SETTINGS);
-                        pml4e->entries[j] = (uint64_t)pdpte;
-                        // now make it virtual
-                        pdpte = (pd_t*)PHYS_TO_VIRT((uint64_t)pdpte & PG_ALIGN);
-                        memset(pdpte, 0, sizeof(pd_t));
-                        // Begin interating though the pde's
-                        pd_t *src_pdpte = (pd_t*)PHYS_TO_VIRT(src_pml4e->entries[j] & PG_ALIGN);
-                        for(int k = 0; k < MAX_TABLE_ENTRIES; k++) {
-                            if((src_pdpte->entries[k] & P) == P) {
-                                printk("Cloning page directory entry[%d]: %p\n", k, src_pdpte->entries[k]);
-                                // For every pte we need a new page
-                                pt_t *pde = (pt_t*)((uint64_t)kmalloc_pg() | USER_SETTINGS);
-                                pdpte->entries[k] = (uint64_t)pde;
-                                // Now make it virtual
-                                pde = (pt_t*)PHYS_TO_VIRT((uint64_t)pde & PG_ALIGN);
-                                memset(pde, 0, sizeof(pt_t));
-                                // begin interaying through all the pte's
-                                pt_t *src_pde = (pt_t*)PHYS_TO_VIRT(src_pdpte->entries[k] & PG_ALIGN);
-                                for(int l = 0; l < MAX_TABLE_ENTRIES; l++) {
-                                    if((src_pde->entries[l] & P) == P) {
-                                        printk("Cloning pte [%d]: %p\n", l, src_pde->entries[l]);
-                                        // BOCHS_MAGIC();
-                                        // We found a page!
-                                        // Not only do we need to make a new page
-                                        // We need to copy the contents of said page
-                                        // Make a temp buffer
-                                        char page_buff[PAGE_SIZE];
-                                        // Get a new page
-                                        // set_cr3(phys_cpy_cr3);
-                                        uint64_t page = (uint64_t)kmalloc_pg() | USER_SETTINGS; 
-                                        pde->entries[l] = page;
-                                        // Set no cr3 to copy contents
-                                        // set_cr3(src);
-                                        // Copy the page
-                                        memcpy(page_buff, (void*)PHYS_TO_VIRT(src_pde->entries[l] & PG_ALIGN), PAGE_SIZE);
-                                        // Change cr3
-                                        // set_cr3(phys_cpy_cr3);
-                                        memcpy((void*)PHYS_TO_VIRT(page & PG_ALIGN), page_buff, PAGE_SIZE);
-                                        // set_cr3(phys_src_cr3);
-                                    }
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-        }
+        // Link the kernel pages into this page table entry
+        copy->entries[511] = src->entries[511];
+        copy->entries[510] = src->entries[510];
         // Change the copy back to a physical address
         copy = (pml4_t*)VIRT_TO_PHYS(copy);
-        // Set back the original page tables
-        set_cr3(cr3_current);
+        // FIXME implement for child process - user pages
     }
     return copy;
 }
 
 void check_vma_permissions(pml4_t *cr3, uint64_t address) {
-    if(cr3 != NULL) {
-        pdpt_t *pdpt = get_pml4e(cr3, address);
-        if(pdpt != 0x0) {
-            printk("pdpt: %p\n", pdpt);
-            pd_t *pd = get_pdpte(cr3, address);
-            if(pd != 0x0) {
-                printk("pd: %p\n", pd);
-                pt_t *pt = get_pde(cr3, address);
-                if(pt != 0x0) {
-                    printk("pt: %p\n", pt);
-                    uint64_t page = get_pte(cr3, address);
-                    if(page != 0x0) {
-                        printk("page: %p\n", page);
-                    } else {
-                        printk("No page entry for vma %p\n", address);
-                    }
-                } else {
-                    printk("No page table exists for vma %p\n", address);
-                }
-            } else {
-                printk("No page directory exists for vma %p\n", address);
-            }
-        } else {
-            printk("No page directory pointer table exists for vma %p\n", address);
-        }
-    }
+    // if(cr3 != NULL) {
+    //     pdpt_t *pdpt = get_pml4e(cr3, address);
+    //     if(pdpt != 0x0) {
+    //         printk("pdpt: %p\n", pdpt);
+    //         pd_t *pd = get_pdpte(cr3, address);
+    //         if(pd != 0x0) {
+    //             printk("pd: %p\n", pd);
+    //             pt_t *pt = get_pde(cr3, address);
+    //             if(pt != 0x0) {
+    //                 printk("pt: %p\n", pt);
+    //                 uint64_t page = get_pte(cr3, address);
+    //                 if(page != 0x0) {
+    //                     printk("page: %p\n", page);
+    //                 } else {
+    //                     printk("No page entry for vma %p\n", address);
+    //                 }
+    //             } else {
+    //                 printk("No page table exists for vma %p\n", address);
+    //             }
+    //         } else {
+    //             printk("No page directory exists for vma %p\n", address);
+    //         }
+    //     } else {
+    //         printk("No page directory pointer table exists for vma %p\n", address);
+    //     }
+    // }
 }
 
 void kfree_pg(void *address) {
     uint32_t page_index = addr_to_pg((void*)VIRT_TO_PHYS(address));
     set_pg_free(page_index, 1);
 }
-
 
 void dump_tables(pml4_t *cr3) {
     if(cr3 != NULL) {
@@ -524,6 +400,113 @@ void dump_tables(pml4_t *cr3) {
     }
 }
 
+uint64_t insert_pml4e(pml4_t *cr3, uint64_t virtual_address, uint64_t frame) {
+    // Save previous cr3
+    pml4_t *ocr3 = get_cr3();
+    // Set the new cr3
+    set_cr3(cr3);
+    PML4T_ADDR[extract_pml4(virtual_address)] = frame;
+    // Set back the previous cr3
+    set_cr3(ocr3);
+    return frame;
+}
+
+uint64_t get_pml4e(pml4_t *cr3, uint64_t virtual_address) {
+    // Save previous cr3
+    pml4_t *ocr3 = get_cr3();
+    // Set the new cr3
+    set_cr3(cr3);
+    printk("get_pml4e: kernel_cr3: %p current cr3: %p virtual: %p\n", kernel_cr3, get_cr3(), virtual_address);
+    // Get the value at the address
+    uint64_t phys_addr = PML4T_ADDR[extract_pml4(virtual_address)];
+    // Set back the previous cr3
+    set_cr3(ocr3);
+    return phys_addr;
+}
+
+uint64_t get_pdpte(pml4_t *cr3, uint64_t virtual_address) {
+    // Save previous cr3
+    pml4_t *ocr3 = get_cr3();
+    // Set the new cr3
+    set_cr3(cr3);
+    printk("get_pdpte: kernel_cr3: %p current cr3: %p virtual: %p\n", kernel_cr3, get_cr3(), virtual_address);
+    // Get the value at the address
+    uint64_t *base_addr = (uint64_t*)((uint64_t)PDPT_ADDR | (extract_pml4(virtual_address) << 12));
+    uint64_t phys_addr = base_addr[extract_directory_ptr(virtual_address)];
+    // Set back the previous cr3
+    set_cr3(ocr3);
+    return phys_addr;
+}
+
+uint64_t insert_pdpte(pml4_t *cr3, uint64_t virtual_address, uint64_t frame) {
+    // Save previous cr3
+    pml4_t *ocr3 = get_cr3();
+    // Set the new cr3
+    set_cr3(cr3);
+    // printk("get cr3: %p\n", get_cr3());
+    // Get the value at the address
+    uint64_t *base_addr = (uint64_t*)((uint64_t)PDPT_ADDR | (extract_pml4(virtual_address) << 12));
+    base_addr[extract_directory_ptr(virtual_address)] = frame;
+    // Set back the previous cr3
+    set_cr3(ocr3);
+    return frame;
+}
+
+
+uint64_t get_pde(pml4_t *cr3, uint64_t virtual_address) {
+    // Save previous cr3
+    pml4_t *ocr3 = get_cr3();
+    // Set the new cr3
+    set_cr3(cr3);
+    printk("get_pde: kernel_cr3: %p current cr3: %p virtual: %p\n", kernel_cr3, get_cr3(), virtual_address);
+    // Get the value at the address
+    uint64_t *base_addr = (uint64_t*)((uint64_t)PGDIR_ADDR | (extract_pml4(virtual_address) << 21) | (extract_directory_ptr(virtual_address) << 12));
+    uint64_t phys_addr = base_addr[extract_directory(virtual_address)];
+    // Set back the previous cr3
+    set_cr3(ocr3);
+    return phys_addr;
+}
+
+uint64_t insert_pde(pml4_t *cr3, uint64_t virtual_address, uint64_t frame) {
+    // Save previous cr3
+    pml4_t *ocr3 = get_cr3();
+    // Set the new cr3
+    set_cr3(cr3);
+    // Get the value at the address
+    uint64_t *base_addr = (uint64_t*)((uint64_t)PGDIR_ADDR | (extract_pml4(virtual_address) << 21) | (extract_directory_ptr(virtual_address) << 12));
+    base_addr[extract_directory(virtual_address)] = frame;
+    // Set back the previous cr3
+    set_cr3(ocr3);
+    return frame;
+}
+
+uint64_t get_pte(pml4_t *cr3, uint64_t virtual_address) {
+    // Save previous cr3
+    pml4_t *ocr3 = get_cr3();
+    // Set the new cr3
+    set_cr3(cr3);
+    printk("get_pte: kernel_cr3: %p current cr3: %p virtual: %p\n", kernel_cr3, get_cr3(), virtual_address);
+    // Get the value at the address
+    uint64_t *base_addr = (uint64_t*)((uint64_t)PGTBL_ADDR | (extract_pml4(virtual_address) << 30) | (extract_directory_ptr(virtual_address) << 21) | (extract_directory(virtual_address) << 12));
+    uint64_t phys_addr = base_addr[extract_table(virtual_address)];
+    // Set back the previous cr3
+    set_cr3(ocr3);
+    return phys_addr;
+}
+
+uint64_t insert_pte(pml4_t *cr3, uint64_t virtual_address, uint64_t frame) {
+    // Save previous cr3
+    pml4_t *ocr3 = get_cr3();
+    // Set the new cr3
+    set_cr3(cr3);
+    uint64_t *base_addr = (uint64_t*)((uint64_t)PGTBL_ADDR | (extract_pml4(virtual_address) << 30) | (extract_directory_ptr(virtual_address) << 21) | (extract_directory(virtual_address) << 12));
+    base_addr[extract_table(virtual_address)] = frame;
+    // Set back the previous cr3
+    set_cr3(ocr3);
+    return frame;
+}
+
+/*
 pdpt_t* get_pml4e(pml4_t *cr3, uint64_t virtual_address) {
     pdpt_t *pml4e = NULL;
     if(cr3 != NULL) {
@@ -544,6 +527,7 @@ pdpt_t* get_pml4e(pml4_t *cr3, uint64_t virtual_address) {
 pd_t* get_pdpte(pml4_t *cr3, uint64_t virtual_address) {
     pd_t *pdpte = NULL;
     if(cr3 != NULL) {
+        printk("cr3: %p virtual address; %p\n", cr3, virtual_address);
         uint64_t pdpte_index = extract_directory_ptr(virtual_address);
         // Save current cr3
         pml4_t *current_cr3 = get_cr3();
@@ -552,7 +536,11 @@ pd_t* get_pdpte(pml4_t *cr3, uint64_t virtual_address) {
         // Get the pdpt
         pdpt_t *pdpt = (pdpt_t*)get_pml4e(cr3, virtual_address);
         if(pdpt != 0x0) {
+            printk("pdpt: %p\n", pdpt);
+            panic("BEFORE MOTHER FUCKING CRASH\n");
             pdpt = (pdpt_t*)PHYS_TO_VIRT((uint64_t)pdpt & PG_ALIGN);
+            printk("dskjhfsdkjfksjd pdpt: %p\n", pdpt);
+            printk("Got it: pml4e %p\n", pdpt->entries[0]);
             // Get the pdpte
             pdpte = (pd_t*)(pdpt->entries[pdpte_index]);
         }
@@ -602,6 +590,7 @@ uint64_t get_pte(pml4_t *cr3, uint64_t virtual_address) {
     }
     return pg;
 }
+*/
 
 /*
 pdpt_t* insert_pml4e(pml4_t *cr3, uint64_t virtual_address) {
@@ -620,7 +609,7 @@ pdpt_t* insert_pml4e(pml4_t *cr3, uint64_t virtual_address) {
             printk("Overwriting pml4e entry @ %d in cr3 %p\n", pml4e_index, cr3);
             // FLUSH_TLB(virtual_address);
         } else {
-            printk("Found existing page directory pointer table %p\n", pml4e);
+            printk("No page directory pointer entry for this virtual address %p\n", virtual_address);
         }
         // Get a new page for the pdpt
         uint64_t pdpt = (uint64_t)kmalloc_pg() | USER_SETTINGS;
@@ -635,15 +624,12 @@ pdpt_t* insert_pml4e(pml4_t *cr3, uint64_t virtual_address) {
     return pml4e;
 }
 
+
 pd_t* insert_pdpte(pml4_t *cr3, uint64_t virtual_address) {
     pd_t *pdpte = NULL;
     if(cr3 != NULL) {
         // Extract the index from the virtual address
         uint64_t pdpte_index = extract_directory_ptr(virtual_address);
-        // Save the current cr3
-        pml4_t *current_cr3 = get_cr3();
-        // Set the new cr3
-        set_cr3(cr3);
         pdpt_t *pdpt = get_pml4e(cr3, virtual_address);
         if(pdpt == NULL) {
             pdpt = insert_pml4e(cr3, virtual_address);
@@ -656,8 +642,12 @@ pd_t* insert_pdpte(pml4_t *cr3, uint64_t virtual_address) {
              printk("Overwriting pdpte entry @ %d in cr3 %p\n", pdpte_index, cr3);
              // FLUSH_TLB(virtual_address);
         } else {
-            printk("Found existing page directory %p\n", pdpte);
+            printk("No existing page directory for this virtual address %p\n", virtual_address);
         }
+        // Save the current cr3
+        pml4_t *current_cr3 = get_cr3();
+        // Set the new cr3
+        set_cr3(cr3);
         // Get a new page for the pdpte
         uint64_t pd = (uint64_t)kmalloc_pg() | USER_SETTINGS;
         // Overwirte/add the entry
