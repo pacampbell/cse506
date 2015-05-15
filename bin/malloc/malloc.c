@@ -7,4 +7,5 @@ int main(int argc, char *argv[]) {
     *(c+1) = '\0';
 
     printf("malloc char: %s\n", c);
+    //c = (char*) malloc(999999);
 }

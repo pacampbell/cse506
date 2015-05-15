@@ -10,6 +10,8 @@ static Task *current_task = NULL;
 static Task *prev_task = NULL;
 volatile uint64_t task_count = 0;
 
+extern void* kern_base;
+
 /* Used for assigning a pid to a task */
 uint64_t pid_map[PID_MAP_LENGTH];
 
@@ -297,6 +299,9 @@ Task* create_new_task(Task* task, const char *name, task_type_t type,
     task->kstack = (uint64_t*) PHYS_TO_VIRT(kmalloc_pg());
     if(type == USER) {
         uint64_t new_stack = task->mm->brk + (50 * PAGE_SIZE);
+        //uint64_t new_stack = (uint64_t)PG_RND_DOWN(PHYS_TO_VIRT(kern_base));
+        printk("kern_base: %p\n", PHYS_TO_VIRT(kern_base));
+        printk("stack: %p, brk: %p, diff: %p\n", new_stack, task->mm->brk, new_stack - task->mm->brk);
         new_stack &= PG_ALIGN;
         if(kmalloc_vma(pml4, new_stack, 1, USER_SETTINGS) == NULL) {
             panic("KMALLOC VMA FAILED\n");
