@@ -47,4 +47,5 @@ void start_shell(void) {
     exec_tarfs_elf("bin/ps");
     // exec_tarfs_elf("bin/ps");
     // exec_tarfs_elf("bin/open");
+    // exec_tarfs_elf("bin/malloc");
 }
