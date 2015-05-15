@@ -30,7 +30,8 @@ void start(uint32_t* modulep, void* physbase, void* physfree) {
     for(smap = (struct smap_t*)(modulep+2); smap < (struct smap_t*)((char*)modulep+modulep[1]+2*4); ++smap) {
         if (smap->type == 1 /* memory */ && smap->length != 0) {
             printk("Available Physical Memory [%x-%x]\n", smap->base, smap->base + smap->length);
-            set_kern_pg_used(smap->base,smap->base + smap->length);
+            //set_kern_pg_used(smap->base,smap->base + smap->length);
+            mark_address_range_free(smap->base, smap->length + smap->base, FREE);
         }
     }
     printk("tarfs in [%p:%p]\n", &_binary_tarfs_start, &_binary_tarfs_end);
