@@ -31,7 +31,13 @@ void panic(char *str) {
 }
 
 void halt() {
-    __asm__ __volatile__("cli; hlt;");
+    __asm__ __volatile__(
+        "cli;"
+        "hlt;"
+        :
+        :
+        : "memory"
+        );
 }
 
 void putck(char color, char c) {

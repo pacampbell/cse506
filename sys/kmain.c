@@ -9,18 +9,12 @@ void idle(void) {
     }
 }
 
-uint64_t *kstack;
-uint64_t *kstack_top;
-pml4_t *kernel_cr3;
-
 /**
  * Similar to initd, this is process 0. This starts up all kernel level 
  * services and threads. 
  */
 void kmain(void) {
-    ls_tars();
-    /* Save some important values from the kernel */
-    save_kernel_global();
+    // ls_tars();
     /* do some basic setup */
     init_services();
     /* start the shell */
@@ -40,24 +34,17 @@ void init_services(void) {
 }
 
 void start_shell(void) {
-   int argc = 1;
-   char *argv[] = {"bin/sbush",NULL};
-   char *envp[] = {"PATH=bin/sbush", NULL};
+   // int argc = 1;
+   // char *argv[] = {"bin/sbush",NULL};
+   // char *envp[] = {"PATH=bin/sbush", NULL};
 
 
     /* Do some testing for now */
     // exec_tarfs_elf_args("bin/cat", argc, argv, envp);
-    exec_tarfs_elf_args("bin/sbush", argc, argv, envp);
+    // exec_tarfs_elf_args("bin/sbush", argc, argv, envp);
     // exec_tarfs_elf_args("bin/args", argc, argv, envp);
     // exec_tarfs_elf_args("bin/exec", argc, argv, envp);
-    // exec_tarfs_elf("bin/ps");
+    exec_tarfs_elf("bin/ps");
     // exec_tarfs_elf("bin/ps");
     // exec_tarfs_elf("bin/open");
-}
-
-void save_kernel_global(void) {
-    /* Create a stack for handling system calls */
-    kstack = (uint64_t*)PHYS_TO_VIRT(kmalloc_pg());
-    kstack_top = &kstack[511];
-    kernel_cr3 = get_cr3();
 }

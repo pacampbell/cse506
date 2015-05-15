@@ -9,20 +9,22 @@
 
 void print_elf_hdr(Elf64_Ehdr *hdr);
 bool same_pg(uint64_t pg, uint64_t addr);
+extern pml4_t* kernel_cr3;
+
 
 struct mm_struct* load_elf(char *data, int len, Task *task, pml4_t *proc_pml4) {
     if (validate_header(data)) {
+        pml4_t *kern_pml4 = get_cr3();
         //get the header
         Elf64_Ehdr *hdr = (Elf64_Ehdr*)data;
 
         //create new mm_struct
-        struct mm_struct *mm = (struct mm_struct*)PHYS_TO_VIRT(kmalloc_pg());
+        struct mm_struct *mm = (struct mm_struct*)kmalloc_kern(PAGE_SIZE);
         memset(mm, 0, sizeof(struct mm_struct));
         if(hdr->e_shstrndx == 0x00) panic("NO STRING TABLE");
 
         mm->start_code = ((Elf64_Ehdr*) data)->e_entry;
 
-        pml4_t *kern_pml4 = get_cr3();
 
         Elf64_Phdr *prgm_hdr = (Elf64_Phdr*)(data + hdr->e_phoff);
         uint64_t high_addr = 0;
@@ -36,19 +38,31 @@ struct mm_struct* load_elf(char *data, int len, Task *task, pml4_t *proc_pml4) {
                     halt();
                 }
 
-                struct vm_area_struct *vma = (struct vm_area_struct*)PHYS_TO_VIRT(kmalloc_pg());
+                struct vm_area_struct *vma = (struct vm_area_struct*) kmalloc_kern(PAGE_SIZE);
                 if(kmalloc_vma(proc_pml4, prgm_hdr->p_vaddr, prgm_hdr->p_memsz, USER_SETTINGS) == NULL) {
                     panic("KMALLOC FAILED - elf.c:load_elf:34\n");
                     printk("SIZE: %d\n", prgm_hdr->p_filesz);
                 }
 
+                printk("proc vaddr: %p\n", prgm_hdr->p_vaddr);
+                printk("proc pml4: %p\n", proc_pml4);
+                printk("proc pml4e: %p\n", get_pml4e(proc_pml4, prgm_hdr->p_vaddr));
+                printk("proc pdpte: %p\n", get_pdpte(proc_pml4, prgm_hdr->p_vaddr));
+                printk("proc pde: %p\n", get_pde(proc_pml4, prgm_hdr->p_vaddr));
+                printk("proc pte: %p\n", get_pte(proc_pml4, prgm_hdr->p_vaddr));
+
                 set_cr3(proc_pml4);
+                printk("kernel_cr3: %p current_cr3: %p proc_cr3: %p\n", kernel_cr3, get_cr3(), proc_pml4);
+                ((char*)(prgm_hdr->p_vaddr))[0] = 'q';
                 memset((void*)prgm_hdr->p_vaddr, 0, prgm_hdr->p_memsz);
 
+                printk("kernel_cr3: %p current_cr3: %p proc_cr3: %p\n", kernel_cr3, get_cr3(), proc_pml4);
+                halt();
+                
                 //printk("memcpy dest: %p src: %p size: %p\n", prgm_hdr->p_vaddr, data + prgm_hdr->p_offset, prgm_hdr->p_filesz);
                 memcpy((void*)prgm_hdr->p_vaddr, data + prgm_hdr->p_offset, prgm_hdr->p_filesz);
+                
                 //memcpy((void*)prgm_hdr->p_vaddr, data + prgm_hdr->p_offset, prgm_hdr->p_memsz);
-
                 set_cr3(kern_pml4);
                 vma->vm_start = prgm_hdr->p_vaddr;
                 vma->vm_end = (uint64_t)(prgm_hdr->p_vaddr + prgm_hdr->p_memsz);
@@ -148,105 +162,6 @@ bool same_pg(uint64_t pg, uint64_t addr) {
     uint64_t end_pg = (beg_pg-1) + PAGE_SIZE;
     return beg_pg <= addr && addr <= end_pg;
 }
-
-#if 0
-struct mm_struct* old_load_elf(char *data, uint64_t length, struct pml4_t *new_pml4) {
-    if(validate_header(data)) {
-        printk("Valid ELF header for system.\n");
-        Elf64_Ehdr *hdr = (Elf64_Ehdr*)data;
-
-        Elf64_Shdr *section = (Elf64_Shdr*)(hdr->e_shoff + (char*)data);
-        struct mm_struct *mm = (struct mm_struct*)PHYS_TO_VIRT(kmalloc_pg());
-
-        if(hdr->e_shstrndx == 0x00) panic("NO STRING TABLE");
-        char* str_tab = ((char*)data + section[hdr->e_shstrndx].sh_offset);
-        //char* str_tab = (char*)(section[(hdr->e_shstrndx )]);
-        int num_secs = hdr->e_shnum;
-        char *name;
-        int txt = 0, rodata = 0, data_seg = 0, bss = 0;
-        for(int i = 0; i < num_secs; i++) {
-            name = &str_tab[section[i].sh_name];
-            printk("name: %s\n", name);
-
-            if(strcmp(".text", name)) {
-                //txt = section[i].sh_offset;
-                txt = i;
-                printk("found .txt at: %p\n", txt);
-
-            } else if(strcmp(".rodata", name)) {
-                //rodata = section[i].sh_addr;
-                rodata = i;
-                //printk("found .rodata at: %p\n",rodata);
-
-            } else if(strcmp(".data", name)) {
-                //data = section[i].sh_addr;
-                data_seg = i;
-                //printk("found .data at: %p\n", data);
-
-            } else if(strcmp(".bss", name)) {
-                //bss = section[i].sh_addr;
-                bss = i;
-                //printk("found .bss at: %p\n", data);
-
-            }
-
-        }
-
-        Elf64_Phdr *phdr = (Elf64_Phdr*)( data + hdr->e_phoff);
-        printk("phdr : %p\n", phdr);
-        printk("data: %p\n", data);
-        printk("entry: %p\n", hdr->e_entry);
-
-        for(int i = 0; i < hdr->e_phnum; i++) {
-            //printk("type: %p\n", phdr[i].p_type);
-        }
-
-        uint64_t page, low_data_addr;
-        low_data_addr =  (data_seg < rodata)?section[data_seg].sh_addr:section[rodata].sh_addr;
-
-        //set up txt section
-        if(PAGE_SIZE < section[txt].sh_size) {panic("ERROR: ELF txt too big\n"); halt();}
-        page = insert_page(new_pml4, hdr->e_entry, USER_SETTINGS);
-        printk("data: %p\n", data);
-        memcpy((void*)page, (void*)(section[txt].sh_offset + data), section[txt].sh_size);
-
-        if((PAGE_SIZE + section[txt].sh_size) > low_data_addr) {
-            panic("ERROR: data fits on same page as txt\n");
-            halt();
-        }
-
-        //uint64_t at = hdr->e_entry + PAGE_SIZE;
-        page = insert_page(new_pml4, (data_seg > rodata)?section[data_seg].sh_addr:section[rodata].sh_addr, USER_SETTINGS);
-        memcpy((void*)page, (void*)(((data_seg > rodata)?section[data_seg].sh_addr:section[rodata].sh_addr) + data), (data_seg > rodata)?section[data_seg].sh_size:section[rodata].sh_size);
-        panic("debugging\n");halt();
-
-        for(uint64_t i = section[data_seg].sh_addr; i < ((5*PAGE_SIZE) + (section[data_seg].sh_addr)); i += PAGE_SIZE) {
-            insert_page(new_pml4, i, USER_SETTINGS);
-            printk("addy: %p\n", i);
-        }
-
-
-        create_mm(mm,
-                0, //start_stack,
-                0, //mmap_base,
-                0, //brk,
-                0, //start_brk,
-                section[bss].sh_addr,
-                section[data_seg].sh_addr,
-                (data_seg > rodata)?section[data_seg].sh_addr:section[rodata].sh_addr,
-                hdr->e_entry,
-                0 //pgd
-                );
-
-
-        return mm;
-    } else {
-        printk("Invalid ELF header for system.\n");
-    }
-
-    return NULL;
-}
-#endif
 
 void print_elf_hdr(Elf64_Ehdr *hdr) {
     printk("hdr->e_type      %p\n", hdr->e_type);    

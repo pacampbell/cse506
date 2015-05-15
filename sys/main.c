@@ -15,6 +15,10 @@
 void *kern_free;
 void *kern_base;
 
+uint64_t *kstack;
+uint64_t *kstack_top;
+pml4_t *kernel_cr3;
+
 void start(uint32_t* modulep, void* physbase, void* physfree) {
     struct smap_t {
         uint64_t base, length;
@@ -40,6 +44,8 @@ void start(uint32_t* modulep, void* physbase, void* physfree) {
     initializePaging((uint64_t)physbase, (uint64_t)physfree);
     // Set up the syscall table
     init_syscall();
+    /* Save some important values from the kernel */
+    save_kernel_global();
     // Create the kmain task
     Task *kmain_task = create_kernel_task("kmain", kmain);
     // Setup timer and keyboard here
@@ -63,7 +69,7 @@ void boot(void) {
             "movq %%rsp, %0;"
             "movq %1, %%rsp;"
             :"=g"(loader_stack)
-            :"r"(&stack[INITIAL_STACK_SIZE])
+            :"r"(&stack[INITIAL_STACK_SIZE - 16]) // this used to be just INITIAL_STACK_SIZE
            );
     // Initialize the descript tables and tss
     reload_gdt();
@@ -75,4 +81,14 @@ void boot(void) {
             (void*)(uint64_t)loader_stack[4]
          );
     while(1);
+}
+
+void save_kernel_global(void) {
+    /* WARNING */
+    /* Important that this comes first */
+    kernel_cr3 = get_cr3();
+    /* WARNING */
+    /* Create a stack for handling system calls */
+    kstack = (uint64_t*)kmalloc_kern(PAGE_SIZE);
+    kstack_top = &kstack[511];
 }

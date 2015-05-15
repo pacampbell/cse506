@@ -176,10 +176,8 @@ Task* create_user_elf_task(const char *name, char* elf, uint64_t size) {
     // dump_tables(kernel_pml4);
     // panic("END KERNEL TABLES\n");
     // Copy the kernels page tables
+    BOCHS_MAGIC();
     pml4_t *user_pml4 = copy_page_tables(kernel_pml4);
-    // panic("START USER TABLES\n");
-    // dump_tables(user_pml4);
-    // panic("END USER TABLES\n");
     // Allocate space for a new user task
     Task *user_task = create_task_struct();
     //user_task->mm = load_elf(elf, size, user_pml4);
@@ -216,7 +214,7 @@ Task* create_task_struct(void) {
     Task *task = get_free_task_struct();
     if(task == NULL) {
         // There was no more free tasks so create a new one
-        task = (Task*) PHYS_TO_VIRT(kmalloc_pg());
+        task = (Task*)kmalloc_kern(PAGE_SIZE);
         memset(task, 0, sizeof(Task));
         printk("Created new task struct\n");
     } else {
@@ -274,14 +272,14 @@ Task *get_next_task(void) {
 void setup_new_stack(Task *task) {
     // uint64_t *stack = task->type == USER ? task->ustack : task->kstack;
     // Set the segments for the correct ring
-    task->kstack[511] = task->registers.ss;
-    task->kstack[508] = task->registers.cs;
-    // set the top of the user/kernel stack
-    task->kstack[510] = task->registers.rsp;  // (uint64_t)&(stack[511]);
-    task->kstack[509] = 0x200202;                // Set the flags
-    task->kstack[507] = task->registers.rip;  // The entry point (on a forked task this might not be the start)
+    task->kstack[2047] = task->registers.ss;
+    task->kstack[2046] = task->registers.rsp;   // set the top of the user/kernel stack
+    task->kstack[2045] = 0x200202;              // Set the flags
+    task->kstack[2044] = task->registers.cs;    
+    task->kstack[2043] = task->registers.rip;  // The entry point (on a forked task this might not be the start)
     // Set the stack pointer to the amount of items pushed
-    task->registers.rsp = (uint64_t)&(task->kstack[507]);
+    task->registers.rsp = (uint64_t)&(task->kstack[2043]);
+    printk("kstack_top: %p\n", task->registers.rsp);
 }
 
 Task* create_new_task(Task* task, const char *name, task_type_t type,
@@ -296,7 +294,8 @@ Task* create_new_task(Task* task, const char *name, task_type_t type,
     task->in_use = true;
     task->sleep = -1;
     /* Set the address of the stack */
-    task->kstack = (uint64_t*) PHYS_TO_VIRT(kmalloc_pg());
+    task->kstack = (uint64_t*) kmalloc_kern(PAGE_SIZE * 4);
+    // insert_page(get_cr3(), (uint64_t)(task->kstack), KERN_SETTINGS);
     if(type == USER) {
         uint64_t new_stack = task->mm->brk + (50 * PAGE_SIZE);
         //uint64_t new_stack = (uint64_t)PG_RND_DOWN(PHYS_TO_VIRT(kern_base));
@@ -400,11 +399,11 @@ Task *clone_task(Task *src, uint64_t global_sp, uint64_t global_rip) {
             halt();
         }
         // Set the kernel stack to have the correct values
-        new_task->kstack[511] = 0x23;
-        new_task->kstack[510] = global_sp;
-        new_task->kstack[509] = 0x200202;
-        new_task->kstack[508] = 0x2b;
-        new_task->kstack[507] = global_rip;
+        new_task->kstack[2047] = 0x23;
+        new_task->kstack[2046] = global_sp;
+        new_task->kstack[2045] = 0x200202;
+        new_task->kstack[2044] = 0x2b;
+        new_task->kstack[2043] = global_rip;
         // Set RSP to be address of 507
         new_task->registers.rsp = (uint64_t)&(new_task->kstack[507]);
         // set_cr3(current_pml4);

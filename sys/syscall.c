@@ -383,7 +383,5 @@ void init_syscall() {
     write_msr(IA32_MSR_STAR, star_value & 0xffffffff, (star_value >> 32) & 0xffffffff);
     // Set the flags to clear
     uint64_t flag_mask = IA32_FLAGS_INTERRUPT | IA32_FLAGS_DIRECTION; 
-    printk("Flags: %p\n", flag_mask);
     SET_FMASK(flag_mask);
-    printk("Flags mask: %p\n", read_msr(IA32_MSR_FMASK));
 }

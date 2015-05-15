@@ -31,6 +31,32 @@
         #define USER_SETTINGS (P | RW | US)
         #define KERN_SETTINGS (P | RW) 
 
+        #define RECURSIVE_SLOT (510L)
+
+        #define L4_SHIFT (39)
+        #define L3_SHIFT (30)
+        #define L2_SHIFT (21)
+        #define L1_SHIFT (12)
+
+#define UPPER_ADDR(x) ( (uint64_t*) (0xffffL << 48 | (x) ) )
+
+#define PGTBL_ADDR UPPER_ADDR((RECURSIVE_SLOT<<L4_SHIFT))
+
+#define PGDIR_ADDR UPPER_ADDR((RECURSIVE_SLOT<<L4_SHIFT) \
+                     |(RECURSIVE_SLOT<<L3_SHIFT))
+
+#define PDPT_ADDR UPPER_ADDR((RECURSIVE_SLOT<<L4_SHIFT) \
+                     |(RECURSIVE_SLOT<<L3_SHIFT) \
+                     |(RECURSIVE_SLOT<<L2_SHIFT))
+
+#define PML4T_ADDR UPPER_ADDR((RECURSIVE_SLOT<<L4_SHIFT) \
+                     |(RECURSIVE_SLOT<<L3_SHIFT) \
+                     |(RECURSIVE_SLOT<<L2_SHIFT) \
+                     |(RECURSIVE_SLOT<<L1_SHIFT))
+
+       
+
+         
         /* Multi level page table directories */
         struct pml4_t {
             uint64_t entries[MAX_TABLE_ENTRIES];
@@ -67,6 +93,7 @@
         void* kmalloc_pg(void);
         void kfree_pg(void *address);
         void* kmalloc_vma(pml4_t *cr3, uint64_t virt_base, size_t size, uint64_t permissions);
+        void *kmalloc_kern(size_t size);
         bool leaks_pg(uint64_t virt_base, size_t size);
         uint64_t calculate_total_page_by_size(size_t size, uint64_t base_addr);
 
@@ -123,16 +150,16 @@
         void dump_tables(pml4_t *cr3);
         void check_vma_permissions(pml4_t *cr3, uint64_t address);
 
-        pdpt_t* get_pml4e(pml4_t *cr3, uint64_t virtual_address);
-        pd_t* get_pdpte(pml4_t *cr3, uint64_t virtual_address);
-        pt_t* get_pde(pml4_t *cr3, uint64_t virtual_address);
-        uint64_t get_pte(pml4_t *cr3, uint64_t virtual_address);
+        // pdpt_t* get_pml4e(pml4_t *cr3, uint64_t virtual_address);
+        // pd_t* get_pdpte(pml4_t *cr3, uint64_t virtual_address);
+        // pt_t* get_pde(pml4_t *cr3, uint64_t virtual_address);
+        // uint64_t get_pte(pml4_t *cr3, uint64_t virtual_address);
 
         /* Cleaner insertion functions */
-        pdpt_t* insert_pml4e(pml4_t *cr3, uint64_t virtual_address);
-        pd_t* insert_pdpte(pml4_t *cr3, uint64_t virtual_address);
-        pt_t* insert_pde(pml4_t *cr3, uint64_t virtual_address);
-        uint64_t insert_pte(pml4_t *cr3, uint64_t virtual_address, uint64_t permissions);
+        // pdpt_t* insert_pml4e(pml4_t *cr3, uint64_t virtual_address);
+        // pd_t* insert_pdpte(pml4_t *cr3, uint64_t virtual_address);
+        // pt_t* insert_pde(pml4_t *cr3, uint64_t virtual_address);
+        // uint64_t insert_pte(pml4_t *cr3, uint64_t virtual_address, uint64_t permissions);
 
         /**
          * Gets the page table using the virtual address
@@ -142,5 +169,15 @@
          */
         pt_t* get_pt(pml4_t *pml4, uint64_t virtual_address);
         pt_t* get_pt_virt(pml4_t *pml4, uint64_t virtual_address, uint64_t permissions);
+
+        /* Self referencing */
+        uint64_t insert_pml4e(pml4_t *cr3, uint64_t virtual_address, uint64_t frame);
+        uint64_t insert_pdpte(pml4_t *cr3, uint64_t virtual_address, uint64_t frame);
+        uint64_t insert_pde(pml4_t *cr3, uint64_t virtual_address, uint64_t frame);
+        uint64_t insert_pte(pml4_t *cr3, uint64_t virtual_address, uint64_t frame);
+        uint64_t get_pml4e(pml4_t *cr3, uint64_t virtual_address);
+        uint64_t get_pdpte(pml4_t *cr3, uint64_t virtual_address);
+        uint64_t get_pde(pml4_t *cr3, uint64_t virtual_address);
+        uint64_t get_pte(pml4_t *cr3, uint64_t virtual_address);
     #endif
 #endif
