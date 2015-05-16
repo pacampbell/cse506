@@ -38,7 +38,7 @@ struct mm_struct* load_elf(char *data, int len, Task *task, pml4_t *proc_pml4) {
                     halt();
                 }
 
-                struct vm_area_struct *vma = (struct vm_area_struct*) kmalloc_kern(PAGE_SIZE);
+                struct vm_area_struct *vma = (struct vm_area_struct*) kmalloc_kern(sizeof(struct vm_area_struct));
                 if(kmalloc_vma(proc_pml4, prgm_hdr->p_vaddr, prgm_hdr->p_memsz, USER_SETTINGS) == NULL) {
                     panic("KMALLOC FAILED - elf.c:load_elf:34\n");
                     printk("SIZE: %d\n", prgm_hdr->p_filesz);
@@ -76,6 +76,12 @@ struct mm_struct* load_elf(char *data, int len, Task *task, pml4_t *proc_pml4) {
 
         mm->brk = high_addr;
         mm->start_brk = mm->brk;
+        struct vm_area_struct *vma = (struct vm_area_struct*) kmalloc_kern(sizeof(struct vm_area_struct));
+        vma->vm_start = mm->start_brk;
+        vma->vm_end = mm->brk;
+        vma->vm_prot = 0;
+        add_vma(mm, vma);
+     
         return mm;
 
     } else {
