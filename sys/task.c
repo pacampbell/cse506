@@ -272,13 +272,13 @@ Task *get_next_task(void) {
 void setup_new_stack(Task *task) {
     // uint64_t *stack = task->type == USER ? task->ustack : task->kstack;
     // Set the segments for the correct ring
-    task->kstack[2047] = task->registers.ss;
-    task->kstack[2046] = task->registers.rsp;   // set the top of the user/kernel stack
-    task->kstack[2045] = 0x200202;              // Set the flags
-    task->kstack[2044] = task->registers.cs;    
-    task->kstack[2043] = task->registers.rip;  // The entry point (on a forked task this might not be the start)
+    task->kstack[511] = task->registers.ss;
+    task->kstack[510] = task->registers.rsp;   // set the top of the user/kernel stack
+    task->kstack[509] = 0x200202;              // Set the flags
+    task->kstack[508] = task->registers.cs;    
+    task->kstack[507] = task->registers.rip;  // The entry point (on a forked task this might not be the start)
     // Set the stack pointer to the amount of items pushed
-    task->registers.rsp = (uint64_t)&(task->kstack[2043]);
+    task->registers.rsp = (uint64_t)&(task->kstack[507]);
     // printk("kstack_top: %p\n", task->registers.rsp);
 }
 
@@ -294,7 +294,7 @@ Task* create_new_task(Task* task, const char *name, task_type_t type,
     task->in_use = true;
     task->sleep = -1;
     /* Set the address of the stack */
-    task->kstack = (uint64_t*) kmalloc_kern(PAGE_SIZE * 4);
+    task->kstack = (uint64_t*) kmalloc_kern(PAGE_SIZE);
     // insert_page(get_cr3(), (uint64_t)(task->kstack), KERN_SETTINGS);
     if(type == USER) {
         uint64_t new_stack = task->mm->brk + (50 * PAGE_SIZE);
@@ -383,7 +383,7 @@ Task *clone_task(Task *src, uint64_t global_sp, uint64_t global_rip) {
         new_task->prev = NULL;
         new_task->children = NULL;
         // Create new kstack and ustack
-        new_task->kstack = (uint64_t*) kmalloc_kern(PAGE_SIZE * 4);       
+        new_task->kstack = (uint64_t*) kmalloc_kern(PAGE_SIZE);       
         // Create new user stack
         printk("Stack start: %p", new_task->mm->start_stack & PG_ALIGN);
         halt();
