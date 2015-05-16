@@ -342,6 +342,12 @@ Task* create_new_task(Task* task, const char *name, task_type_t type,
 
     if(task->mm != NULL) {
         task->mm->start_stack = task->registers.rsp;
+        struct vm_area_struct *vma = kmalloc_kern(sizeof(struct vm_area_struct));
+        vma->vm_start = task->mm->start_stack;
+        vma->vm_end = vma->vm_start + PAGE_SIZE;
+        vma->vm_prot = VM_GROWSDOWN;
+        add_vma(task->mm, vma);
+
     }
 
     /* This task is the end of the list */
