@@ -2,7 +2,7 @@
 #define _SYS_MM_VMA_H_
 
 #include <sys/defs.h>
-#include <sys/pgtable.h>
+//#include <sys/pgtable.h>
 
 #define VM_READ         0x00000001      /* currently active flags */
 #define VM_WRITE        0x00000002

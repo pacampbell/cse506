@@ -317,21 +317,20 @@ uint64_t insert_page(pml4_t *cr3, uint64_t virtual_address, uint64_t permissions
     return PHYS_TO_VIRT(page & PG_ALIGN);
 }
 
-pml4_t* copy_page_tables(Task *src) {
+pml4_t* copy_page_tables(pml4_t *src) {
     pml4_t *copy = NULL;
     if(src != NULL) {
-        pml4_t *src_pml4 = (pml4_t*)src->registers.cr3;
         // pml4_t *ocr3 = get_cr3();
-        set_cr3(src_pml4);
+        set_cr3(src);
         // printk("kernel: %p ocr3: %p src: %p\n", kernel_cr3, ocr3, src);
-        src_pml4  =(pml4_t*) PHYS_TO_VIRT(src_pml4);
+        src  =(pml4_t*) PHYS_TO_VIRT(src);
         copy = (pml4_t*) kmalloc_kern(PAGE_SIZE);
         pml4_t *copy_phys = (pml4_t*) VIRT_TO_PHYS(copy);
-        pml4_t *src_phys = (pml4_t*) VIRT_TO_PHYS(src_pml4);
+        pml4_t *src_phys = (pml4_t*) VIRT_TO_PHYS(src);
         // Zero out the new pml4
         memset(copy, 0, sizeof(pml4_t));
         // Link the kernel pages into this page table entry
-        copy->entries[511] = src_pml4->entries[511];
+        copy->entries[511] = src->entries[511];
         set_cr3(copy_phys);
         // printk("kernel: %p ocr3: %p src: %p current: %p\n", kernel_cr3, ocr3, src, get_cr3());
         copy->entries[510] = (uint64_t)copy_phys | P | RW | US;

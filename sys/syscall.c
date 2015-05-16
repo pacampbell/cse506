@@ -1,6 +1,6 @@
 #define __KERNEL__
-#include <sys/syscall_k.h>
 #include <sys/task.h>
+#include <sys/syscall_k.h>
 #include <sys/pgtable.h>
 #include <sbunix/debug.h>
 #include <sys/tarfs.h>

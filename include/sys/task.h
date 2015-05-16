@@ -5,9 +5,9 @@
     #define _TASK_H
         /* FIXME: This file only defines kernel multitasking as of now */
         /* FIXME: Userspace multitasking still needs to be implemented */
+        #include <sys/pgtable.h>
         #include <sys/defs.h>
         #include <sbunix/string.h>
-        #include <sys/pgtable.h>
         #include <sys/mm/vma.h>
         #include <sys/gdt.h> 
         #include <sys/fs/file.h>

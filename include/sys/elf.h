@@ -5,7 +5,7 @@
 	#define __ELF_H
 	#include <sys/defs.h>
 	#include <sys/sbunix.h>
-        #include <sys/task.h>
+    #include <sys/task.h>
 	/* TODO: Does not include dynamic linking tables */
 
 	/* Elf-64 typedefs defined from ELF-64 Object File Format, Version 1.5 

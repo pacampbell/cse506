@@ -362,7 +362,7 @@ Task *clone_task(Task *src, uint64_t global_sp, uint64_t global_rip) {
         dump_tables((pml4_t*)src->registers.cr3);
         panic("KERNEL TABLE DUMP\n");
         halt();
-        // pml4_t *cloned_pml4 = copy_page_tables((pml4_t*)(src->registers.cr3));
+        pml4_t *cloned_pml4 = copy_page_tables((pml4_t*)(src->registers.cr3));
         // Set copied cr3
         new_task->registers.cr3 = (uint64_t)cloned_pml4;
         // Assign a new pid

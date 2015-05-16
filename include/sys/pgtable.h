@@ -3,11 +3,12 @@
 #else
     #ifndef _PGTABLE_H
     #define _PGTABLE_H
+        #include <sys/mm/vma.h>
+        //#include <sys/task.h>
         #include <sys/sbunix.h>
         #include <sbunix/string.h>
         #include <sys/screen.h>
         #include <sys/defs.h>
-        #include <sys/task.h>
         
         #define FREE 1
         #define USED 0
@@ -88,7 +89,7 @@
          * @param src Source task to copy page tables of.
          * @return Returns a copy of src.
          */
-        pml4_t* copy_page_tables(Task *src);
+        pml4_t* copy_page_tables(pml4_t *src);
 
         /**
          * Inserts a page into the page table referenced by cr3
