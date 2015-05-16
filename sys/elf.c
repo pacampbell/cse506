@@ -93,12 +93,7 @@ struct mm_struct* load_elf(char *data, int len, Task *task, pml4_t *proc_pml4) {
 
 void load_elf_args(Task *tsk, int argc, char *argv[], char *envp[]) {
     if (tsk->mm->start_stack == 0) panic("Task not set up\n");
-    panic("called\n");
-    for (int i = 0; i < argc; i++) {
-        printk("addr: %p %p\n", argv[i], argv);
-        printk("got: %s\n", argv[i]);
-    }
-
+    
     char *tmp_c = kmalloc_kern(sizeof(char));
 
     pml4_t *kern_cr3;
@@ -168,15 +163,13 @@ void load_elf_args(Task *tsk, int argc, char *argv[], char *envp[]) {
         tsk_env++;
         set_cr3(kern_cr3);
     }
-        panic("here now2\n");
-        set_cr3(task_cr3);
+    set_cr3(task_cr3);
 
     *new_stack= 0;
     new_stack++;
     
     set_cr3(kern_cr3);
-    panic("Done\n");
-
+    kfree_pg(tmp_c);
 }
 
 bool same_pg(uint64_t pg, uint64_t addr) {

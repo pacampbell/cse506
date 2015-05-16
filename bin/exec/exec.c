@@ -3,6 +3,6 @@
 
 int main(int argc, char *argv[], char *envp[]) {
     printf("execing...\n");
-    execve("bin/ps", argv, envp);
+    execve("bin/args", argv, envp);
     printf("STILL HERE... NOT GOOD!!!\n");
 }
