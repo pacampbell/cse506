@@ -179,7 +179,6 @@ Task* create_user_elf_task(const char *name, char* elf, uint64_t size) {
     // dump_tables(kernel_pml4);
     // panic("END KERNEL TABLES\n");
     // Copy the kernels page tables
-    BOCHS_MAGIC();
     pml4_t *user_pml4 = copy_page_tables(kernel_pml4, NULL);
     // Allocate space for a new user task
     Task *user_task = create_task_struct();
@@ -476,7 +475,6 @@ void switch_tasks(Task *old, Task *new) {
         if(old->state != TERMINATED) {
             old->state = READY;
             // printk("Swicthing out %s - ursp %p kstack: %p \n", old->name, old->registers.rsp, old->kstack);
-            // BOCHS_MAGIC();
             /* Save the current register state */
             __asm__ __volatile__(
                 /* save rax so we can use it for scratch */
@@ -526,7 +524,6 @@ void switch_tasks(Task *old, Task *new) {
         tss.rsp0 = (uint64_t)&((current_task->kstack)[511]);
         // Now swap to new task
         // printk("Switching in %s - rsp %p\n", current_task->name, current_task->registers.rsp);
-        // BOCHS_MAGIC();
         __asm__ __volatile__(
             /* Save the argument in the register */
             "movq %0, %%rax;"
@@ -553,7 +550,6 @@ void switch_tasks(Task *old, Task *new) {
             "movq 0x40(%%rax), %%rsp;"
             /* Set rax */
             "movq 0x0(%%rax), %%rax;"
-            // "xchg %%bx, %%bx;"
             :
             : "r"(current_task)
             : "memory"
@@ -563,7 +559,37 @@ void switch_tasks(Task *old, Task *new) {
             __asm__ __volatile__("iretq;");
         } else {
             if(current_task->type == USER) {
-                printk("Continuing: %s - pid: %d\n", current_task->name, current_task->pid);
+                __asm__ __volatile__(
+                    /* Save the argument in the register */
+                    "movq %0, %%rax;"
+                    /* Set cr3 */
+                    "movq 0x88(%0), %%rdi;"
+                    "movq %%rdi, %%cr3;"
+                    /* Set the rest of the registers */
+                    "movq 0x8(%%rax), %%rbx;"
+                    "movq 0x10(%%rax), %%rcx;"
+                    "movq 0x18(%%rax), %%rdx;"
+                    "movq 0x20(%%rax), %%rsi;"
+                    "movq 0x28(%%rax), %%rdi;"
+                    "movq 0x48(%%rax), %%r8;"
+                    "movq 0x50(%%rax), %%r9;"
+                    "movq 0x58(%%rax), %%r10;"
+                    "movq 0x60(%%rax), %%r11;"
+                    "movq 0x68(%%rax), %%r12;"
+                    "movq 0x70(%%rax), %%r13;"
+                    "movq 0x78(%%rax), %%r14;"
+                    "movq 0x80(%%rax), %%r15;"
+                    /* Set the base pointer */
+                    "movq 0x30(%%rax), %%rbp;"
+                    /* set the stack pointer */
+                    "movq 0x40(%%rax), %%rsp;"
+                    /* Set rax */
+                    "movq 0x0(%%rax), %%rax;"
+                    // "xchg %%bx, %%bx;"
+                    :
+                    : "r"(current_task)
+                    : "memory"
+                );
             } else {
                 __asm__ __volatile__(
                     "sti;"
