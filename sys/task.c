@@ -152,7 +152,7 @@ Task* create_user_elf_args_task(const char *name, char* elf, uint64_t size, int 
     // Get the kernel page tables
     pml4_t *kernel_pml4 = (pml4_t *)get_cr3();
     // Copy the kernels page tables
-    pml4_t *user_pml4 = copy_page_tables(kernel_pml4);
+    pml4_t *user_pml4 = copy_page_tables(kernel_pml4, NULL);
     // Allocate space for a new user task
     Task *user_task = create_task_struct();
     //user_task->mm = load_elf(elf, size, user_pml4);
@@ -177,7 +177,7 @@ Task* create_user_elf_task(const char *name, char* elf, uint64_t size) {
     // panic("END KERNEL TABLES\n");
     // Copy the kernels page tables
     BOCHS_MAGIC();
-    pml4_t *user_pml4 = copy_page_tables(kernel_pml4);
+    pml4_t *user_pml4 = copy_page_tables(kernel_pml4, NULL);
     // Allocate space for a new user task
     Task *user_task = create_task_struct();
     //user_task->mm = load_elf(elf, size, user_pml4);
@@ -299,8 +299,8 @@ Task* create_new_task(Task* task, const char *name, task_type_t type,
     if(type == USER) {
         uint64_t new_stack = task->mm->brk + (50 * PAGE_SIZE);
         //uint64_t new_stack = (uint64_t)PG_RND_DOWN(PHYS_TO_VIRT(kern_base));
-        printk("kern_base: %p\n", PHYS_TO_VIRT(kern_base));
-        printk("stack: %p, brk: %p, diff: %p\n", new_stack, task->mm->brk, new_stack - task->mm->brk);
+        // printk("kern_base: %p\n", PHYS_TO_VIRT(kern_base));
+        // printk("stack: %p, brk: %p, diff: %p\n", new_stack, task->mm->brk, new_stack - task->mm->brk);
         new_stack &= PG_ALIGN;
         if(kmalloc_vma(pml4, new_stack, 1, USER_SETTINGS) == NULL) {
             panic("KMALLOC VMA FAILED\n");
@@ -365,9 +365,7 @@ Task *clone_task(Task *src, uint64_t global_sp, uint64_t global_rip) {
         // Copy the struct (no deep copies)
         memcpy(new_task, src, sizeof(Task));
         // Copy the page tables of the source process
-        // pml4_t *current_pml4 = get_cr3();
-        // set_cr3(g_kernel_pgtable);
-        pml4_t *cloned_pml4 = copy_page_tables((pml4_t*)(src->registers.cr3));
+        pml4_t *cloned_pml4 = copy_page_tables((pml4_t*)(src->registers.cr3), src->mm);
         // Set copied cr3
         new_task->registers.cr3 = (uint64_t)cloned_pml4;
         // Assign a new pid
@@ -385,27 +383,38 @@ Task *clone_task(Task *src, uint64_t global_sp, uint64_t global_rip) {
         new_task->prev = NULL;
         new_task->children = NULL;
         // Create new kstack and ustack
-        new_task->kstack = (uint64_t*) PHYS_TO_VIRT(kmalloc_pg());
-        // memset(new_task->kstack, 0, PAGE_SIZE);        
+        new_task->kstack = (uint64_t*) kmalloc_kern(PAGE_SIZE * 4);       
         // Create new user stack
-        if(new_task->type == USER) {
-            uint64_t stack_size = PG_RND_UP(new_task->mm->start_stack) - global_sp;
-            // Allocate space for a new user stack
-            new_task->ustack = (uint64_t*)kmalloc_vma(cloned_pml4, new_task->mm->start_stack & PG_ALIGN, stack_size, USER_SETTINGS);
-            // printk("rsp: %p ustack_base: %p size: %d byte(s)\n", global_sp, new_task->mm->start_stack, stack_size);
-        
-        } else {
-            panic("ERROR: COPY KERNEL TASK?\n");
-            halt();
-        }
+        printk("Stack start: %p", new_task->mm->start_stack & PG_ALIGN);
+        halt();
+        // if(new_task->type == USER) {
+        //     uint64_t stack_size = PG_RND_UP(new_task->mm->start_stack) - global_sp;
+        //     // Allocate space for a new user stack
+        //     new_task->ustack = (uint64_t*)kmalloc_vma(cloned_pml4, new_task->mm->start_stack & PG_ALIGN, stack_size, USER_SETTINGS);
+        //     // copy the users stack into
+        //     char *buffer = kmalloc_kern(PAGE_SIZE)
+        //     set_cr3((pml4_t*)src);
+        //     uint64_t
+        //     memcpy()
+
+
+        //     kfree_pg(buffer);
+        //     printk("stack size: %d\n", stack_size);
+        //     // 
+        //     halt();
+        //     // printk("rsp: %p ustack_base: %p size: %d byte(s)\n", global_sp, new_task->mm->start_stack, stack_size);
+        // } else {
+        //     panic("ERROR: COPY KERNEL TASK?\n");
+        //     halt();
+        // }
         // Set the kernel stack to have the correct values
-        new_task->kstack[2047] = 0x23;
-        new_task->kstack[2046] = global_sp;
-        new_task->kstack[2045] = 0x200202;
-        new_task->kstack[2044] = 0x2b;
-        new_task->kstack[2043] = global_rip;
+        // new_task->kstack[2047] = 0x23;
+        // new_task->kstack[2046] = global_sp;
+        // new_task->kstack[2045] = 0x200202;
+        // new_task->kstack[2044] = 0x2b;
+        // new_task->kstack[2043] = global_rip;
         // Set RSP to be address of 507
-        new_task->registers.rsp = (uint64_t)&(new_task->kstack[507]);
+        // new_task->registers.rsp = (uint64_t)&(new_task->kstack[2043]);
         // set_cr3(current_pml4);
     } else {
         panic("UNABLE TO CLONE NULL TASK");
@@ -571,6 +580,9 @@ void switch_tasks(Task *old, Task *new) {
         if(current_task->state == NEW) {
             current_task->state = RUNNING;
             __asm__ __volatile__("iretq;");
+        } else {
+            printk("Where is my interrupts?\n");
+            __asm__ __volatile__("sti;");
         }
     }
 }

@@ -283,6 +283,7 @@ void *kmalloc_vma(pml4_t *cr3, uint64_t virt_base, size_t size, uint64_t permiss
         // Allocate pages and map to virtual address
         for(int i = 0; i < num_pages; i++) {
             uint64_t virt_addr = virt_base + (i * PAGE_SIZE);
+            // printk("virt_addr: %p\n", virt_addr);
             insert_page(cr3, virt_addr, permissions);
             if(i == 0) {
                 new_allocation = (void*)virt_addr;
@@ -317,7 +318,7 @@ uint64_t insert_page(pml4_t *cr3, uint64_t virtual_address, uint64_t permissions
     return PHYS_TO_VIRT(page & PG_ALIGN);
 }
 
-pml4_t* copy_page_tables(pml4_t *src) {
+pml4_t* copy_page_tables(pml4_t *src, struct mm_struct *mm) {
     pml4_t *copy = NULL;
     if(src != NULL) {
         pml4_t *ocr3 = get_cr3();
@@ -325,6 +326,7 @@ pml4_t* copy_page_tables(pml4_t *src) {
         src  = (pml4_t*) PHYS_TO_VIRT(src);
         copy = (pml4_t*) kmalloc_kern(PAGE_SIZE);
         pml4_t *copy_phys = (pml4_t*)VIRT_TO_PHYS(copy);
+        pml4_t *src_phys = (pml4_t*)VIRT_TO_PHYS(src);
         // Zero out the new pml4
         memset(copy, 0, sizeof(pml4_t));
         // Link the kernel pages into this page table entry
@@ -332,10 +334,43 @@ pml4_t* copy_page_tables(pml4_t *src) {
         set_cr3(copy_phys);
         // printk("kernel: %p ocr3: %p src: %p current: %p\n", kernel_cr3, ocr3, src, get_cr3());
         copy->entries[510] = (uint64_t)copy_phys | P | RW | US;
+        // Go back to the source page tables and start searching for user pages
+        set_cr3(src_phys);
+        
+        if(mm != NULL) {
+            for(struct vm_area_struct *vma = mm->mmap; vma != NULL; vma = vma->next) {
+                printk("vma: %p - %s\n", vma->vm_start, (vma->vm_prot & VM_GROWSDOWN) == VM_GROWSDOWN ? "GROWS DOWN" : "GROWS UP");
+                if(get_pml4e(src_phys, USER_VIRT_OFFSET) != 0x0) {
+                    char *buffer = kmalloc_kern(PAGE_SIZE);
+                    uint64_t address = vma->vm_start & PG_ALIGN;
+                    uint64_t pte;
+                    uint64_t grow_amount = (vma->vm_prot & VM_GROWSDOWN) == VM_GROWSDOWN ? -PAGE_SIZE : PAGE_SIZE;
+                    while((pte = get_pte(src_phys, address)) != 0x0) {
+                        // Create the pt if it does not exist
+                        get_pt_virt(copy_phys, address, USER_SETTINGS);
+                        // Create a new pte in the copy page tables
+                        insert_pte(copy_phys, address, (uint64_t)kmalloc_pg() | USER_SETTINGS);
+                        // Copy the src pte contents into a buffer
+                        set_cr3(src_phys);
+                        memcpy(buffer, (void*)address, PAGE_SIZE);
+                        // Copy the buffer into new pte just inserted in the copy table
+                        set_cr3(copy_phys);
+                        memcpy((void*)address, buffer, PAGE_SIZE);
+                        // Set back to the src page tables
+                        set_cr3(src_phys);
+                        // Increment the address by 1 page and try again
+                        address += grow_amount;
+                    }
+                    // release the page content buffer
+                    kfree_pg(buffer);
+                }
+            }
+        } else {
+            printk("Skipping mm on kernel tables\n");
+        }
         // Change the copy back to a physical address
         copy = copy_phys;
         set_cr3(ocr3);
-        // FIXME implement for child process - user pages
     }
     return copy;
 }
