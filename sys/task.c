@@ -581,7 +581,7 @@ void switch_tasks(Task *old, Task *new) {
             current_task->state = RUNNING;
             __asm__ __volatile__("iretq;");
         } else {
-            printk("Where is my interrupts?\n");
+            // printk("Where is my interrupts?\n");
             __asm__ __volatile__("sti;");
         }
     }
