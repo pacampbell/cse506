@@ -365,8 +365,6 @@ pml4_t* copy_page_tables(pml4_t *src, struct mm_struct *mm) {
                     kfree_pg(buffer);
                 }
             }
-        } else {
-            printk("Skipping mm on kernel tables\n");
         }
         // Change the copy back to a physical address
         copy = copy_phys;
