@@ -1,12 +1,15 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+void child_func();
+
 int main(int argc, char *argv[]) {
 	pid_t pid = -1;
 	printf("MULTIPLY ME\n");
 	switch((pid = fork())) {
 		case 0:
 			printf("In the child - parent %d\n", getppid());
+			child_func();
 			break;
 		case -1:
 			printf("Failed to fork\n");
@@ -15,6 +18,13 @@ int main(int argc, char *argv[]) {
 			printf("Parent %d forked a child with pid %d\n", getpid(), pid);
 			break;
 	}
-
+	printf("Good bye world\n");
 	return EXIT_SUCCESS;
+}
+
+void child_func() {
+	printf("Yay in a child function!\n");
+	for(int i = 0; i < 10; i++) {
+		printf("%d\n", i);
+	}
 }

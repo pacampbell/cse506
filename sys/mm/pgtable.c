@@ -407,41 +407,6 @@ void kfree_pg(void *address) {
     set_pg_free(page_index, 1);
 }
 
-void dump_tables(pml4_t *cr3) {
-    if(cr3 != NULL) {
-        pml4_t *old_cr3 = get_cr3();
-        set_cr3(cr3);
-        printk("cr3: %p\n", cr3);
-        // Make cr3 virtual
-        cr3 = (pml4_t*)PHYS_TO_VIRT(cr3);
-        for(int i = 0; i < 512; i++) {
-            if(cr3->entries[i] != 0x0) {
-                printk("index: %d pml4e: %p\n", i, cr3->entries[i]);
-                pdpt_t *pml4e = (pdpt_t*)PHYS_TO_VIRT(cr3->entries[i] & PG_ALIGN);
-                for(int j = 0; j < 512; j++) {
-                    if(pml4e->entries[j] != 0x0){
-                        printk("index: %d pdpte: %p\n", j, pml4e->entries[j]);
-                        pd_t *pdpte = (pd_t*)PHYS_TO_VIRT(pml4e->entries[j] & PG_ALIGN);
-                        for(int k = 0; k < 512; k++) {
-                            if(pdpte->entries[k] != 0x0) {
-                                printk("index: %d pde: %p\n", k, pdpte->entries[k]);
-                                pt_t *pde = (pt_t*)PHYS_TO_VIRT(pdpte->entries[k] & PG_ALIGN);
-                                for(int l = 0; l < 512; l++) {
-                                    if(pde->entries[l] != 0x0) {
-                                        printk("index: %d pte: %p\n", l, pde->entries[l]);
-                                        // BOCHS_MAGIC();
-                                    }
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-        }
-        set_cr3(old_cr3);
-    }
-}
-
 uint64_t insert_pml4e(pml4_t *cr3, uint64_t virtual_address, uint64_t frame) {
     // Save previous cr3
     pml4_t *ocr3 = get_cr3();

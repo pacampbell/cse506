@@ -11,8 +11,6 @@
 uint64_t global_rip = 0;
 uint64_t global_sp = 0;
 
-void sys_ps();
-
 void sys_exit(int ret) {
     // Unschedule the current task.
     preempt(true);
@@ -180,10 +178,8 @@ void sys_nanosleep(struct timespec *req, struct timespec *rem) {
     while(task->sleep > tick) {
         // Not ready to wake up just sleep
         printk("Sleeping until %d - currently: %d\n", task->sleep, tick);
-        // BOCHS_MAGIC();
         preempt(false);
     }
-    BOCHS_MAGIC();
     // Task is no longer sleeping. Reset
     task->sleep = -1;
     task->state = RUNNING;
