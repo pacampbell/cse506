@@ -111,6 +111,13 @@ static void page_fault(registers_t regs) {
         panic("KMALLOC VMA FAILED\n");
     }
 
+    struct vm_area_struct *vma = kmalloc_kern(sizeof(struct vm_area_struct));
+    vma->vm_start = faulting_address & PG_ALIGN;
+    vma->vm_end = vma->vm_start + PAGE_SIZE;
+    vma->vm_prot = (tsk->mm->start_stack - faulting_address < faulting_address - tsk->mm->brk) ? VM_GROWSDOWN : 0;
+    add_vma(tsk->mm, vma);
+
+
     // uint64_t page = get_pte((pml4_t*)(tsk->registers.cr3), (uint64_t)address);
     // printk("New Page: %p\n", page);
     // printk("Address returned: %p\n", address);
