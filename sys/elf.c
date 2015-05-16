@@ -43,6 +43,7 @@ struct mm_struct* load_elf(char *data, int len, Task *task, pml4_t *proc_pml4) {
                     panic("KMALLOC FAILED - elf.c:load_elf:34\n");
                     printk("SIZE: %d\n", prgm_hdr->p_filesz);
                 }
+                // printk("ELF Virtual memory address: %p\n", prgm_hdr->p_vaddr);
 
                 set_cr3(proc_pml4);
                 memset((void*)prgm_hdr->p_vaddr, 0, prgm_hdr->p_memsz);

@@ -45,6 +45,7 @@ void start_shell(void) {
     // exec_tarfs_elf_args("bin/args", argc, argv, envp);
     // exec_tarfs_elf_args("bin/exec", argc, argv, envp);
     exec_tarfs_elf("bin/ps");
+    // exec_tarfs_elf("bin/fork");
     // exec_tarfs_elf("bin/kill");
     // exec_tarfs_elf("bin/open");
     // exec_tarfs_elf("bin/malloc");

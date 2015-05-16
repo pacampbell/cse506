@@ -7,6 +7,7 @@
         #include <sbunix/string.h>
         #include <sys/screen.h>
         #include <sys/defs.h>
+        #include <sys/mm/vma.h>
         
         #define FREE 1
         #define USED 0
@@ -102,7 +103,7 @@
          * @param src Page table pml4 to start copying.
          * @return Returns a copy of src.
          */
-        pml4_t* copy_page_tables(pml4_t *src);
+        pml4_t* copy_page_tables(pml4_t *src, struct mm_struct *mm);
 
         /**
          * Inserts a page into the page table referenced by cr3
@@ -131,6 +132,9 @@
         #define VIRTUAL_OFFSET (0xFFFFFFFF80000000)               // kernmem in linker script
         #define PHYS_TO_VIRT(physical) (((uint64_t) (physical) + VIRTUAL_OFFSET))
         #define VIRT_TO_PHYS(virtual) (((uint64_t) (virtual) - VIRTUAL_OFFSET))
+
+        #define USER_VIRT_OFFSET (0x400000)
+        #define PHYS_TO_VUSER(physical) (((uint64_t)(physical) + USER_VIRT_OFFSET) & PG_ALIGN)
 
         #define PG_RND_UP(address) (((uint64_t)(address) + PAGE_SIZE) & PG_ALIGN)
         #define PG_RND_DOWN(address) (((uint64_t)(address) & PG_ALIGN))
