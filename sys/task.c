@@ -382,6 +382,11 @@ Task *clone_task(Task *src, uint64_t global_sp, uint64_t global_rip) {
         new_task->in_use = true;
         // Assign the child task return value to zero
         new_task->registers.rax = 0;
+        // Set the stack pointer and instruction pointer
+        printk("global_sp: %p\n", global_sp);
+        new_task->registers.rsp = global_sp;
+        new_task->registers.rip = global_rip;
+        // new_task->registers.rip = global_rip;
         // Expliciting say this program is ready
         new_task->state = READY;
         // Set some pointers to be NULL
@@ -391,8 +396,7 @@ Task *clone_task(Task *src, uint64_t global_sp, uint64_t global_rip) {
         // Create new kstack and ustack
         new_task->kstack = (uint64_t*) kmalloc_kern(PAGE_SIZE);       
         // Create new user stack
-        printk("Stack start: %p", new_task->mm->start_stack & PG_ALIGN);
-        halt();
+        printk("Stack start: %p\n", new_task->mm->start_stack & PG_ALIGN);
         // if(new_task->type == USER) {
         //     uint64_t stack_size = PG_RND_UP(new_task->mm->start_stack) - global_sp;
         //     // Allocate space for a new user stack
@@ -587,8 +591,13 @@ void switch_tasks(Task *old, Task *new) {
             current_task->state = RUNNING;
             __asm__ __volatile__("iretq;");
         } else {
-            // printk("Where is my interrupts?\n");
-            __asm__ __volatile__("sti;");
+            if(current_task->type == USER) {
+                printk("Continuing: %s - pid: %d\n", current_task->name, current_task->pid);
+            } else {
+                __asm__ __volatile__(
+                    "sti;"
+                );
+            }
         }
     }
 }

@@ -125,8 +125,16 @@ uint64_t sys_fork() {
         panic("Failed to fork\n");
         return -1;
     }
-    // #4 return new task pid
-    return child->pid;
+
+    printk("child pid: %p current pid: %p\n", child->pid, current->pid);
+
+    if(child->pid == current->pid) {
+        // #4a we are in the child!!!
+        return 0;
+    } else {
+        // #4b return new task pid
+        return child->pid;
+    }
 }
 
 void sys_waitpid() {

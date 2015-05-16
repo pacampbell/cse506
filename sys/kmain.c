@@ -48,7 +48,7 @@ void start_shell(void) {
     // for(int i = 0; i < 10; i++) {
     //     exec_tarfs_elf("bin/hello");
     // }
-    // exec_tarfs_elf("bin/fork");
+    exec_tarfs_elf("bin/fork");
     // exec_tarfs_elf("bin/kill");
     // exec_tarfs_elf("bin/open");
     // exec_tarfs_elf("bin/malloc");
