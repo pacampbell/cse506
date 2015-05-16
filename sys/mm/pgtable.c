@@ -339,7 +339,7 @@ pml4_t* copy_page_tables(pml4_t *src, struct mm_struct *mm) {
         
         if(mm != NULL) {
             for(struct vm_area_struct *vma = mm->mmap; vma != NULL; vma = vma->next) {
-                printk("vma: %p - %s\n", vma->vm_start, (vma->vm_prot & VM_GROWSDOWN) == VM_GROWSDOWN ? "GROWS DOWN" : "GROWS UP");
+                // printk("vma: %p - %s\n", vma->vm_start, (vma->vm_prot & VM_GROWSDOWN) == VM_GROWSDOWN ? "GROWS DOWN" : "GROWS UP");
                 if(get_pml4e(src_phys, USER_VIRT_OFFSET) != 0x0) {
                     char *buffer = kmalloc_kern(PAGE_SIZE);
                     uint64_t address = vma->vm_start & PG_ALIGN;

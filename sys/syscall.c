@@ -22,7 +22,6 @@ void sys_yield() {
     Task *task = get_current_task();
     if(task != NULL) {
         task->state = WAITING;
-        printk("In handler yields on %s\n", task->name);
         preempt(false);
     } else {
         printk("NULL TASK\n");
@@ -125,9 +124,6 @@ uint64_t sys_fork() {
         panic("Failed to fork\n");
         return -1;
     }
-
-    printk("child pid: %p current pid: %p\n", child->pid, current->pid);
-
     if(child->pid == current->pid) {
         // #4a we are in the child!!!
         return 0;

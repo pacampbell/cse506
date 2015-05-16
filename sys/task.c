@@ -383,7 +383,6 @@ Task *clone_task(Task *src, uint64_t global_sp, uint64_t global_rip) {
         // Assign the child task return value to zero
         new_task->registers.rax = 0;
         // Set the stack pointer and instruction pointer
-        printk("global_sp: %p\n", global_sp);
         new_task->registers.rsp = global_sp;
         new_task->registers.rip = global_rip;
         // new_task->registers.rip = global_rip;
@@ -394,38 +393,7 @@ Task *clone_task(Task *src, uint64_t global_sp, uint64_t global_rip) {
         new_task->prev = NULL;
         new_task->children = NULL;
         // Create new kstack and ustack
-        new_task->kstack = (uint64_t*) kmalloc_kern(PAGE_SIZE);       
-        // Create new user stack
-        printk("Stack start: %p\n", new_task->mm->start_stack & PG_ALIGN);
-        // if(new_task->type == USER) {
-        //     uint64_t stack_size = PG_RND_UP(new_task->mm->start_stack) - global_sp;
-        //     // Allocate space for a new user stack
-        //     new_task->ustack = (uint64_t*)kmalloc_vma(cloned_pml4, new_task->mm->start_stack & PG_ALIGN, stack_size, USER_SETTINGS);
-        //     // copy the users stack into
-        //     char *buffer = kmalloc_kern(PAGE_SIZE)
-        //     set_cr3((pml4_t*)src);
-        //     uint64_t
-        //     memcpy()
-
-
-        //     kfree_pg(buffer);
-        //     printk("stack size: %d\n", stack_size);
-        //     // 
-        //     halt();
-        //     // printk("rsp: %p ustack_base: %p size: %d byte(s)\n", global_sp, new_task->mm->start_stack, stack_size);
-        // } else {
-        //     panic("ERROR: COPY KERNEL TASK?\n");
-        //     halt();
-        // }
-        // Set the kernel stack to have the correct values
-        // new_task->kstack[2047] = 0x23;
-        // new_task->kstack[2046] = global_sp;
-        // new_task->kstack[2045] = 0x200202;
-        // new_task->kstack[2044] = 0x2b;
-        // new_task->kstack[2043] = global_rip;
-        // Set RSP to be address of 507
-        // new_task->registers.rsp = (uint64_t)&(new_task->kstack[2043]);
-        // set_cr3(current_pml4);
+        new_task->kstack = (uint64_t*) kmalloc_kern(PAGE_SIZE);
     } else {
         panic("UNABLE TO CLONE NULL TASK");
         halt();
