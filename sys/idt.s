@@ -43,7 +43,6 @@ remap_pic:
   .global isr_\num
   isr_\num:
     cli
-    push 0
     push \num
     jmp isr_common_stub
 .endm
@@ -53,7 +52,6 @@ remap_pic:
    .global isr_\num
    isr_\num:
       cli
-      push 0
       push \num
       jmp isr_common_stub
 .endm

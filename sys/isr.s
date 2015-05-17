@@ -61,7 +61,7 @@ isr_common_stub:
    popq rax
 
    # re-enable interrupts
-   addq rsp, 0x18
+   addq rsp, 0x10
    # Return from the interrupt
    iretq
 
