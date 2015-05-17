@@ -41,6 +41,7 @@ Working system calls:
   - getppid
   - kill
   - getcwd
+  - chdir
 
 Other noteable features:
   - fast syscall and sysretq are used

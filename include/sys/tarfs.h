@@ -55,5 +55,6 @@ struct file* tarfs_to_file(const char *path);
 int exec_tarfs_elf_args(const char *path, int argc, char *argv[], char *envp[]);
 int exec_tarfs_elf(const char *path);
 void ls_tars(const char* filter);
+bool has_dir(const char* dir);
 
 #endif

@@ -27,6 +27,19 @@ size_t strlen(const char *s) {
     return length;
 }
 
+size_t strappend(char *s1, char *s2, char *buf, int len) {
+    int at = 0;
+    for(;*s1 != 0 && at < len; s1++, at++, buf++) {
+       *buf = *s1; 
+    }
+    for(;*s2 != 0 && at < len; s2++, at++, buf++) {
+       *buf = *s2; 
+    }
+
+    *buf = 0;
+    return at;
+}
+
 bool strcmp(const char *str1, const char *str2) {
     bool equal = false;
     if(str1 != NULL && str2 != NULL) {

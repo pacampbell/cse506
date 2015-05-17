@@ -197,6 +197,19 @@ char *sys_getcwd(char *buf, size_t size) {
     return (char*)memcpy(buf, get_current_task()->cwd, size);
 }
 
+int sys_chdir(const char *path) {
+    char buf[MAX_PATH];
+    memset(get_current_task()->cwd, 0, MAX_FD);
+    strappend(get_current_task()->cwd, (char*)path, buf, MAX_PATH);
+    printk("appended: '%s'\n", buf);
+    if(!has_dir(buf)) {
+        return -1;
+    }
+    
+    memcpy(get_current_task()->cwd, buf, MAX_FD);
+    return 0;
+}
+
 int sys_open(const char *pathname, int flags) {
     Task *tsk = get_current_task();
     int rtn = -1;
@@ -300,7 +313,7 @@ uint64_t syscall_common_handler(uint64_t num, uint64_t arg1, uint64_t arg2, uint
             return_value = (uint64_t)sys_getcwd((char*)arg1, arg2);
             break;
         case SYS_chdir:
-            panic("sys_chdir not implemented.\n");
+            return_value = sys_chdir((const char *)arg1);
             break;
         case SYS_open:
             return_value = sys_open((const char*)arg1, arg2);

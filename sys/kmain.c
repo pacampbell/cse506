@@ -37,9 +37,9 @@ void init_services(void) {
 }
 
 void start_shell(void) {
-  int argc = 1;
-  char *argv[] = {"bin/sbush",NULL};
-  char *envp[] = {"PATH=bin/", NULL};
+ // int argc = 1;
+ // char *argv[] = {"bin/sbush",NULL};
+ // char *envp[] = {"PATH=bin/", NULL};
 
 
     /* Do some testing for now */
@@ -47,7 +47,7 @@ void start_shell(void) {
     // exec_tarfs_elf_args("bin/sbush", argc, argv, envp);
     // exec_tarfs_elf_args("bin/args", argc, argv, envp);
     // exec_tarfs_elf_args("bin/exec", argc, argv, envp);
-    exec_tarfs_elf_args("bin/askexec", argc, argv, envp);
+    //exec_tarfs_elf_args("bin/askexec", argc, argv, envp);
     // exec_tarfs_elf("bin/ps");
     // exec_tarfs_elf("bin/ps");
     // exec_tarfs_elf("bin/ps");
@@ -63,10 +63,11 @@ void start_shell(void) {
     
     // exec_tarfs_elf("bin/ps");
     // for(int i = 0; i < 10; i++) {
-    //     exec_tarfs_elf("bin/hello");
+         exec_tarfs_elf("bin/hello");
     // }
     // exec_tarfs_elf("bin/yield");
     // exec_tarfs_elf("bin/kill");
     // exec_tarfs_elf("bin/open");
     // exec_tarfs_elf("bin/malloc");
+    // exec_tarfs_elf("bin/chdir");
 }

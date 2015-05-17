@@ -46,7 +46,7 @@ void ls_tars(const char* filter) {
         uint64_t e_size = covert_base_8(entry->size);
         if (entry->name[0] != '\0' && (filter == NULL || begwith(entry->name, filter))) { 
             count++;
-            printk("%s  ", entry->name);
+            printk("'%s'  ", entry->name);
             if(count % 5 == 0) printk("\n");
         }
 
@@ -79,6 +79,29 @@ void dir_tars(const char* name, int count) {
     }
    
 }
+
+bool has_dir(const char* dir) {
+    if(*dir == '/') dir++;
+    Header *entry = (Header*)(&_binary_tarfs_start);
+
+    while(entry < (Header*)(&_binary_tarfs_end)) {
+        uint64_t e_size = covert_base_8(entry->size);
+        if (entry->name[0] != '\0' && *entry->typeflag == TAR_DIRTYPE) { 
+            if(strcmp(entry->name, dir)) {
+                return true;
+            }
+        }
+
+        if(e_size > 0) {
+            // Add the padding to the entry size
+            entry = entry + 1 + (e_size / 513 + 1);
+        } else {
+            entry = entry + 1;
+        }
+    }
+    return false;
+}
+
 
 tarfs_entry* traverse_tars(const char *path, tarfs_entry *t_entry) {
     tarfs_entry *found = NULL;  

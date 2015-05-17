@@ -9,5 +9,6 @@
         bool strcmp(const char *str1, const char *str2);
         void *memcpy(void *dest, const void *src, size_t n);
         bool begwith(const char *str, const char* match);
+        size_t strappend(char *s1, char *s2, char *buf, int len);
     #endif
 #endif
