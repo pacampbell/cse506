@@ -193,6 +193,10 @@ void sys_nanosleep(struct timespec *req, struct timespec *rem) {
     task->state = RUNNING;
 }
 
+char *sys_getcwd(char *buf, size_t size) {
+    return (char*)memcpy(buf, get_current_task()->cwd, size);
+}
+
 int sys_open(const char *pathname, int flags) {
     Task *tsk = get_current_task();
     int rtn = -1;
@@ -293,7 +297,7 @@ uint64_t syscall_common_handler(uint64_t num, uint64_t arg1, uint64_t arg2, uint
             panic("sys_alarm not implemented.\n");
             break;
         case SYS_getcwd:
-            panic("sys_getcwd not implemented.\n");
+            return_value = (uint64_t)sys_getcwd((char*)arg1, arg2);
             break;
         case SYS_chdir:
             panic("sys_chdir not implemented.\n");

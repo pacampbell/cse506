@@ -292,6 +292,8 @@ Task* create_new_task(Task* task, const char *name, task_type_t type,
     task->in_use = true;
     task->sleep = -1;
     task->is_yield = false;
+    memset(task->cwd, 0, MAX_PATH);
+    *task->cwd = '/';
     /* Set the address of the stack */
     task->kstack = (uint64_t*) kmalloc_kern(PAGE_SIZE);
     // insert_page(get_cr3(), (uint64_t)(task->kstack), KERN_SETTINGS);

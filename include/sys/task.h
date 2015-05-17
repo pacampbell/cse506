@@ -73,6 +73,7 @@
             struct mm_struct *mm, *active_mm;   /* The mm_struct of this task */
             struct file *files[MAX_FD];
             struct args_struct args;
+            char cwd[MAX_PATH];
         };
         typedef struct Task Task;
 
