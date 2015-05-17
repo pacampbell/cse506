@@ -80,7 +80,7 @@ tarfs_entry* traverse_tars(const char *path, tarfs_entry *t_entry) {
             entry = entry + 1;
         }
     }
-    printk("name: %s\n", found->path);
+    // printk("name: %s\n", found->path);
     return found;
 }
 

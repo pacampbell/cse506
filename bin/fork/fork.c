@@ -8,13 +8,15 @@ int main(int argc, char *argv[]) {
 	printf("MULTIPLY ME\n");
 	switch((pid = fork())) {
 		case 0:
-			printf("In the child - parent %d\n", getppid());
+			printf("=====CCCCCC======\n");
+			printf("In the child[%d] - parent %d\n", getpid(), getppid());
 			child_func();
 			break;
 		case -1:
 			printf("Failed to fork\n");
 			break;
 		default:
+			printf("=====PPPPP======\n");
 			printf("Parent %d forked a child with pid %d\n", getpid(), pid);
 			break;
 	}
@@ -23,8 +25,17 @@ int main(int argc, char *argv[]) {
 }
 
 void child_func() {
-	printf("Yay in a child function!\n");
-	for(int i = 0; i < 10; i++) {
-		printf("%d\n", i);
+	pid_t pid = -1;
+	switch((pid = fork())) {
+		case 0:
+			printf("In the child[%d] - parent %d\n", getpid(), getppid());
+			// child_func();
+			break;
+		case -1:
+			printf("Failed to fork\n");
+			break;
+		default:
+			printf("Parent %d forked a child with pid %d\n", getpid(), pid);
+			break;
 	}
 }
