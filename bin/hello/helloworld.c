@@ -2,27 +2,18 @@
 #include <stdlib.h>
 
 int main(int argc, char *argv[]) {
-    // pid_t pid = -1;
-    printf("Hello, World! from user space.\n");
-    //  int yield_count = 0;
-    // while(yield_count < 6) {
-    //     // printf("Time to yield\n");    
-    //     yield();
-    //     yield_count++;
-    // }
-    sleep(5);
-    // switch((pid = fork())) {
-    // 	case -1:
-    // 		printf("Fork failed\n");
-    // 		break;
-    // 	case 0:
-    // 		printf("In the child!!!\n");
-    // 		break;
-    // 	default:
-    // 		printf("In parent. child: %d\n", pid);
-    // 		break;
-    // }
-    printf("Good bye world!\n");
-    return 1;
+    printf("\n=========================================================\n");
+    //printf("Please read the README\n");
+    //printf("\n");
+    //printf("This is not a shell, it only runs exec on the binary\n");
+    //printf("You can make your program run without exec by changing the\n");
+    //printf("start_shell function in sys/kmain.c\n");
+    //printf("\n");
+    //printf("to make this less annoying remove the schedualing of hello\n");
+    //printf("in the start_shell\n");
+    //printf("\n");
+    //printf("sleeping for 10 seconds...\n");
+    //sleep(10);
+    printf("=========================================================\n\n");
 }
 
