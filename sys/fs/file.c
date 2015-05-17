@@ -9,3 +9,9 @@ void free_file_list(struct file *f[], size_t size) {
         }
     }
 }
+
+int close_file(struct file *f[], int fd) {
+    if (fd < 3 || f[fd] == NULL || fd > MAX_FD) return -1;
+    kfree_pg(f[fd]);
+    return 1;
+} 

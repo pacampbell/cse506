@@ -44,3 +44,18 @@ bool strcmp(const char *str1, const char *str2) {
     }
     return equal;
 }
+
+bool begwith(const char *str, const char* match) {
+    int str_len = strlen(str);
+    int match_len = strlen(match);
+    bool rtn = true;
+
+    if (str_len < match_len) return false;
+
+    for (int i = 0; i < match_len; i++) {
+        rtn &= *(str + i) == *(match + i);
+        if(!rtn) break;
+    }
+
+    return rtn;
+}

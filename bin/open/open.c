@@ -17,6 +17,8 @@ int main(int argc, char *argv[]) {
         printf("%s", c);
     }
     printf("\n");
+    int rtn = close(i);
+    printf("close: %d\n", rtn);
 
     return 0;
 }

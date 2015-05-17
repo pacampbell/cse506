@@ -23,5 +23,6 @@ struct file {
 };
 
 void free_file_list(struct file *f[], size_t size);
+int close_file(struct file *f[], int fd);
 
 #endif

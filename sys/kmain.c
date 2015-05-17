@@ -16,9 +16,12 @@ void idle(void) {
 void kmain(void) {
     // ls_tars();
     /* do some basic setup */
+    cls();
     init_services();
     /* start the shell */
     start_shell();
+    ls_tars("bin");
+    printk("\n");
     /* Everything is started now spin */
     while(1) {
         /* Done doing our work, now just wait */
@@ -34,9 +37,9 @@ void init_services(void) {
 }
 
 void start_shell(void) {
-   // int argc = 1;
-   // char *argv[] = {"bin/sbush",NULL};
-   // char *envp[] = {"PATH=bin/sbush", NULL};
+  int argc = 1;
+  char *argv[] = {"bin/sbush",NULL};
+  char *envp[] = {"PATH=bin/", NULL};
 
 
     /* Do some testing for now */
@@ -44,6 +47,7 @@ void start_shell(void) {
     // exec_tarfs_elf_args("bin/sbush", argc, argv, envp);
     // exec_tarfs_elf_args("bin/args", argc, argv, envp);
     // exec_tarfs_elf_args("bin/exec", argc, argv, envp);
+    exec_tarfs_elf_args("bin/askexec", argc, argv, envp);
     // exec_tarfs_elf("bin/ps");
     // exec_tarfs_elf("bin/ps");
     // exec_tarfs_elf("bin/ps");
@@ -55,6 +59,7 @@ void start_shell(void) {
     // exec_tarfs_elf("bin/fork");
     // exec_tarfs_elf("bin/ps");
 
+    //exec_tarfs_elf("bin/fork");
     
     // exec_tarfs_elf("bin/ps");
     // for(int i = 0; i < 10; i++) {
@@ -64,5 +69,4 @@ void start_shell(void) {
     // exec_tarfs_elf("bin/kill");
     // exec_tarfs_elf("bin/open");
     // exec_tarfs_elf("bin/malloc");
-    // exec_tarfs_elf("bin/hello");
 }

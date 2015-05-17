@@ -161,9 +161,6 @@ Task* create_user_elf_args_task(const char *name, char* elf, uint64_t size, int 
     create_new_task(user_task, name, USER, NEUTRAL_PRIORITY, 0, user_pml4, 
                    (code)user_task->mm->start_code);
     //add the args to the stack
-    for(int i = 0; i < argc; i++) {
-        printk("passing: %s\n", argv[i]);
-    }
     load_elf_args(user_task, argc,argv,envp);
     // Add the task to the scheduler list
     insert_into_list(user_task);

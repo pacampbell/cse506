@@ -1,5 +1,6 @@
 #define __KERNEL__
 #include <sys/tarfs.h>
+#include <sbunix/string.h>
 
 /*
    static char* type(char t) {
@@ -37,12 +38,12 @@ static uint64_t covert_base_8(char *str) {
     return value;
 }
 
-void ls_tars(void) {
+void ls_tars(const char* filter) {
     Header *entry = (Header*)(&_binary_tarfs_start);
 
     while(entry < (Header*)(&_binary_tarfs_end)) {
         uint64_t e_size = covert_base_8(entry->size);
-        if (entry->name[0] != '\0') { 
+        if (entry->name[0] != '\0' && (filter == NULL || begwith(entry->name, filter))) { 
             printk("%s\n", entry->name);
         }
 
@@ -53,8 +54,27 @@ void ls_tars(void) {
             entry = entry + 1;
         }
     }
-    printk("tar: %p\n", &_binary_tarfs_start);
-    printk("tar: %p\n", &_binary_tarfs_end);
+}
+
+void dir_tars(const char* name, int count) {
+     Header *entry = (Header*)(&_binary_tarfs_start);
+     int c = 0;
+
+    while(entry < (Header*)(&_binary_tarfs_end)) {
+        uint64_t e_size = covert_base_8(entry->size);
+        if (entry->name[0] != '\0' && *entry->typeflag == TAR_DIRTYPE) { 
+            c++;
+            printk("name: %s count: %d\n", entry->name, c);
+        }
+
+        if(e_size > 0) {
+            // Add the padding to the entry size
+            entry = entry + 1 + (e_size / 513 + 1);
+        } else {
+            entry = entry + 1;
+        }
+    }
+   
 }
 
 tarfs_entry* traverse_tars(const char *path, tarfs_entry *t_entry) {
@@ -94,7 +114,7 @@ struct file* tarfs_to_file(const char *path) {
         f = (struct file*)kmalloc_kern(sizeof(struct file));
         if (f == NULL) {
             panic("Could not make new file\n");
-            halt();
+            return NULL;
         }
 
         f->start = (uint64_t)e.data_base;
@@ -108,7 +128,7 @@ struct file* tarfs_to_file(const char *path) {
     return f;
 }
 
-void exec_tarfs_elf(const char *path) {
+int exec_tarfs_elf(const char *path) {
     tarfs_entry e;
     memset(&e, 0, sizeof(e));
     if(traverse_tars(path, &e) != NULL) {
@@ -116,10 +136,13 @@ void exec_tarfs_elf(const char *path) {
         create_user_elf_task(path, e.data_base, e.size);
     } else {
         printk("Unable to find: %s in tarfs\n", path);
+        return -1;
     }
+
+    return 0;
 }
 
-void exec_tarfs_elf_args(const char *path, int argc, char *argv[], char *envp[]) {
+int exec_tarfs_elf_args(const char *path, int argc, char *argv[], char *envp[]) {
     tarfs_entry e;
     memset(&e, 0, sizeof(e));
     if(traverse_tars(path, &e) != NULL) {
@@ -127,6 +150,9 @@ void exec_tarfs_elf_args(const char *path, int argc, char *argv[], char *envp[])
         create_user_elf_args_task(path, e.data_base, e.size, argc, argv, envp);
     } else {
         printk("Unable to find: %s in tarfs\n", path);
+        return -1;
     }
+
+    return 0;
 }
 

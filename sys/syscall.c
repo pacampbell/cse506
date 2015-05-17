@@ -94,11 +94,12 @@ void* sys_brk(uint64_t addr) {
         return (void*)tsk->mm->brk;
     }
 
+#ifdef DEBUG
     if (addr >= tsk->mm->start_stack || tsk->mm->start_brk >= addr) {
-        panic("ERROR: ");
+        panic("WARNING: ");
         printk("adder: %p, brk: %p, stack: %p\n", addr, tsk->mm->brk, tsk->mm->start_stack);
-        return NULL;
     }
+#endif
     tsk->mm->brk = addr;
 
     return (void*)tsk->mm->brk;
@@ -204,12 +205,19 @@ int sys_open(const char *pathname, int flags) {
     return rtn;
 }
 
+int sys_close(int fd) {
+    if (fd < 3) return -1;
+    return close_file(get_current_task()->files, fd);
+}
+
 int sys_execve(char *filename, char *argv[], char *envp[]) {
     int argc;
     for(argc = 0; argv[argc] != NULL; argc++);
-    exec_tarfs_elf_args(filename, argc, argv, envp);
+    int rtn = exec_tarfs_elf_args(filename, argc, argv, envp);
     //exec_tarfs_elf(filename);
-    preempt(true);
+    if(rtn >= 0) {
+        preempt(true);
+    }
 
     return -1; 
 }
@@ -301,7 +309,7 @@ uint64_t syscall_common_handler(uint64_t num, uint64_t arg1, uint64_t arg2, uint
             return_value = sys_lseek(arg1,arg2, arg3);
             break;
         case SYS_close:
-            panic("sys_close not implemented.\n");
+            return_value = sys_close(arg1);
             break;
         case SYS_pipe:
             panic("sys_pipe not implemented.\n");
