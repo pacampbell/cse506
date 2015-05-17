@@ -44,7 +44,7 @@ static __inline int64_t syscall_0(uint64_t n) {
 }
 
 static __inline int64_t syscall_1(uint64_t n, uint64_t a1) {
-    printf("syscall: %d\n", n);
+    printf("");
 	int64_t rv = -ENOSYS;
 	__asm__ __volatile__ (
 		"movq %1, %%rax;"

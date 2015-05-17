@@ -105,8 +105,8 @@ void load_elf_args(Task *tsk, int argc, char *argv[], char *envp[]) {
 
     uint64_t *new_stack = (uint64_t*)((tsk->mm->start_stack + PAGE_SIZE) & PG_ALIGN);
     if (kmalloc_vma(task_cr3, (uint64_t)new_stack, 1, USER_SETTINGS) == NULL) {
-        panic("i broke\n");
-        halt();
+        panic("malloc failed\n");
+        return;
     }
 
     new_stack = (uint64_t*)tsk->mm->start_stack;

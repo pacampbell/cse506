@@ -24,9 +24,9 @@ void *malloc(size_t size) {
         // Check the head pointer
         if(head_ptr == NULL) {
             // Get back the address in memory
-    printf("HELLO###################################################\n");
+    //printf("HELLO###################################################\n");
             ptr = sbrk(total_bytes); // Get the current brk
-    printf("HELLO###################################################\n");
+    //printf("HELLO###################################################\n");
             // Linux system call returns the new brk
             if(ptr == (void*) -1) {
                 // sbrk failed

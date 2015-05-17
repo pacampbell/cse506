@@ -8,5 +8,6 @@
         size_t strlen(const char *str);
         bool strcmp(const char *str1, const char *str2);
         void *memcpy(void *dest, const void *src, size_t n);
+        bool begwith(const char *str, const char* match);
     #endif
 #endif

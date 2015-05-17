@@ -95,11 +95,12 @@ void* sys_brk(uint64_t addr) {
         return (void*)tsk->mm->brk;
     }
 
+#ifdef DEBUG
     if (addr >= tsk->mm->start_stack || tsk->mm->start_brk >= addr) {
-        panic("ERROR: ");
+        panic("WARNING: ");
         printk("adder: %p, brk: %p, stack: %p\n", addr, tsk->mm->brk, tsk->mm->start_stack);
-        return NULL;
     }
+#endif
     tsk->mm->brk = addr;
 
     return (void*)tsk->mm->brk;
@@ -209,9 +210,11 @@ int sys_close(int fd) {
 int sys_execve(char *filename, char *argv[], char *envp[]) {
     int argc;
     for(argc = 0; argv[argc] != NULL; argc++);
-    exec_tarfs_elf_args(filename, argc, argv, envp);
+    int rtn = exec_tarfs_elf_args(filename, argc, argv, envp);
     //exec_tarfs_elf(filename);
-    preempt(true);
+    if(rtn >= 0) {
+        preempt(true);
+    }
 
     return -1; 
 }

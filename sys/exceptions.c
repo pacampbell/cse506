@@ -80,19 +80,24 @@ static void stack_segmentation_fault(registers_t regs) {
 }
 
 static void general_protection_fault(registers_t regs) {
+#ifdef DEBUG
     panic("GENERAL PROTECTION FAULT\n");
-	printk("Interrupt [%d] - Errocode: %p\n", regs.int_no, regs.err_no);
-	printk("rip: %p ss: %p cs: %p\n", regs.rip, regs.ss, regs.cs);
-	panic("DUMP\n");
-	Task *ctask = get_current_task();
-	dump_task(ctask);
-    halt();
+    printk("Interrupt [%d] - Errocode: %p\n", regs.int_no, regs.err_no);
+    printk("rip: %p ss: %p cs: %p\n", regs.rip, regs.ss, regs.cs);
+    panic("DUMP\n");
+#endif
+    Task *ctask = get_current_task();
+    dump_task(ctask);
+    printk("killing: %s\n", ctask->name);
+    preempt(true);
+
 }
 
 static void page_fault(registers_t regs) {
     uint64_t faulting_address;
     __asm__ __volatile__("mov %%cr2, %0" : "=r" (faulting_address));
     Task *tsk = get_current_task();
+#ifdef DEBUG
     printk("cr3: %p rip: %p faulting address: %p\n", get_cr3(), regs.rip, faulting_address);
     if(tsk->mm != NULL) {
         printk("brk: %p\n", tsk->mm->brk);
@@ -100,6 +105,7 @@ static void page_fault(registers_t regs) {
     } else {
         printk("KERNEL TASK\n");
     }
+#endif
 
     if(tsk->mm == NULL ||
             (faulting_address < tsk->mm->start_brk || tsk->mm->start_stack < faulting_address)) {
@@ -122,8 +128,8 @@ static void page_fault(registers_t regs) {
     // printk("New Page: %p\n", page);
     // printk("Address returned: %p\n", address);
     check_vma_permissions((pml4_t*)(tsk->registers.cr3), (uint64_t)address);
-    // halt();
-    panic("Good page fault\n");
+    //halt();
+    //panic("Good page fault\n");
 
 }
 
@@ -133,6 +139,7 @@ static void bad_page_fault(registers_t regs) {
 
 
     panic("!!!!!!!PAGE FAULT!!!!!!!\n");
+#ifdef DEBUG
     printk("address: %p\n", faulting_address);
     printk("bits   : ");
 
@@ -167,7 +174,7 @@ static void bad_page_fault(registers_t regs) {
     } else {
         printk(" read"); 
     }
-    
+
     if(u) {
         printk(" user"); 
     } else {
@@ -185,11 +192,13 @@ static void bad_page_fault(registers_t regs) {
     }
 
     printk("cs: %p ss: %p ursp: %p\n", regs.cs, regs.ss, regs.ursp);
+#endif
     // Dump info about the task
     Task *ctask = get_current_task();
     dump_task(ctask);
 
-    halt();
+    printk("killing: %s\n", ctask->name);
+    preempt(true);
 }
 
 static void alignment_check_fault(registers_t regs) {
