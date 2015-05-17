@@ -208,6 +208,7 @@ int sys_execve(char *filename, char *argv[], char *envp[]) {
     int argc;
     for(argc = 0; argv[argc] != NULL; argc++);
     exec_tarfs_elf_args(filename, argc, argv, envp);
+    //exec_tarfs_elf(filename);
     preempt(true);
 
     return -1; 
