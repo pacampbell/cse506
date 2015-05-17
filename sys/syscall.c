@@ -118,17 +118,18 @@ uint64_t sys_fork() {
         if(!insert_into_list(child)) {
             panic("FAILED TO INSERT CHILD PROCESS\n");
         }
+        // Set the rax value to the child
+        current->registers.rax = child->pid;
+        // Let the child start now!
+        preempt(false);
+        /* Should not return here */
+        panic("RETURNED TO FORK WHEN SHOULDNT HAVE\n");
     } else {
         panic("Failed to fork\n");
         return -1;
     }
-    if(child->pid == current->pid) {
-        // #4a we are in the child!!!
-        return 0;
-    } else {
-        // #4b return new task pid
-        return child->pid;
-    }
+    // #4 return new task pid
+    return child->pid;
 }
 
 void sys_waitpid() {

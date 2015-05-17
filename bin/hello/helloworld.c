@@ -10,7 +10,7 @@ int main(int argc, char *argv[]) {
     //     yield();
     //     yield_count++;
     // }
-    // sleep(1000);
+    sleep(1000);
     // switch((pid = fork())) {
     // 	case -1:
     // 		printf("Fork failed\n");

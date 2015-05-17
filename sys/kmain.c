@@ -51,10 +51,10 @@ void start_shell(void) {
     // for(int i = 0; i < 10; i++) {
     //     exec_tarfs_elf("bin/hello");
     // }
-    // exec_tarfs_elf("bin/ps");
     // exec_tarfs_elf("bin/yield");
-
+    // exec_tarfs_elf("bin/ps");
     // exec_tarfs_elf("bin/kill");
     // exec_tarfs_elf("bin/open");
     // exec_tarfs_elf("bin/malloc");
+    // exec_tarfs_elf("bin/hello");
 }

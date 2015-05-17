@@ -172,7 +172,6 @@ Task* create_user_elf_args_task(const char *name, char* elf, uint64_t size, int 
 }
       
 Task* create_user_elf_task(const char *name, char* elf, uint64_t size) {
-    printk("Creating: %s\n", name);
     // Get the kernel page tables
     pml4_t *kernel_pml4 = (pml4_t *)get_cr3();
     // panic("START KERNEL TABLES\n");
@@ -222,12 +221,12 @@ Task* create_task_struct(void) {
     } else {
         // Remove this task from the insert_into_list
         panic("REPUROSING Task struct\n");
-        printk("previous life name: %s\n", task->name);
         free_file_list(task->files, MAX_FD);
         if(remove_task_by_pid(task->pid) == NULL) {
             panic("Tried to free a NULL task.\n");
             halt();
         }
+        printk("cr3: %p\n", task->registers.cr3);
     }
     return task;
 }
@@ -474,6 +473,7 @@ void switch_tasks(Task *old, Task *new) {
     if(old != NULL && new != NULL && old != new) {
         if(old->state != TERMINATED) {
             old->state = READY;
+            uint64_t rax = old->registers.rax;
             // printk("Swicthing out %s - ursp %p kstack: %p \n", old->name, old->registers.rsp, old->kstack);
             /* Save the current register state */
             __asm__ __volatile__(
@@ -502,14 +502,30 @@ void switch_tasks(Task *old, Task *new) {
                 "movq %%r15, 0x80(%0);"
                 /* save rbp */
                 "movq %%rbp, 0x30(%0);"
-                /* save rsp */
-                "movq %%rsp, 0x40(%0);"
                 : 
                 : "r"(old)
                 :
             );
-            // Reset the call stack for the next time its scheduled
-            // setup_new_stack(old);
+            if(old->type == KERNEL) {
+                __asm__ __volatile__(
+                    /* save rsp */
+                    "movq %%rsp, 0x40(%0);"
+                    :
+                    : "r"(old)
+                    : "memory"
+                );
+            } else {
+                printk(" \b");
+                old->registers.rax = rax;
+                extern uint64_t global_sp;
+                __asm__ __volatile__(
+                    /* save rsp */
+                    "movq %1, 0x40(%0);"
+                    :
+                    : "r"(old), "r"(global_sp)
+                    : "memory"
+                );
+            }
         } else {
             // Mark pid as free
             free_pid(old->pid);
@@ -559,6 +575,9 @@ void switch_tasks(Task *old, Task *new) {
             __asm__ __volatile__("iretq;");
         } else {
             if(current_task->type == USER) {
+                // printk("Continuing task %s - %d - status: %d\n", current_task->name, current_task->pid, current_task->state);
+                // printk("sp: %p rax: %d\n", current_task->registers.rsp, current_task->registers.rax);
+                BOCHS_MAGIC();
                 __asm__ __volatile__(
                     /* Save the argument in the register */
                     "movq %0, %%rax;"
@@ -585,7 +604,7 @@ void switch_tasks(Task *old, Task *new) {
                     "movq 0x40(%%rax), %%rsp;"
                     /* Set rax */
                     "movq 0x0(%%rax), %%rax;"
-                    // "xchg %%bx, %%bx;"
+                    "ret;"
                     :
                     : "r"(current_task)
                     : "memory"
