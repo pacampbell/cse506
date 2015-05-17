@@ -5,7 +5,7 @@
 void idle(void) {
     while(1) {
         __asm__ __volatile__("hlt;");
-        preempt(false);
+        preempt(false, false);
     }
 }
 
@@ -25,7 +25,7 @@ void kmain(void) {
     /* Everything is started now spin */
     while(1) {
         /* Done doing our work, now just wait */
-        preempt(false);
+        preempt(false, false);
     }
 }
 
@@ -52,12 +52,12 @@ void start_shell(void) {
     // exec_tarfs_elf("bin/ps");
     // exec_tarfs_elf("bin/ps");
     // exec_tarfs_elf("bin/ps");
-    exec_tarfs_elf("bin/ps");
-    // exec_tarfs_elf("bin/fork");
-    // exec_tarfs_elf("bin/fork");
-    // exec_tarfs_elf("bin/fork");
-    // exec_tarfs_elf("bin/fork");
     // exec_tarfs_elf("bin/ps");
+    // exec_tarfs_elf("bin/fork");
+    // exec_tarfs_elf("bin/fork");
+    // exec_tarfs_elf("bin/fork");
+    // exec_tarfs_elf("bin/fork");
+    exec_tarfs_elf("bin/ps");
 
     //exec_tarfs_elf("bin/fork");
     
@@ -65,7 +65,7 @@ void start_shell(void) {
     // for(int i = 0; i < 10; i++) {
     //     exec_tarfs_elf("bin/hello");
     // }
-    // exec_tarfs_elf("bin/yield");
+    exec_tarfs_elf("bin/yield");
     // exec_tarfs_elf("bin/kill");
     // exec_tarfs_elf("bin/open");
     // exec_tarfs_elf("bin/malloc");

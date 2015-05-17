@@ -4,6 +4,7 @@
 #include <sys/screen.h>
 #include <sbunix/debug.h>
 #include <sys/tarfs.h>
+#include <sys/syscall_k.h>
 
 static Task *tasks = NULL;
 static Task *current_task = NULL;
@@ -277,10 +278,6 @@ void setup_new_stack(Task *task) {
     task->kstack[507] = task->registers.rip;  // The entry point (on a forked task this might not be the start)
     // Set the stack pointer to the amount of items pushed
     task->registers.rsp = (uint64_t)&(task->kstack[507]);
-    // printk("kstack_top: %p\n", task->registers.rsp);
-    // if(task->type == USER) {
-    //     printk("rip: %p rsp: %p\n", task->registers.rip, task->registers.rsp);
-    // }
 }
 
 Task* create_new_task(Task* task, const char *name, task_type_t type,
@@ -294,6 +291,7 @@ Task* create_new_task(Task* task, const char *name, task_type_t type,
     task->pid = allocate_pid();
     task->in_use = true;
     task->sleep = -1;
+    task->is_yield = false;
     /* Set the address of the stack */
     task->kstack = (uint64_t*) kmalloc_kern(PAGE_SIZE);
     // insert_page(get_cr3(), (uint64_t)(task->kstack), KERN_SETTINGS);
@@ -408,7 +406,7 @@ int get_task_count(void) {
     return task_count;
 }
 
-void preempt(bool discard) {
+void preempt(bool discard, bool use_global) {
     Task *old_task = current_task;
     current_task = get_next_task();
 
@@ -423,7 +421,7 @@ void preempt(bool discard) {
         task_count--;
     }
     // Attempt to switch tasks; Assembly magic voodo
-    switch_tasks(old_task, current_task);
+    switch_tasks(old_task, current_task, use_global);
 }
 
 void set_task(Task *task) {
@@ -470,7 +468,7 @@ void set_task(Task *task) {
 
 extern uint64_t global_sp;
 extern uint64_t global_rip;
-void switch_tasks(Task *old, Task *new) {
+void switch_tasks(Task *old, Task *new, bool use_global) {
     // Make sure both are not null
     // and both are not the same (no need to swap if same)
     if(old != NULL && new != NULL && old != new) {
@@ -478,6 +476,8 @@ void switch_tasks(Task *old, Task *new) {
             // printk("Swapping out: %s\n", old->name);
             old->state = READY;
             uint64_t rax = old->registers.rax;
+            // uint64_t rip = old->registers.rip;
+            // printk("old task: %s - rip: %p\n", old->name, rip);
             // printk("Swicthing out %s - ursp %p kstack: %p \n", old->name, old->registers.rsp, old->kstack);
             /* Save the current register state */
             __asm__ __volatile__(
@@ -510,13 +510,6 @@ void switch_tasks(Task *old, Task *new) {
                 : "r"(old)
                 :
             );
-            // __asm__ __volatile__(
-            //     "movq %%rsp, 0x40(%0);"
-            //     :
-            //     : "r"(old)
-            //     : "memory"
-            // );
-            
             if(old->type == KERNEL) {
                 __asm__ __volatile__(
                     "movq %%rsp, 0x40(%0);"
@@ -524,7 +517,7 @@ void switch_tasks(Task *old, Task *new) {
                     : "r"(old)
                     : "memory"
                 );
-            } else {
+            } else if(use_global) {
                 printk(" \b");
                 old->registers.rax = rax;
                 __asm__ __volatile__(
@@ -535,6 +528,14 @@ void switch_tasks(Task *old, Task *new) {
                     : "memory"
                 );
                 setup_new_stack(old);
+            } else {
+                // printk("%s - USER TASK THAT HAS KERNEL ISSUES\n", old->name);
+                 __asm__ __volatile__(
+                    "movq %%rsp, 0x40(%0);"
+                    :
+                    : "r"(old)
+                    : "memory"
+                );
             }
         } else {
             // Mark pid as free
@@ -581,7 +582,7 @@ void switch_tasks(Task *old, Task *new) {
             : "memory"
         );
         __asm__ __volatile__("sti;");
-        if(current_task->type == USER || current_task->state == NEW) {
+        if((!current_task->is_yield && current_task->type == USER) || current_task->state == NEW) {
             /* Jump back to whence we came */
             __asm__ __volatile__(
                 /* Set rax */
