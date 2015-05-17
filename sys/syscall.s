@@ -4,6 +4,7 @@
 .extern kstack_top
 .extern global_rip
 .extern global_sp
+.extern get_current_task
 
 .text
 .globl syscall_entry
@@ -14,10 +15,22 @@ syscall_entry:
 	movq %rcx, global_rip
 	# Push rbx onto the user stack
 	pushq %rbx
+	# push %r12 onto the user stack
+	pushq %r12
 	# Save the user stack pointer into rbx
 	movq %rsp, %rbx
+	# Save the rdi value into r12
+	movq %rax, %r12
 	# Switch to the kernel stack
 	movq kstack_top, %rsp
+	# Get the processes kernel stack
+	callq get_current_task
+	# DEBUG ME
+	xchg %bx, %bx
+	# Set the process kernel stack to be used
+	movq 0xA8(%rax), %rsp 
+	# put back the original rdi value
+	movq %r12, %rax
 	# Push the user stack onto the kernel stack
 	pushq %rbx
 	# Push save rcx and r11 onto the kernel stack
@@ -55,6 +68,8 @@ syscall_entry:
 	popq %rcx		    # restore the return address
 	# Set back the userspace stack
 	popq %rsp
+	# pop off the r12 value
+	popq %r12
 	# put back the rbx value
 	popq %rbx
 	# Jump back to userspace

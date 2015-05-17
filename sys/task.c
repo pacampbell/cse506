@@ -292,6 +292,7 @@ Task* create_new_task(Task* task, const char *name, task_type_t type,
     task->in_use = true;
     task->sleep = -1;
     task->is_yield = false;
+    task->is_forking = false;
     /* Set the address of the stack */
     task->kstack = (uint64_t*) kmalloc_kern(PAGE_SIZE);
     // insert_page(get_cr3(), (uint64_t)(task->kstack), KERN_SETTINGS);
@@ -380,9 +381,9 @@ Task *clone_task(Task *src, uint64_t global_sp, uint64_t global_rip) {
         new_task->in_use = true;
         // Assign the child task return value to zero
         new_task->registers.rax = 0;
+        new_task->is_forking = true;
         // Set the stack pointer and instruction pointer
-        new_task->registers.rsp = global_sp;
-        new_task->registers.rip = global_rip;
+        // new_task->registers.rsp = global_sp;
         // new_task->registers.rip = global_rip;
         // Expliciting say this program is ready
         new_task->state = READY;
@@ -392,8 +393,9 @@ Task *clone_task(Task *src, uint64_t global_sp, uint64_t global_rip) {
         new_task->children = NULL;
         // Create new kstack and ustack
         new_task->kstack = (uint64_t*) kmalloc_kern(PAGE_SIZE);
+        memcpy(new_task->kstack, src->kstack, PAGE_SIZE);
         // prepare the stack for iretq
-        setup_new_stack(new_task);
+        // setup_new_stack(new_task);
     } else {
         panic("UNABLE TO CLONE NULL TASK");
         halt();
@@ -476,8 +478,6 @@ void switch_tasks(Task *old, Task *new, bool use_global) {
             // printk("Swapping out: %s\n", old->name);
             old->state = READY;
             uint64_t rax = old->registers.rax;
-            // uint64_t rip = old->registers.rip;
-            // printk("old task: %s - rip: %p\n", old->name, rip);
             // printk("Swicthing out %s - ursp %p kstack: %p \n", old->name, old->registers.rsp, old->kstack);
             /* Save the current register state */
             __asm__ __volatile__(
@@ -510,7 +510,7 @@ void switch_tasks(Task *old, Task *new, bool use_global) {
                 : "r"(old)
                 :
             );
-            if(old->type == KERNEL) {
+            if(old->type == KERNEL || old->is_forking || old->is_yield) {
                 __asm__ __volatile__(
                     "movq %%rsp, 0x40(%0);"
                     :
@@ -529,13 +529,8 @@ void switch_tasks(Task *old, Task *new, bool use_global) {
                 );
                 setup_new_stack(old);
             } else {
-                // printk("%s - USER TASK THAT HAS KERNEL ISSUES\n", old->name);
-                 __asm__ __volatile__(
-                    "movq %%rsp, 0x40(%0);"
-                    :
-                    : "r"(old)
-                    : "memory"
-                );
+                panic("Didn't handle a tasking case\n");
+                halt();
             }
         } else {
             // Mark pid as free
@@ -582,7 +577,7 @@ void switch_tasks(Task *old, Task *new, bool use_global) {
             : "memory"
         );
         __asm__ __volatile__("sti;");
-        if((!current_task->is_yield && current_task->type == USER) || current_task->state == NEW) {
+        if((!current_task->is_yield && !current_task->is_forking && current_task->type == USER) || current_task->state == NEW) {
             /* Jump back to whence we came */
             __asm__ __volatile__(
                 /* Set rax */

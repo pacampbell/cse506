@@ -112,6 +112,7 @@ void* sys_brk(uint64_t addr) {
 uint64_t sys_fork() {
     // #1 Get current Task
     Task *current = get_current_task();
+    current->is_forking = true;
     // #2 clone task
     // printk("Cloning pid: %d name: %s\n", current->pid, current->name);
     Task *child = clone_task(current, global_sp, global_rip);
@@ -121,12 +122,12 @@ uint64_t sys_fork() {
         if(!insert_into_list(child)) {
             panic("FAILED TO INSERT CHILD PROCESS\n");
         }
-        // Set the rax value to the child
-        current->registers.rax = child->pid;
         // Let the child start now!
         preempt(false, true);
         /* Should not return here */
-        panic("RETURNED TO FORK WHEN SHOULDNT HAVE\n");
+        // panic("RETURNED TO FORK WHEN SHOULDNT HAVE\n");
+        // printk("who am i? %s %d\n", get_current_task()->name, get_current_task()->pid);
+        // halt();
     } else {
         panic("Failed to fork\n");
         return -1;

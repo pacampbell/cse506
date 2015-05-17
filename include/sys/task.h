@@ -66,6 +66,7 @@
             ssize_t sleep;                      /* -1 if task is not sleeping */
             bool is_yield;                      /* Flag determining if this process is currently in a yielding state */
             bool in_use;                        /* Flag determing if the struct is in use or not */
+            bool is_forking;                    /* Flag to determing if this process is currently forking */
             struct Task *parent;                /* Pointer to the parent of this task */
             struct Task *children;              /* Head pointer to list of children */
             struct Task *next;                  /* Next task in the list */
