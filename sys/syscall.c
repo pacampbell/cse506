@@ -7,7 +7,6 @@
 #include <sys/elf.h>
 #include <sys/fs/file.h>
 
-
 uint64_t global_rip = 0;
 uint64_t global_sp = 0;
 
@@ -167,19 +166,23 @@ void sys_ps() {
     }
 }
 
-extern uint32_t tick;
 void sys_nanosleep(struct timespec *req, struct timespec *rem) {
     extern uint32_t tick;
     Task *task = get_current_task();
     if(task->sleep == -1) {
-        task->sleep = tick + 100;
+        set_cr3((pml4_t*)task->registers.cr3);
+        task->sleep = tick + (35 * req->tv_sec);
         task->state = WAITING;
     } 
-    // yield until its time to wake up
+    // halt until its time to wake up
     while(task->sleep > tick) {
         // Not ready to wake up just sleep
-        printk("Sleeping until %d - currently: %d\n", task->sleep, tick);
-        preempt(false);
+        __asm__ __volatile__ (
+            "sti; hlt;"
+            :
+            :
+            :"memory"
+        );
     }
     // Task is no longer sleeping. Reset
     task->sleep = -1;
@@ -285,7 +288,6 @@ uint64_t syscall_common_handler(uint64_t num, uint64_t arg1, uint64_t arg2, uint
             panic("sys_chdir not implemented.\n");
             break;
         case SYS_open:
-            //panic("sys_open not implemented.\n");
             return_value = sys_open((const char*)arg1, arg2);
             break;
         case SYS_read:
