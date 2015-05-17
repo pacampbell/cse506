@@ -12,17 +12,20 @@ uint64_t global_sp = 0;
 
 void sys_exit(int ret) {
     // Unschedule the current task.
-    preempt(true);
+    preempt(true, false);
 }
 
 void sys_yield() {
     Task *task = get_current_task();
     if(task != NULL) {
         task->state = WAITING;
-        preempt(false);
+        task->is_yield = true;
+        printk("Current task: %s\n", task->name);
+        preempt(false, false);
     } else {
         printk("NULL TASK\n");
     }
+    task->is_yield = false;
 }
 
 // int fd, const void *buf, size_t count
@@ -121,7 +124,7 @@ uint64_t sys_fork() {
         // Set the rax value to the child
         current->registers.rax = child->pid;
         // Let the child start now!
-        preempt(false);
+        preempt(false, true);
         /* Should not return here */
         panic("RETURNED TO FORK WHEN SHOULDNT HAVE\n");
     } else {
@@ -216,9 +219,8 @@ int sys_execve(char *filename, char *argv[], char *envp[]) {
     int rtn = exec_tarfs_elf_args(filename, argc, argv, envp);
     //exec_tarfs_elf(filename);
     if(rtn >= 0) {
-        preempt(true);
+        preempt(true, false);
     }
-
     return -1; 
 }
 

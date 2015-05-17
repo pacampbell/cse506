@@ -19,6 +19,32 @@ Included binaries:
       It asks for a file name in tarfs and then writes out its contents
   - ps
       lists all of the processes running on the os
+  - kill
+      kills a process
+  - echo
+      echos text passed as arguments
+
+
+Working system calls:
+  - fork
+    * Bug with using exec after forking.
+  - execve
+  - sleep
+  - open 
+  - read
+  - write
+  - lseek
+  - close
+  - brk
+  - exit
+  - getpid
+  - getppid
+  - kill
+
+Other noteable features:
+  - fast syscall and sysretq are used
+  - on demand malloc
+  - auto growing stack
 
 The provided Makefile:
   1) builds a kernel

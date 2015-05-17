@@ -89,7 +89,7 @@ static void general_protection_fault(registers_t regs) {
     Task *ctask = get_current_task();
     dump_task(ctask);
     printk("killing: %s\n", ctask->name);
-    preempt(true);
+    preempt(true, false);
 
 }
 
@@ -198,7 +198,7 @@ static void bad_page_fault(registers_t regs) {
     dump_task(ctask);
 
     printk("killing: %s\n", ctask->name);
-    preempt(true);
+    preempt(true, false);
 }
 
 static void alignment_check_fault(registers_t regs) {

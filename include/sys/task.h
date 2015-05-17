@@ -64,6 +64,7 @@
             priority_t priority;                /* priority value from [0, 2^64 - 1] */
             task_type_t type;                   /* Type of task kernel or user */
             ssize_t sleep;                      /* -1 if task is not sleeping */
+            bool is_yield;                      /* Flag determining if this process is currently in a yielding state */
             bool in_use;                        /* Flag determing if the struct is in use or not */
             struct Task *parent;                /* Pointer to the parent of this task */
             struct Task *children;              /* Head pointer to list of children */
@@ -150,9 +151,9 @@
 
         void run_task(Task *task);
         // Switch tasks
-        void switch_tasks(Task *old, Task *new);
+        void switch_tasks(Task *old, Task *new, bool use_global);
         // preempt
-        void preempt(bool discard);
+        void preempt(bool discard, bool use_global);
         // Methods for getting tasks
         bool insert_into_list(Task *task);
         Task *get_task_by_pid(pid_t pid);

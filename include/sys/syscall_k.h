@@ -34,6 +34,8 @@
 		void write_msr(uint64_t msr, uint64_t lo, uint64_t hi);
 		uint64_t read_msr(uint64_t msr);
 
+		/* syscall prototypes */
+		void sys_yield();
 
 		/* Macros for helping to set and check the MSR */
 		#define IS_SCE_SET(value) ({ 			      \
