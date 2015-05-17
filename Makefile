@@ -1,8 +1,8 @@
 CC=gcc
 # CC=clang
 AS=as
-DEBUG=
-# DEBUG = -DDEBUG
+# DEBUG=
+DEBUG = -DDEBUG
 CFLAGS=-O1 -g -std=c99 -D__thread= -Wall -Werror -nostdinc -Iinclude -msoft-float -mno-sse -mno-red-zone -fno-builtin -fPIC -march=amdfam10 -g3 -fno-stack-protector $(DEBUG)
 LD=ld
 LDLAGS=-nostdlib
