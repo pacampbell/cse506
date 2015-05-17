@@ -217,13 +217,13 @@ Task* create_task_struct(void) {
         // printk("Created new task struct\n");
     } else {
         // Remove this task from the insert_into_list
-        panic("REPUROSING Task struct\n");
+        // panic("REPUROSING Task struct\n");
         free_file_list(task->files, MAX_FD);
         if(remove_task_by_pid(task->pid) == NULL) {
             panic("Tried to free a NULL task.\n");
             halt();
         }
-        printk("cr3: %p\n", task->registers.cr3);
+        // printk("cr3: %p\n", task->registers.cr3);
     }
     return task;
 }
@@ -278,6 +278,9 @@ void setup_new_stack(Task *task) {
     // Set the stack pointer to the amount of items pushed
     task->registers.rsp = (uint64_t)&(task->kstack[507]);
     // printk("kstack_top: %p\n", task->registers.rsp);
+    // if(task->type == USER) {
+    //     printk("rip: %p rsp: %p\n", task->registers.rip, task->registers.rsp);
+    // }
 }
 
 Task* create_new_task(Task* task, const char *name, task_type_t type,
@@ -345,7 +348,6 @@ Task* create_new_task(Task* task, const char *name, task_type_t type,
         vma->vm_end = vma->vm_start + PAGE_SIZE;
         vma->vm_prot = VM_GROWSDOWN;
         add_vma(task->mm, vma);
-
     }
 
     /* This task is the end of the list */
@@ -392,6 +394,8 @@ Task *clone_task(Task *src, uint64_t global_sp, uint64_t global_rip) {
         new_task->children = NULL;
         // Create new kstack and ustack
         new_task->kstack = (uint64_t*) kmalloc_kern(PAGE_SIZE);
+        // prepare the stack for iretq
+        setup_new_stack(new_task);
     } else {
         panic("UNABLE TO CLONE NULL TASK");
         halt();
@@ -464,11 +468,14 @@ void set_task(Task *task) {
     );
 }
 
+extern uint64_t global_sp;
+extern uint64_t global_rip;
 void switch_tasks(Task *old, Task *new) {
     // Make sure both are not null
     // and both are not the same (no need to swap if same)
     if(old != NULL && new != NULL && old != new) {
         if(old->state != TERMINATED) {
+            // printk("Swapping out: %s\n", old->name);
             old->state = READY;
             uint64_t rax = old->registers.rax;
             // printk("Swicthing out %s - ursp %p kstack: %p \n", old->name, old->registers.rsp, old->kstack);
@@ -503,9 +510,15 @@ void switch_tasks(Task *old, Task *new) {
                 : "r"(old)
                 :
             );
+            // __asm__ __volatile__(
+            //     "movq %%rsp, 0x40(%0);"
+            //     :
+            //     : "r"(old)
+            //     : "memory"
+            // );
+            
             if(old->type == KERNEL) {
                 __asm__ __volatile__(
-                    /* save rsp */
                     "movq %%rsp, 0x40(%0);"
                     :
                     : "r"(old)
@@ -514,14 +527,14 @@ void switch_tasks(Task *old, Task *new) {
             } else {
                 printk(" \b");
                 old->registers.rax = rax;
-                extern uint64_t global_sp;
                 __asm__ __volatile__(
-                    /* save rsp */
+                    "movq %2, 0x38(%0);"
                     "movq %1, 0x40(%0);"
                     :
-                    : "r"(old), "r"(global_sp)
+                    : "r"(old), "r"(global_sp), "r"(global_rip)
                     : "memory"
                 );
+                setup_new_stack(old);
             }
         } else {
             // Mark pid as free
@@ -567,50 +580,17 @@ void switch_tasks(Task *old, Task *new) {
             : "r"(current_task)
             : "memory"
         );
-        if(current_task->state == NEW) {
-            current_task->state = RUNNING;
-            __asm__ __volatile__("iretq;");
-        } else {
-            if(current_task->type == USER) {
-                // printk("Continuing task %s - %d - status: %d\n", current_task->name, current_task->pid, current_task->state);
-                // printk("sp: %p rax: %d\n", current_task->registers.rsp, current_task->registers.rax);
-                BOCHS_MAGIC();
-                __asm__ __volatile__(
-                    /* Save the argument in the register */
-                    "movq %0, %%rax;"
-                    /* Set cr3 */
-                    "movq 0x88(%0), %%rdi;"
-                    "movq %%rdi, %%cr3;"
-                    /* Set the rest of the registers */
-                    "movq 0x8(%%rax), %%rbx;"
-                    "movq 0x10(%%rax), %%rcx;"
-                    "movq 0x18(%%rax), %%rdx;"
-                    "movq 0x20(%%rax), %%rsi;"
-                    "movq 0x28(%%rax), %%rdi;"
-                    "movq 0x48(%%rax), %%r8;"
-                    "movq 0x50(%%rax), %%r9;"
-                    "movq 0x58(%%rax), %%r10;"
-                    "movq 0x60(%%rax), %%r11;"
-                    "movq 0x68(%%rax), %%r12;"
-                    "movq 0x70(%%rax), %%r13;"
-                    "movq 0x78(%%rax), %%r14;"
-                    "movq 0x80(%%rax), %%r15;"
-                    /* Set the base pointer */
-                    "movq 0x30(%%rax), %%rbp;"
-                    /* set the stack pointer */
-                    "movq 0x40(%%rax), %%rsp;"
-                    /* Set rax */
-                    "movq 0x0(%%rax), %%rax;"
-                    "ret;"
-                    :
-                    : "r"(current_task)
-                    : "memory"
-                );
-            } else {
-                __asm__ __volatile__(
-                    "sti;"
-                );
-            }
+        __asm__ __volatile__("sti;");
+        if(current_task->type == USER || current_task->state == NEW) {
+            /* Jump back to whence we came */
+            __asm__ __volatile__(
+                /* Set rax */
+                "movq 0x0(%%rax), %%rax;"
+                "iretq;"
+                :
+                : "r"(current_task)
+                : "memory"
+            );
         }
     }
 }
@@ -690,7 +670,7 @@ Task* get_free_task_struct(void) {
         while(ctask != NULL) {
             if(!ctask->in_use) {
                 free_task = ctask;
-                printk("FOUND A FREE TASK : %s\n", free_task->name);
+                // printk("FOUND A FREE TASK : %s\n", free_task->name);
                 // zero out the free task
                 memset(free_task, 0, sizeof(Task));
                 break;

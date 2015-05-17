@@ -10,7 +10,7 @@ int main(int argc, char *argv[]) {
     //     yield();
     //     yield_count++;
     // }
-    sleep(1000);
+    sleep(5);
     // switch((pid = fork())) {
     // 	case -1:
     // 		printf("Fork failed\n");
@@ -22,7 +22,7 @@ int main(int argc, char *argv[]) {
     // 		printf("In parent. child: %d\n", pid);
     // 		break;
     // }
-    // printf("Good bye world!\n");
+    printf("Good bye world!\n");
     return 1;
 }
 

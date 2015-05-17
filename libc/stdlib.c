@@ -153,6 +153,7 @@ unsigned int sleep(unsigned int seconds) {
     memset(&rmtp, 0, sizeof(rmtp));
     // initialize rqtp struct
     rqtp.tv_sec = seconds;
+    printf(" \b");
     // Get the return code
     if(syscall_2(SYS_nanosleep, (uint64_t)&rqtp, (uint64_t)&rmtp) < 0) {
         // TODO: Something bad happened
