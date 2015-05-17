@@ -34,19 +34,19 @@ void init_services(void) {
 }
 
 void start_shell(void) {
-   // int argc = 1;
-   // char *argv[] = {"bin/sbush",NULL};
-   // char *envp[] = {"PATH=bin/sbush", NULL};
+   int argc = 1;
+   char *argv[] = {"bin/sbush",NULL};
+   char *envp[] = {"PATH=bin/", NULL};
 
 
     /* Do some testing for now */
     // exec_tarfs_elf_args("bin/cat", argc, argv, envp);
-    // exec_tarfs_elf_args("bin/sbush", argc, argv, envp);
+    exec_tarfs_elf_args("bin/sbush", argc, argv, envp);
     // exec_tarfs_elf_args("bin/args", argc, argv, envp);
     // exec_tarfs_elf_args("bin/exec", argc, argv, envp);
     // exec_tarfs_elf("bin/ps");
     
-    exec_tarfs_elf("bin/fork");
+    //exec_tarfs_elf("bin/fork");
     
     // for(int i = 0; i < 10; i++) {
     //     exec_tarfs_elf("bin/hello");
@@ -56,5 +56,4 @@ void start_shell(void) {
     // exec_tarfs_elf("bin/kill");
     // exec_tarfs_elf("bin/open");
     // exec_tarfs_elf("bin/malloc");
-    // exec_tarfs_elf("bin/hello");
 }

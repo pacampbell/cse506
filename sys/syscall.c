@@ -201,6 +201,11 @@ int sys_open(const char *pathname, int flags) {
     return rtn;
 }
 
+int sys_close(int fd) {
+    if (fd < 3) return -1;
+    return close_file(get_current_task()->files, fd);
+}
+
 int sys_execve(char *filename, char *argv[], char *envp[]) {
     int argc;
     for(argc = 0; argv[argc] != NULL; argc++);
@@ -299,7 +304,7 @@ uint64_t syscall_common_handler(uint64_t num, uint64_t arg1, uint64_t arg2, uint
             return_value = sys_lseek(arg1,arg2, arg3);
             break;
         case SYS_close:
-            panic("sys_close not implemented.\n");
+            return_value = sys_close(arg1);
             break;
         case SYS_pipe:
             panic("sys_pipe not implemented.\n");
