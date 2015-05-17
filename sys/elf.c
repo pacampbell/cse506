@@ -94,7 +94,7 @@ struct mm_struct* load_elf(char *data, int len, Task *task, pml4_t *proc_pml4) {
 void load_elf_args(Task *tsk, int argc, char *argv[], char *envp[]) {
     if (tsk->mm->start_stack == 0) panic("Task not set up\n");
     
-    char *tmp_c = kmalloc_kern(sizeof(char));
+    char tmp_c;
 
     pml4_t *kern_cr3;
     pml4_t *task_cr3;
@@ -108,6 +108,13 @@ void load_elf_args(Task *tsk, int argc, char *argv[], char *envp[]) {
         panic("malloc failed\n");
         return;
     }
+    set_cr3(kern_cr3);
+    struct vm_area_struct *vma = (struct vm_area_struct *)kmalloc_kern(sizeof(struct vm_area_struct));
+    vma->vm_prot = 0;
+    vma->vm_start =(uint64_t) new_stack;
+    vma->vm_end = vma->vm_start + PAGE_SIZE;
+    add_vma(tsk->mm, vma);
+    set_cr3(task_cr3);
 
     new_stack = (uint64_t*)tsk->mm->start_stack;
 
@@ -117,6 +124,14 @@ void load_elf_args(Task *tsk, int argc, char *argv[], char *envp[]) {
     //tsk->args.argv = PHYS_TO_VIRT(kmalloc_pg());
     tsk->args.argv = (uint64_t)kmalloc_vma(task_cr3, (tsk->mm->start_stack + (4*PAGE_SIZE)) & PG_ALIGN, 1, USER_SETTINGS);
     char *tsk_argv =  (char*)tsk->args.argv;
+    set_cr3(kern_cr3);
+    vma = (struct vm_area_struct *)kmalloc_kern(sizeof(struct vm_area_struct));
+    vma->vm_prot = 0;
+    vma->vm_start =(uint64_t) tsk_argv;
+    vma->vm_end = vma->vm_start + PAGE_SIZE;
+    add_vma(tsk->mm, vma);
+    set_cr3(task_cr3);
+
     for (int i = 0; i < argc; i++, new_stack++) {
         *new_stack = (uint64_t)tsk_argv;
 
@@ -126,9 +141,9 @@ void load_elf_args(Task *tsk, int argc, char *argv[], char *envp[]) {
             //printk("char: %c\n", *(argv[i]+j));
             //*tsk_argv = *(argv[i] + j);
            set_cr3(kern_cr3);
-           *tmp_c = *(argv[i] + j);
+           tmp_c = *(argv[i] + j);
            set_cr3(task_cr3);
-           *tsk_argv = *tmp_c;
+           *tsk_argv = tmp_c;
            set_cr3(kern_cr3);
             //printk("%c\n", *(argv[i]+j));
             //if(i == 1 && j == 3)halt();
@@ -144,6 +159,14 @@ void load_elf_args(Task *tsk, int argc, char *argv[], char *envp[]) {
     //tsk->args.envp = PHYS_TO_VIRT(kmalloc_pg());
     tsk->args.envp = (uint64_t)kmalloc_vma((pml4_t*)tsk->registers.cr3, (tsk->mm->start_stack + (5*PAGE_SIZE)) & PG_ALIGN, 1, USER_SETTINGS);
     char *tsk_env =  (char*)tsk->args.envp;
+    set_cr3(kern_cr3);
+    vma = (struct vm_area_struct *)kmalloc_kern(sizeof(struct vm_area_struct));
+    vma->vm_prot = 0;
+    vma->vm_start =(uint64_t) tsk_env;
+    vma->vm_end = vma->vm_start + PAGE_SIZE;
+    add_vma(tsk->mm, vma);
+    set_cr3(task_cr3);
+
     //printk("adder: %p\n", new_stack);
     set_cr3(kern_cr3);
     for (int i = 0; envp[i] != NULL; i++, new_stack++) {
@@ -153,9 +176,9 @@ void load_elf_args(Task *tsk, int argc, char *argv[], char *envp[]) {
 
         for (int j = 0; *(envp[i]+j) != '\0'; j++, tsk_env++) {
             set_cr3(kern_cr3);
-           *tmp_c = *(envp[i] + j);
+           tmp_c = *(envp[i] + j);
            set_cr3(task_cr3);
-           *tsk_env = *tmp_c;
+           *tsk_env = tmp_c;
            set_cr3(kern_cr3);
         }
         set_cr3(task_cr3);
@@ -169,7 +192,6 @@ void load_elf_args(Task *tsk, int argc, char *argv[], char *envp[]) {
     new_stack++;
     
     set_cr3(kern_cr3);
-    kfree_pg(tmp_c);
 }
 
 bool same_pg(uint64_t pg, uint64_t addr) {

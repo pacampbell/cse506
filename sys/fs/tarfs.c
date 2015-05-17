@@ -40,11 +40,14 @@ static uint64_t covert_base_8(char *str) {
 
 void ls_tars(const char* filter) {
     Header *entry = (Header*)(&_binary_tarfs_start);
+    int count = 0;
 
     while(entry < (Header*)(&_binary_tarfs_end)) {
         uint64_t e_size = covert_base_8(entry->size);
         if (entry->name[0] != '\0' && (filter == NULL || begwith(entry->name, filter))) { 
-            printk("%s\n", entry->name);
+            count++;
+            printk("%s  ", entry->name);
+            if(count % 5 == 0) printk("\n");
         }
 
         if(e_size > 0) {
