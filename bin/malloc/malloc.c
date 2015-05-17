@@ -5,8 +5,7 @@ int main(int argc, char *argv[]) {
     char *c = (char*)malloc(0xfffffffffff);
     *c = 'p';
     *(c+1) = '\0';
-    *(c+(0xffffffffffe)) = '\0';
-
     printf("malloc char: %s\n", c);
-    //c = (char*) malloc(999999);
+    printf("I should break now!!\n");
+    *(c+(0xffffffffffe)) = '\0';
 }
